@@ -1,0 +1,268 @@
+{% extends 'khata/base.html' %}
+
+{% block title %}{{ customer.name }} {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body text-center">
+                <h4 class="fw-bold text-success mb-1">Name :<b> {{ customer.name }} </b></h4>
+                <p class="text-muted small mb-3">Phone: {{ customer.phone }}</p>
+
+                <div
+                    class="p-3 rounded {% if net_balance >= 0 %}bg-light text-danger{% else %}bg-light text-success{% endif %}">
+                    <span class="small d-block text-uppercase fw-bold text-muted">Total Balance</span>
+                    <h3 class="mb-0 fw-bold">
+                        ₹{{ net_balance|stringformat:".2f" }}
+                    </h3>
+                    <small class="fw-semibold">
+                        {% if net_balance > 0 %}Aapko lene hain (Udhaar){% elif net_balance < 0 %}Aapko dene hain  (Advance){% else %}Hisaab Barabar{% endif %} </small>
+                </div>
+                <div class="card shadow-sm border-0 p-3 mb-4">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <small class="text-muted">Total Diye</small>
+                            <h5 class="text-danger">₹{{ total_given }}</h5>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Total Mile</small>
+                            <h5 class="text-success">₹{{ total_got }}</h5>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <!-- Agar balance > 0 hai, tabhi Byaaj ka button dikhayein -->
+            {% if whatsapp_url %}
+            <a href="{{ whatsapp_url }}" target="_blank" class="btn btn-success btn-sm w-100 fw-bold mb-3 shadow-sm">
+                💬 Sent WhatsApp Reminder
+            </a>
+            {% endif %}
+            {% if net_balance > 0 %}
+            <button type="button" class="btn btn-warning btn-sm w-100 fw-bold mb-3 shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#interestModal">
+                ⏱ Interest Calculation
+            </button>
+            {% endif %}
+            <div class="card-header bg-success text-white fw-bold">Add New Transection</div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Date</label>
+                        <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Amount</label>
+                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="₹ 0.00"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Entry Type</label>
+                        <select name="trans_type" class="form-select" required>
+                            <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
+                            <option value="GOT">Mujhe Mile (Jama / Payment)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Remarks (Optional)</label>
+                        <input type="text" name="remarks" class="form-control"
+                            placeholder="Optional: Kis cheez ke liye?">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white py-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                    <span class="fw-bold fs-5">Ledger History</span>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <form method="GET" class="d-flex align-items-center gap-2">
+                            <input type="date" name="start_date" class="form-control form-control-sm"
+                                value="{{ start_date }}">
+                            <input type="date" name="end_date" class="form-control form-control-sm"
+                                value="{{ end_date }}">
+                            <button type="submit" class="btn btn-sm btn-light fw-bold text-success">Filter</button>
+                            <a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-sm btn-danger">Reset</a>
+                        </form>
+
+                        <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
+                            class="btn btn-sm btn-light fw-bold text-danger">📄 PDF Download</a>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sr</th>
+                                <th class="ps-4">Date</th>
+                                <th>Vivran</th>
+                                <th class="text-end text-danger">Maine Diye</th>
+                                <th class="text-end text-success pe-4">Mujhe Mile</th>
+                                <th>Balance</th>
+                                <th>Edit</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in transactions %}
+                            <tr>
+                                <td>{{forloop.counter}}</td>
+                                <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
+                                <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
+
+                                <td class="text-end fw-bold text-danger">
+                                    {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                                </td>
+
+                                <td class="text-end fw-bold text-success pe-4">
+                                    {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                                </td>
+                                <td
+                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-success{% endif %}">
+                                    ₹{% if trans.running_balance < 0 %}
+                                        {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %}
+                                        {{trans.running_balance }} {% endif %} </td>
+                                <td>
+                                    <a href="{% url 'khata:edit_transaction' trans.b64_id %}"
+                                        class="btn btn-sm btn-outline-secondary px-2 py-0 me-1"
+                                        title="Edit Entry">✏️</a>
+                                </td>
+                                <td>
+                                    <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
+                                        class="delete-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
+                                            title="Delete Entry">X</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
+                                    nahi hua hai.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Interest Calculator Pop-up Modal -->
+<div class="modal fade" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark" id="interestModalLabel">Byaaj Calculation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            </div>
+
+            <form action="{% url 'khata:add_interest' encoded_id %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+
+                    <!-- Principal Amount (Bakaaya Rakam) - Read Only -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Principal</label>
+                        <input type="number" id="principalAmt" class="form-control bg-light"
+                            value="{{ net_balance|stringformat:'.2f' }}" readonly>
+                    </div>
+
+                    <div class="row">
+                        <!-- Rate per month -->
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Rate % / Month</label>
+                            <input type="number" step="0.01" name="rate" id="interestRate" class="form-control"
+                                placeholder="Jaise 2" required value="2">
+                        </div>
+
+
+                        <!-- Time in months -->
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Time in Month</label>
+                            <!-- value me backend se calculated mahine aayenge, par ise manually badla (edit) bhi ja sakta hai -->
+                            <input type="number" step="0.01" name="months" id="interestMonths" class="form-control"
+                                placeholder="Kitne mahine?" value="{{ auto_months }}" required>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Auto-calculated Interest Amount -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-danger">Total Byaaj</label>
+                        <input type="number" step="0.01" name="interest_amount" id="totalInterest"
+                            class="form-control fw-bold text-danger" required readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Date</label>
+                        <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                    <!-- Form submit button -->
+                    <button type="submit" class="btn btn-success fw-bold">Hisaab Mein Jodein</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Live Calculation ke liye JavaScript -->
+<!-- Live Calculation ke liye JavaScript -->
+<script>
+    // Elements ko select karna
+    const principalInput = document.getElementById('principalAmt');
+    const rateInput = document.getElementById('interestRate');
+    const monthsInput = document.getElementById('interestMonths');
+    const totalInterestInput = document.getElementById('totalInterest');
+
+    // Function jo live interest calculate karega
+    function calculateInterest() {
+        let principal = parseFloat(principalInput.value) || 0;
+        let rate = parseFloat(rateInput.value) || 0;
+        let months = parseFloat(monthsInput.value) || 0;
+
+        // P * R * T / 100 ka basic formula
+        let interest = (principal * rate * months) / 100;
+
+        // Total ko 2 decimal format mein dikhana
+        totalInterestInput.value = interest.toFixed(2);
+    }
+
+    // Input events par calculation update karna
+    rateInput.addEventListener('input', calculateInterest);
+    monthsInput.addEventListener('input', calculateInterest);
+
+    // Jaise hi pop-up (Modal) open ho, ek baar auto-calculate chal jaye
+    document.getElementById('interestModal').addEventListener('shown.bs.modal', function () {
+        calculateInterest();
+    });
+</script>
+{% endblock %}

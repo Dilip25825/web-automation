@@ -1,0 +1,33 @@
+{% extends 'khata/base.html' %}
+{% block title %}Dukaan Settings - OkCredit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white fw-bold py-3">
+                Shop Profile (Settings)
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Shop Name</label>
+                        <input type="text" name="shop_name" class="form-control" value="{{ profile.shop_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mobile Number</label>
+                        <input type="text" name="phone" class="form-control" value="{{ profile.phone|default:'' }}" placeholder="Optional: Dukaan ka mobile number">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Shop Address</label>
+                        <textarea name="address" class="form-control" rows="3" placeholder="Optional: Dukaan ka pata">{{ profile.address|default:'' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Save Profile</button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-danger w-100 mt-2">Back To Dashboard</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'licensing/base.html' %}
+
+{% block title %}EPR{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4">
+    <!-- {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-secondary bg-dark text-light"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %} -->
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header text-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-info">📊 PACS ERP Table Live Control</h5>
+            <a href="{% url 'create_pacserp' %}" class="btn btn-info text-dark fw-bold btn-sm me-2">➕ Add New ERP
+                Record</a>
+        </div>
+        <div class="card-body">
+
+            <form method="GET" action="{% url 'pacserp_dashboard' %}"
+                class="row g-2 mb-4 d-flex justify-content-center align-items-center">
+                <div class="col-md-2">
+                    <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
+                        placeholder="Search by Pacs Name, Operator Mobile or System ID...">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-light">🔍 Search</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover align-middle text-nowrap border-secondary"
+                    style="font-size: 14px;">
+                    <thead class="table-dark text-center border-secondary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Erp Id</th>
+                            <th>Pacs Name</th>
+                            <th>Amount</th>
+                            <th>Payment Status</th>
+                            <th>Expiry Date</th>
+                            <th>Operator Mobile</th>
+                            <th>Utr Number</th>
+                            <th>Remark / Log</th>
+                            <th>Status</th>
+                            {% if request.user.is_superuser %}
+                            <th>Update</th>
+                            {% endif %}
+                            <th>Action</th>
+                            <th>Genrate Invoice</th>
+                            {% if request.user.is_superuser %}
+                            <th>Delete</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if erp_records %}
+                        {% for record in erp_records %}
+                        <tr>
+                            <td class="text-center">{{ record.id }}</td>
+                            <td><strong class="text-light">{{record.erp_id}}</strong></td>
+                            <td><strong class="text-light">{{ record.pacs_name|default:"-" }}</strong></td>
+                            <td class="text-end text-light">{{ record.amount }}</td>
+                            <td class="text-end text-light">{{ record.payment_status }}</td>
+                            <td class="text-center text-light">{{ record.expiry_date|date:"Y-m-d"|default:"-" }}</td>
+                            <td class="text-center">{{ record.operator_mobile|default:"-" }}</td>
+                            <td class="text-center">{{ record.utr_number }}</td>
+                            <td class="text-wrap" style="max-width: 220px;"><small class="text-light">{{record.remark|default:"-" }}</small></td>
+                            <td class="text-center">
+                                {% now "Y-m-d" as today_date %}
+                                {% if record.expiry_date|date:"Y-m-d" < today_date %} <span
+                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">
+                                    EXPIRED</span>
+                                    {% else %}
+                                    <span
+                                        class="badge bg-success-subtle text-success border border-success px-2 py-1">ACTIVE</span>
+                                    {% endif %}
+                            </td>
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <a href="{% url 'update_pacserp' record.id %}"
+                                    class="btn btn-outline-info btn-sm fw-bold text-info px-2"
+                                    title="PACS ERP record update karein">
+                                    <i class="fas fa-edit me-1"></i> Update
+                                </a>
+                                {% else %}
+                            </td>
+                            {% endif %}
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    {% now "Y-m-d" as today_date %}
+                                    {% if record.expiry_date|date:"Y-m-d" < today_date %} <button type="button"
+                                        class="btn btn-outline-success btn-sm fw-bold" data-bs-toggle="modal"
+                                        data-bs-target="#erpModal{{ record.id }}">✅ Activate</button>
+                                        {% else %}
+                                        {% if request.user.is_superuser %}
+                                        <a href="#" data-url="{% url 'toggle_erp_activation' record.id %}"
+                                            class="btn btn-outline-danger btn-sm"
+                                            onclick="confirmDeactivate(event, this, '{{ record.id }}');">
+                                            ⚠️Deactivate
+                                        </a>
+                                        {% else %}
+                                        <span
+                                            class="badge bg-dark border border-secondary text-muted px-2 py-1">⚠️Deactivate</span>
+                                        {% endif %}
+                                        {% endif %}
+
+
+                                </div>
+                            </td>
+                            <td> <a href="{% url 'generate_erp_invoice' record.id %}"
+                                    class="btn btn-sm btn-outline-info" title="Download ERP Invoice" target="_blank">
+                                    📄 Invoice
+                                </a>
+                            </td>
+
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <a href="#" data-url="{% url 'delete_record' record.id %}"
+                                    class="btn btn-outline-danger btn-sm"
+                                    onclick="confirmDelete(event, this, '{{ record.id }}');">
+                                    ❌Delete
+                                </a>
+                                {% else %}
+                                <!-- Non-admin users ke liye message -->
+                                <!-- <span class="text-muted" title="Only Admin can delete">❌Delete</span> -->
+                            </td>
+                            {% endif %}
+
+                        </tr>
+
+                        <script>
+                            // 1. Delete Confirmation Function
+                            function confirmDelete(event, element, recordId) {
+                                event.preventDefault(); // Click ka default behavior rokna
+
+                                var targetUrl = element.getAttribute('data-url');
+
+                                Swal.fire({
+                                    title: 'Kya aap sure hain?',
+                                    text: "Record ID: " + recordId + " permanent delete ho jayega! Yeh action undo nahi hoga.",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#d33',
+                                    cancelButtonColor: '#3085d6',
+                                    confirmButtonText: 'Haan, delete karein!',
+                                    cancelButtonText: 'Cancel'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = targetUrl; // Safety Check ke baad redirection
+                                    }
+                                });
+                            }
+
+                        </script>
+                        <script>
+                            function confirmDeactivate(event, element, recordId) {
+                                event.preventDefault(); // Is line se deactivation direct nahi hoga, hold ho jayega
+                                var targetUrl = element.getAttribute('data-url');
+
+                                Swal.fire({
+                                    title: 'Deactivate Status?',
+                                    text: "Kya aap Record ID: " + recordId + " ko temporarily deactivate karna chahte hain?",
+                                    icon: 'info', // Info icon status badalne ke liye
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#f39c12', // Orange color deactivation ke liye
+                                    cancelButtonColor: '#3085d6',
+                                    confirmButtonText: 'Haan, deactivate karein!',
+                                    cancelButtonText: 'Cancel'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = targetUrl; // User jab confirm karega tabhi deactivate hoga
+                                    }
+                                });
+                            }
+                        </script>
+
+                        {% if messages %}
+                        <div id="django-messages-container" style="display: none;">
+                            {% for message in messages %}
+                            <div class="django-msg" data-tags="{{ message.tags }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <script type="text/javascript">
+                            document.addEventListener("DOMContentLoaded", function () {
+                                // HTML container se saare messages ko JavaScript me fetch karna
+                                const msgElements = document.querySelectorAll('#django-messages-container .django-msg');
+
+                                msgElements.forEach(function (element) {
+                                    let msgType = element.getAttribute('data-tags');
+                                    let msgText = element.innerText;
+                                    let alertTitle = "Notification";
+
+                                    // Error Handling: Sahi icons map karna
+                                    if (msgType === 'error' || msgType === 'danger') {
+                                        msgType = 'error';
+                                        alertTitle = 'Error!';
+                                    } else if (msgType === 'success') {
+                                        msgType = 'success';
+                                        alertTitle = 'Success!';
+                                    } else if (msgType === 'warning') {
+                                        msgType = 'warning';
+                                        alertTitle = 'Warning!';
+                                    } else {
+                                        msgType = 'info';
+                                        alertTitle = 'Info';
+                                    }
+
+                                    // SweetAlert Toast Notification Trigger karna
+                                    Swal.fire({
+                                        title: alertTitle,
+                                        text: msgText,
+                                        icon: msgType,
+                                        timer: 4000,
+                                        showConfirmButton: false,
+                                        position: 'top-end',
+                                        toast: true
+                                    });
+                                });
+                            });
+                        </script>
+                        {% endif %}
+
+                        <div class="modal fade" id="erpModal{{ record.id }}" data-bs-backdrop="static" tabindex="-1"
+                            aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content shadow-lg">
+                                    <div class="modal-header bg-dark text-warning border-bottom border-warning">
+                                        <h5 class="modal-title fw-bold">✅ Activate ERP Module: {{ record.pacs_name }}
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+
+                                    <form method="POST"
+                                        action="{% url 'toggle_erp_activation' record.id %}?search_id={{ search_query }}">
+                                        {% csrf_token %}
+                                        <div class="modal-body text-wrap text-light">
+
+                                            <p><strong>Branch/Dist:</strong> {{ record.brach|default:"-" }} /
+                                                {{record.dist|default:"-" }}</p>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-warning small fw-bold">Enter Activation
+                                                    Amount (In Rs.)</label>
+                                                <input type="number" name="amount" class="form-control"
+                                                    value="{{ record.amount }}" required min="0">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label text-warning small fw-bold">Expire Date</label>
+                                                <input type="date" name="expiry_date" class="form-control"
+                                                    value="{{ record.expiry_date|date:'Y-m-d' }}" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-warning small fw-bold">Enter UTR /
+                                                    Transaction Number</label>
+                                                <input type="text" name="utr_number" class="form-control"
+                                                    value="{{ record.utr_number|default:'' }}"
+                                                    placeholder="Optional Transaction ID">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-warning small fw-bold">Custom Remark /
+                                                    Reason</label>
+                                                <input type="text" name="remark" class="form-control"
+                                                    placeholder="Optional registration note...">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label d-block text-muted small fw-bold">Activating As
+                                                    Admin:</label>
+                                                <span
+                                                    class="badge bg-dark border border-secondary text-success p-2 fs-6 w-100 text-start">
+                                                    👤 {{ request.user.username }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-top border-secondary">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-warning text-dark fw-bold">Save & Open
+                                                Route</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="12" class="text-center text-muted py-4">No records found in tblPacsErp database
+                                table.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+{% endblock %}

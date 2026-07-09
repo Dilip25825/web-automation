@@ -1,0 +1,173 @@
+{% extends 'licensing/base.html' %}
+
+{% block title %}User Info Database Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-secondary bg-dark text-light"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header text-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-info">User Info Table Live Control</h5>
+            <a href="/" class="btn btn-outline-secondary btn-sm">⬅️ Back to Central Hub</a>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'userinfo_dashboard' %}" class="row g-2 mb-4 d-flex justify-content-center align-items-center">
+                <div class="col-md-2">
+                    <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
+                        placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-light">🔍 Search</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover align-middle text-nowrap border-secondary"
+                    style="font-size: 14px;">
+                    <thead class="table-dark text-center border-secondary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Login ID</th>
+                            <th>Pacs Name</th>
+                            <th>Dist</th>
+                            <th>Branch</th>
+                            <th>fYear</th>
+                            <th>IsActive</th>
+                            <th>Payment Status</th>
+                            <th>Amount</th>
+                            <th>Entry count</th>
+                            <th>Operator Mobile</th>
+                            <th>Date Time</th>
+                            <!-- <th>Last Login</th> -->
+                            <th>IsPri</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if clients %}
+                        {% for client in clients %}
+                        <tr>
+                            <td class="text-center">{{ client.id }}</td>
+                            <td class="text-center">{{ client.mobile|default:"-" }}</td>
+                            <td><strong>{{ client.pacs_name|default:"-" }}</strong></td>
+                            <td>{{ client.dist|default:"-" }}</td>
+                            <td>{{ client.brach|default:"-" }}</td>
+                            <td class="text-center">{{ client.f_year|default:"-" }}</td>
+                            <td>{{ client.is_active }}</td>
+                            <td class="text-center">{{ client.payment_status }}</td>
+                            <td class="text-end">{{ client.amount }}</td>
+                            <th>{{client.entry_count}}</th>
+                            <td class="text-center">{{ client.operator_mobile|default:"-" }}</td>
+                            <td>{{ client.date_time|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                            <!-- <td>{{ client.last_login|date:"Y-m-d H:i:s"|default:"-" }}</td> -->
+                            <td>{{ client.is_pri }}</td>
+                            <td class="text-center">
+                                {% if client.payment_status == client.amount %}
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success px-2 py-1">ACTIVE</span>
+                                {% else %}
+                                <span
+                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">INACTIVE</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center">
+                                {% if client.payment_status == client.amount %}
+                                <a href="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}"
+                                    class="btn btn-outline-danger btn-sm"
+                                    onclick="return confirm('Kya aap PACS ID {{ client.id }} ko Deactivate करना चाहते हैं?');">
+                                    Deactivate
+                                </a>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-success btn-sm fw-bold"
+                                    data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
+                                    🚀 Activate
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="userinfoModal{{ client.id }}" data-bs-backdrop="static"
+                            tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content shadow-lg">
+                                    <div class="modal-header bg-dark text-info border-bottom border-info">
+                                        <h5 class="modal-title fw-bold">🚀 Activate PACS: {{ client.pacs_name }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+
+                                    <form method="POST"
+                                        action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
+                                        {% csrf_token %}
+                                        <div class="modal-body text-wrap text-light">
+                                            <p><strong>PACS ID:</strong> <span class="text-info">{{ client.id }}</span>
+                                            </p>
+                                            <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-info small fw-bold">Enter Activation
+                                                    Amount (In Rs.)</label>
+                                                <input type="number" name="amount" class="form-control"
+                                                    value="{{ client.amount }}" required min="1">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-info small fw-bold">Enter UTR /
+                                                    Transaction Number</label>
+                                                <input type="text" name="utr_number" class="form-control"
+                                                    value="{{ client.utr_number|default:'' }}"
+                                                    placeholder="Optional Transaction ID">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label d-block text-muted small fw-bold">Activating As
+                                                    Admin:</label>
+                                                <span
+                                                    class="badge bg-dark border border-secondary text-success p-2 fs-6 w-100 text-start">
+                                                    👤 {{ request.user.username }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-top border-secondary">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-info text-dark fw-bold">Save &
+                                                Activate</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="13" class="text-center text-muted py-4">No matching records found in
+                                userinfo table.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'licensing/base.html' %}
+
+{% block title %}Manage Categories | Web Auto{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-light"><i class="fas fa-tags me-2"></i>Manage Categories</h2>
+        <div>
+            <a href="{% url 'reminders:category_create' %}" class="btn btn-success me-2">
+                <i class="fas fa-plus me-1"></i> New Category
+            </a>
+            <a href="{% url 'reminders:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Tasks
+            </a>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="table-secondary bg-opacity-25">
+                        <tr>
+                            <th>#</th>
+                            <th>Icon</th>
+                            <th>Name</th>
+                            <th>Color</th>
+                            <th>Tasks Assigned</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><i class="fas {{ category.icon }}"></i></td>
+                            <td><strong>{{ category.name }}</strong></td>
+                            <td>
+                                <span class="badge bg-{{ category.color }}">
+                                    {{ category.color }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ category.task_set.count }}</span>
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'reminders:category_delete' category.id %}"
+                                    class="btn btn-sm btn-outline-danger confirm-delete" data-title="Delete Category?"
+                                    data-text="Tasks assigned to this category will remain without a category."
+                                    title="Delete Category">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-secondary py-4">
+                                <i class="fas fa-tags fa-2x mb-2 d-block"></i>
+                                No categories yet. Create your first category!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

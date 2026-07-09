@@ -1,0 +1,84 @@
+{% extends 'khata/base.html' %}
+{% load static %}
+{% block title %} Reports {% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm border-0 p-4">
+        <h3 class="mb-4">Len-Den Report</h3>
+        <form method="GET" class="row g-3 mb-4">
+            <div class="col-auto">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date|default:'' }}">
+            </div>
+            <div class="col-auto">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date|default:'' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Report Dekhein</button>
+                <a href="{% url 'report_page' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sr</th>
+                        <th>Date</th>
+                        <th>Grahak</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trans in transactions %}
+                    <tr>
+                        <td>{{forloop.counter}}</td>
+                        <td>{{ trans.date|date:"d M Y" }}</td>
+
+                        <td>
+                            <a href="{% url 'customer_detail' trans.customer.id %}"
+                                class="text-decoration-none fw-bold text-primary">
+                                {{ trans.customer.name }}
+                            </a>
+                        </td>
+
+                        <td>
+                            <span
+                                class="badge {% if trans.trans_type == 'GIVEN' %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ trans.trans_type }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">₹{{ trans.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination Controls -->
+
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if transactions.has_previous %}
+                <li class="page-item"><a class="page-link"
+                        href="?page=1{% if start_date %}&start_date={{start_date}}&end_date={{end_date}}{% endif %}">&laquo;
+                        First</a></li>
+                <li class="page-item"><a class="page-link"
+                        href="?page={{ transactions.previous_page_number }}{% if start_date %}&start_date={{start_date}}&end_date={{end_date}}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled"><span class="page-link">Page {{ transactions.number }} of {{transactions.paginator.num_pages }}</span></li>
+
+                {% if transactions.has_next %}
+                <li class="page-item"><a class="page-link"
+                        href="?page={{ transactions.next_page_number }}{% if start_date %}&start_date={{start_date}}&end_date={{end_date}}{% endif %}">Next</a>
+                </li>
+                <li class="page-item"><a class="page-link"
+                        href="?page={{ transactions.paginator.num_pages }}{% if start_date %}&start_date={{start_date}}&end_date={{end_date}}{% endif %}">Last
+                        &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+<!-- templates/licensing/base.html -->
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Web Automation{% endblock %}</title>
+
+    <!-- Bootstrap 5 (Dark) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Tailwind CSS (Optional - for new components) -->
+
+
+    <style>
+        body {
+            padding-top: 0px;
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+        }
+
+        .card {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+        }
+
+        .card-header {
+            background-color: #0f172a !important;
+            border-bottom: 1px solid #334155 !important;
+        }
+
+        .form-control {
+            background-color: #0f172a !important;
+            border: 1px solid #475569 !important;
+            color: #f8fafc !important;
+        }
+
+        .form-control:focus {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25) !important;
+        }
+
+        .table-dark {
+            --bs-table-bg: #1e293b !important;
+            --bs-table-striped-bg: #111827 !important;
+        }
+
+        .modal-content {
+            background-color: #1e293b !important;
+            border: 1px solid #475569 !important;
+        }
+
+        .dropdown-menu {
+            background-color: #1e293b !important;
+            border: 1px solid #475569 !important;
+        }
+
+        .dropdown-item:hover {
+            background-color: #334155 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ========================================================== -->
+    <!-- NAVBAR (Only ONE - Directly in base.html)                   -->
+    <!-- ========================================================== -->
+    <nav class="navbar navbar-expand-lg bg-dark border-bottom border-secondary"
+        style="background-color: #0d1117 !important; position: sticky; top: 0; z-index: 9999; width: 100%;">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-light" href="{% url 'main_hub' %}">
+                <i class="fas fa-cogs me-2"></i>Web Automation With Excel
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+           {% if request.user.is_authenticated %}
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold {% if request.path == '/' %}active{% endif %}"
+                            href="{% url 'main_hub' %}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold {% if 'userinfo' in request.path %}active{% endif %}"
+                            href="{% url 'userinfo_dashboard' %}">
+                            <i class="fas fa-users me-1"></i>UserInfo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold {% if 'pacserp' in request.path %}active{% endif %}"
+                            href="{% url 'pacserp_dashboard' %}">
+                            <i class="fas fa-tractor me-1"></i>ERP
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold {% if 'reminders' in request.path %}active{% endif %}"
+                            href="{% url 'reminders:dashboard' %}">
+                            <i class="fas fa-tasks me-1"></i>Reminders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'khata' in request.path %}active{% endif %}"
+                            href="{% url 'khata:dashboard' %}">
+                            <i class="fas fa-book me-1"></i>Khata
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form action="{% url 'logout' %}" method="post" id="logoutForm">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger" id="logoutBtn">
+                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="{% url 'login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- ========================================================== -->
+    <!-- MAIN CONTENT                                               -->
+    <!-- ========================================================== -->
+    <!-- <main class="py-3"> -->
+    <!-- <div class="container"> -->
+    <!-- Django Messages (will be shown via SweetAlert2 toasts) -->
+    {% block content %}
+    {% endblock %}
+    <!-- </div> -->
+    <!-- </main> -->
+
+    <!-- ========================================================== -->
+    <!-- FOOTER                                                     -->
+    <!-- ========================================================== -->
+    <footer class="footer mt-auto py-3 bg-dark border-top border-secondary">
+        <div class="container text-center text-light small">
+            &copy; {% now "Y" %} Web Automation with Excel — All Rights Reserved
+        </div>
+    </footer>
+
+    <!-- ========================================================== -->
+    <!-- SCRIPTS                                                    -->
+    <!-- ========================================================== -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SweetAlert2 Auto-Toasts + Delete Confirmation + Logout Confirmation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ============================================
+            // 1. AUTO-TOAST FOR DJANGO MESSAGES
+            // ============================================
+            {% if messages %}
+            {% for message in messages %}
+            Swal.fire({
+                toast: true,
+                position: 'center',
+                icon: '{{ message.tags }}',
+                title: '{{ message|escapejs }}',
+                showConfirmButton: false,
+                timer: 3500,
+                timerProgressBar: true,
+                background: '#1e293b',
+                color: '#f1f5f9',
+            });
+            {% endfor %}
+            {% endif %}
+
+            // ============================================
+            // 2. CONFIRM DELETE FOR .confirm-delete LINKS
+            // ============================================
+            document.querySelectorAll('.confirm-delete').forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const href = this.getAttribute('href');
+                    const title = this.getAttribute('data-title') || 'Delete this item?';
+                    const text = this.getAttribute('data-text') || 'You won\'t be able to revert this!';
+
+                    Swal.fire({
+                        title: title,
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'Cancel',
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = href;
+                        }
+                    });
+                });
+            });
+
+            // ============================================
+            // 3. LOGOUT CONFIRMATION
+            // ============================================
+            const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const form = document.getElementById('logoutForm');
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            background: '#1e293b',
+            color: '#f1f5f9',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();  // Form POST submit karega
+            }
+        });
+    });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

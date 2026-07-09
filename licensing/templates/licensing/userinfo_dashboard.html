@@ -1,0 +1,443 @@
+{% extends 'licensing/base.html' %}
+
+{% block title %}User Info Database Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header text-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-info">User Info Table Live Control</h5>
+            <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2">➕ Add New
+                Record</a>
+            
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'userinfo_dashboard' %}"
+                class="row g-2 mb-4 d-flex justify-content-center align-items-center">
+                <!-- Sahi Tareeka (Bootstrap Standard ke sath) -->
+
+
+
+                <div class="col-md-2">
+                    <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
+                        placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-light">🔍 Search</button>
+                </div>
+
+                <div class="col-md-2 text-end text-light">
+                    <label for="customAmount">Enter Custom Amount</label>
+                </div>
+                <div class="col-md-1">
+                    <input type="text" name="customAmount" class="form-control" placeholder="Amount">
+                </div>
+            </form>
+            {% if clients %}
+            <h4 class="mb-0 fw-bold text-info">Total Record(s) : {{ clients.paginator.count }}</h4>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-hover align-middle text-nowrap border-secondary"
+                    style="font-size: 14px;">
+                    <thead class="table-dark text-center border-secondary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Login ID</th>
+                            <th>Pacs Name</th>
+                            <th>For Whys</th>
+                            <th>fYear</th>
+                            <!-- <th>IsActive</th> -->
+                            <th>Payment Status</th>
+                            <th>Amount</th>
+                            <th>Entry count</th>
+                            <th>Operator Mobile</th>
+                            <!-- <th>Date Time</th> -->
+                            <th>IsPri</th>
+                            <th>UTR Number</th>
+                            <!-- {% if request.user.is_superuser %} -->
+                            <th>Accepted By</th>
+                            <!-- {% endif %} -->
+                             <th>Accepted Date</th>
+                            <th>Status</th>
+                            {% if request.user.is_superuser %}
+                            <th>Edit/Update</th>
+                            {% endif %}
+                            <th>Action</th>
+                            <th>Genrate Invoice</th>
+                            {% if request.user.is_superuser %}
+                            <TH>Delete</TH>
+                            <th>Copy Row</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if clients %}
+                        {% for client in clients %}
+                        <tr>
+                            <td class="text-center">{{ client.id }}</td>
+                            <td class="text-center">{{ client.mobile|default:"-" }}</td>
+                            <td><strong>{{ client.pacs_name|default:"-" }}</strong></td>
+                            <td>{{ client.for_whys }}</td>
+                            <td class="text-center">{{ client.f_year|default:"-" }}</td>
+                            <!-- <td>{{ client.is_active }}</td> -->
+                            <td class="text-center">{{ client.payment_status }}</td>
+                            <td class="text-end">{{ client.amount }}</td>
+                            <th>{{client.entry_count}}</th>
+                            <td class="text-center">{{ client.operator_mobile|default:"-" }}</td>
+                            <!-- <td>{{ client.date_time|date:"Y-m-d H:i:s"|default:"-" }}</td> -->
+                            <td>{{ client.is_pri }}</td>
+                            <td>{{ client.utr_number }}</td>
+                            <!-- {% if request.user.is_superuser %} -->
+                            <td>{{ client.accepte_by }}</td>
+                            <!-- {% endif %} -->
+                             <td>{{ client.activation_date }}</td>
+                            <td class="text-center">
+                                {% if client.payment_status == client.amount %}
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success px-2 py-1">ACTIVE</span>
+                                {% else %}
+                                <span
+                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">INACTIVE</span>
+                                {% endif %}
+                            </td>
+
+
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <a href="{% url 'update_userinfo' client.id %}"
+                                    class="btn btn-sm btn-outline-info fw-bold" title="Farmer record update karein">
+                                    <i class="fas fa-edit me-1"></i>📝Update
+                                </a>
+                                {% else %}
+                                <!-- <span class="badge bg-dark border border-secondary text-muted px-2 py-1">📝
+                                    Update</span> -->
+                            </td>
+                            {% endif %}
+
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    {% if client.payment_status == client.amount %}
+                                    {% if request.user.is_superuser %}
+                                    <a href="#"
+                                        data-url="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}"
+                                        class="btn btn-outline-danger btn-sm fw-semibold"
+                                        onclick="confirmToggleActivation(event, this, '{{ client.id }}', '{{ client.pacs_name }}', 'True');">
+                                        <i class="fas fa-ban me-1"></i>⚠️ Deactivate
+                                    </a>
+                                    {% else %}
+                                    <span class="badge bg-dark border border-secondary text-muted px-2 py-1">⚠️
+                                        Deactivate</span>
+                                    {% endif %}
+
+                                    {% else %}
+                                    <button type="button" class="btn btn-outline-success btn-sm fw-bold"
+                                        data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
+                                        ✅ Activate
+                                    </button>
+                                    {% endif %}
+
+
+                                </div>
+                            </td>
+                            <td>
+                                <!-- <a href="{% url 'generate_invoice' client.id %}"
+                                    class="btn btn-sm btn-outline-info fw-bold" title="Download Invoice"
+                                    target="_blank">
+                                    📄 Invoice
+                                </a> -->
+                                <a href="#" data-url="{% url 'generate_invoice' client.id %}"
+                                    onclick="openInvoiceWithAmount(event, this.getAttribute('data-url'))"
+                                    class="btn btn-sm btn-outline-info fw-bold" title="Download Invoice">
+                                    📄 Invoice
+                                </a>
+                            </td>
+
+
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <a href="#" data-url="{% url 'delete_userinfo' client.id %}"
+                                    class="btn btn-outline-danger btn-sm fw-semibold"
+                                    onclick="confirmUserDelete(event, this, '{{ client.id }}', '{{ client.pacs_name }} {{ client.mobile }}');"
+                                    title="Permanently Delete User Profile">
+                                    <i class="fas fa-trash-alt"></i> ❌ Delete
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{% url 'create_userinfo' %}?copy_id={{ client.id }}"
+                                    class="btn btn-sm btn-outline-warning fw-bold">
+                                    📋 Copy
+                                </a>
+                            </td>
+                            {% endif %}
+
+                            {% if messages %}
+                            <div id="django-messages-container" style="display: none;">
+                                {% for message in messages %}
+                                <div class="django-msg" data-tags="{{ message.tags }}">{{ message }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+
+                        </tr>
+
+                        <div class="modal fade" id="userinfoModal{{ client.id }}" data-bs-backdrop="static"
+                            tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content shadow-lg">
+                                    <div class="modal-header bg-dark text-info border-bottom border-info">
+                                        <h5 class="modal-title fw-bold">🚀 Activate PACS: {{ client.pacs_name }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+
+                                    <form method="POST"
+                                        action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
+                                        {% csrf_token %}
+                                        <div class="modal-body text-wrap text-light">
+                                            <p><strong>PACS ID:</strong> <span class="text-info">{{ client.id }}</span>
+                                            </p>
+                                            <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
+                                            <p><strong>Activation Type:</strong> {{ client.for_whys }} {{client.f_year}}
+                                            </p>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-info small fw-bold">Enter Activation
+                                                    Amount (In Rs.)</label>
+                                                <input type="number" name="amount" class="form-control"
+                                                    value="{{ client.amount }}" required min="0">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label text-info small fw-bold">Enter UTR /
+                                                    Transaction Number</label>
+                                                <input type="text" name="utr_number" class="form-control"
+                                                    value="{{ client.utr_number|default:'' }}"
+                                                    placeholder="Optional Transaction ID">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label d-block text-muted small fw-bold">Activating As
+                                                    Admin:</label>
+                                                <span
+                                                    class="badge bg-dark border border-secondary text-success p-2 fs-6 w-100 text-start">
+                                                    👤 {{ request.user.username }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-top border-secondary">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-info text-dark fw-bold">Save &
+                                                Activate</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="13" class="text-center text-muted py-4">No matching records found in
+                                userinfo table.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+ {% if clients.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+
+        {% if clients.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ clients.previous_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Prev</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">Prev</span>
+        </li>
+        {% endif %}
+
+        {% for num in clients.paginator.page_range %}
+            
+            {% if clients.number == num %}
+                <li class="page-item active" aria-current="page">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            
+            {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+            
+        {% endfor %}
+
+        {% if clients.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ clients.next_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Next</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">Next</span>
+        </li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}
+
+
+        </div>
+
+    </div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script type="text/javascript">
+    // ==========================================
+    // A. USER DELETE CONFIRMATION LOGIC
+    // ==========================================
+    function confirmUserDelete(event, element, userId, username) {
+        // 1. Core Guard: Default link redirection ko freeze karo
+        event.preventDefault();
+
+        // 2. Data Fetching: Element se real Django delete URL nikalna
+        var targetUrl = element.getAttribute('data-url');
+        if (!targetUrl) return; // Error Handling: Agar URL missing ho toh crash hone se bachein
+
+        // 3. SweetAlert2 Red Danger Confirmation Popup Trigger
+        Swal.fire({
+            title: 'Kya Aap Sure Hain?',
+            text: "User ID: " + userId + " (" + username + ") का प्रोफाइल और डाटा हमेशा के लिए डिलीट हो जाएगी! ये एक्शन अनडू नहीं किया जा सकता!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33', // Danger Alert Red Color
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Haan, User Delete karein!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // 4. Safety Duplicate Check: User jab 'Haan' par click karega, tabhi real redirection hoga
+            if (result.isConfirmed) {
+                window.location.href = targetUrl;
+            }
+        });
+    }
+
+    // ==========================================
+    // B. GLOBAL DJANGO TOAST NOTIFICATION CONVERTER
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", function () {
+        // Hidden HTML block se saare message nodes select karna
+        const msgElements = document.querySelectorAll('#django-messages-container .django-msg');
+
+        msgElements.forEach(function (element) {
+            let msgType = element.getAttribute('data-tags');
+            let msgText = element.innerText;
+            let alertTitle = "Notification";
+
+            // Django messaging levels ko SweetAlert types ke sath dynamic map karna
+            if (msgType === 'error' || msgType === 'danger') {
+                msgType = 'error';
+                alertTitle = 'Error!';
+            } else if (msgType === 'success') {
+                msgType = 'success';
+                alertTitle = 'Success!';
+            } else if (msgType === 'warning') {
+                msgType = 'warning';
+                alertTitle = 'Warning!';
+            } else {
+                msgType = 'info';
+                alertTitle = 'Info';
+            }
+
+            // Animated safe toast response loader
+            Swal.fire({
+                title: alertTitle,
+                text: msgText,
+                icon: msgType,
+                timer: 4000, // 4 seconds automatic close window
+                showConfirmButton: false,
+                position: 'top-end',
+                toast: true
+            });
+        });
+    });
+</script>
+
+<script type="text/javascript">
+    // =======================================================================
+    // SYSTEM CORE: DYNAMIC ACTIVATION & DEACTIVATION CONFIRMATION ENGINE
+    // =======================================================================
+    function confirmToggleActivation(event, element, clientId, clientName, isActive) {
+        // 1. Core Guard: Normal link loading and routing process freeze karna
+        event.preventDefault();
+
+        // 2. Data Extraction: Dynamic Target string retrieval with query params (?search_id=...)
+        var targetUrl = element.getAttribute('data-url');
+        if (!targetUrl) return; // Error Handling fallback
+
+        // 3. Boolean Normalization for Safe Handling
+        var isClientActive = (isActive === 'True' || isActive === 'true' || isActive === true);
+
+        // 4. Custom Theme Selection (Status mapping)
+        var alertTitle = isClientActive ? 'Deactivate PACS Account?' : 'Activate PACS Account?';
+        var alertText = isClientActive
+            ? "Kya Aap PACS ID: " + clientId + " (" + clientName + ") Ko Temporarily Deactivate Karna Chahte Hain?"
+            : "Kya Aap PACS ID: " + clientId + " (" + clientName + ") Ka Profile Active Karna Chahte Hain?";
+
+        var alertIcon = isClientActive ? 'warning' : 'question';
+        var confirmButtonColor = isClientActive ? '#e74c3c' : '#2ecc71'; // Red for warning/deactivate, Green for active
+        var confirmButtonText = isClientActive ? 'Haan, Deactivate karein!' : 'Haan, Active karein!';
+
+        // 5. Fire SweetAlert2 Modal
+        Swal.fire({
+            title: alertTitle,
+            text: alertText,
+            icon: alertIcon,
+            showCancelButton: true,
+            confirmButtonColor: confirmButtonColor,
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: confirmButtonText,
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            // 6. Final Execution Check: Redirection loop handles the URL parameters instantly
+            if (result.isConfirmed) {
+                window.location.href = targetUrl;
+            }
+        });
+    }
+</script>
+<script type="text/javascript">
+    // ==========================================
+    // INVOICE VALUE FETCH & REDIRECTION LOGIC
+    // ==========================================
+    function openInvoiceWithAmount(event, baseUrl) {
+        // Core Guard: Default link action ko rokna
+        event.preventDefault();
+
+        // Error Handling Logic: Value fetch karte waqt error na aaye
+        try {
+            // Input box ka name "customAmount" hai, usko select karna
+            let amountInput = document.querySelector('input[name="customAmount"]');
+
+            // Agar box mil jaye toh uski value lena, warna default '0' set karna
+            let amountValue = amountInput ? amountInput.value : '0';
+
+            // URL mein Custom Amount as a Query Parameter (GET) jodna
+            let finalUrl = baseUrl + "?customAmount=" + encodeURIComponent(amountValue);
+
+            // Naye tab mein final URL ko open karna (target="_blank" effect)
+            window.open(finalUrl, '_blank');
+
+        } catch (error) {
+            // Fallback: Agar script fail ho jaye, toh bina amount ke invoice page khol dein
+            console.error("Amount fetch karne mein error: ", error);
+            window.open(baseUrl, '_blank');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'licensing/base.html' %}
+{% block title %}Login | Software Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 75vh;">
+    <div class="login-card" style="border: 1px solid #d1d5db; background: #1e293b; border-radius: 15px; width: 100%; max-width: 400px; padding: 2rem; box-shadow: 0 10px 25px rgba(216, 216, 216, 0.5);">
+        <div class="text-center mb-4">
+            <h3 class="text-success">⚙️ Admin Login</h3>
+            <p class="text-muted small">Enter credentials to access Control Panel</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="alert alert-danger small py-2">Invalid Username or Password.</div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label small">Username</label>
+                <input type="text" name="username" class="form-control bg-dark text-light border-secondary" placeholder="Enter username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small">Password</label>
+                <input type="password" name="password" class="form-control bg-dark text-light border-secondary" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100 mt-3 py-2 fw-bold">Sign In</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

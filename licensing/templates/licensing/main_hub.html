@@ -1,0 +1,70 @@
+<!-- templates/licensing/main_hub.html -->
+{% extends 'licensing/base.html' %}
+
+{% block title %}Dashboard | Web Auto{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 fw-bold text-light">🚀 Welcome Back, {{ user.username }}!</h1>
+        <p class="lead text-light">Manage your activations, clients, and tasks from one place.</p>
+        <hr class="border-secondary w-50 mx-auto">
+        
+        <div class="row g-4 mt-4 justify-content-center">
+            <!-- Quick Stats Cards -->
+            <div class="col-sm-6">
+                <div class="card bg-secondary bg-opacity-25 border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="card-title text-info"><i class="fas fa-users me-2"></i>UserInfo</h2>
+                        <p class="card-text display-6">{{ total_userinfo }}</p>
+                        <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-info btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card bg-secondary bg-opacity-25 border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="card-title text-warning"><i class="fas fa-tractor me-2"></i>ERP</h2>
+                        <p class="card-text display-6">{{ total_erp }}</p>
+                        <a href="{% url 'pacserp_dashboard' %}" class="btn btn-outline-warning btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card bg-secondary bg-opacity-25 border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="card-title text-success"><i class="fas fa-tasks me-2"></i>Pending Tasks</h2>
+                       <p class="card-text display-10">कितना काम बाकि है और क्या क्या बाकी है.</p>
+                        <a href="{% url 'reminders:dashboard' %}" class="btn btn-outline-success btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card bg-secondary bg-opacity-25 border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="card-title text-light"><i class="fas fa-tasks me-2"></i>OkCredit</h2>
+                        <p class="card-text display-10">Manage all Creditors and Debitors</p>
+                        <a href="{% url 'khata:dashboard' %}" class="btn btn-outline-success btn-sm">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+{% endblock %}

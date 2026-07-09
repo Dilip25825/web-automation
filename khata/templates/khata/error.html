@@ -1,0 +1,27 @@
+{% extends 'khata/base.html' %}
+
+{% block title %}Error - OkCredit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="alert alert-danger shadow-sm border-0">
+            <h4 class="alert-heading fw-bold">Oops! Kuch gadbad ho gayi.</h4>
+            <p>Aapke page ko load karne mein samasya aayi. Niche error message dekhein:</p>
+            <hr>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="mb-0 fw-semibold text-dark">{{ message }}</p>
+                {% endfor %}
+            {% else %}
+                <p class="mb-0">Agyaat error (Unknown error).</p>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{% url 'khata:dashboard' %}" class="btn btn-outline-danger">Wapas Dashboard par jayein</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

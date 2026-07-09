@@ -1,0 +1,123 @@
+{% extends 'licensing/base.html' %}
+{% load static %}
+
+{% block title %}Reminders | Web Auto{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+   <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 text-light"><i class="fas fa-tasks me-2"></i>Task Reminders</h1>
+    <div>
+        <a href="{% url 'reminders:category_list' %}" class="btn btn-outline-info me-2">
+            <i class="fas fa-tags me-1"></i> Manage Categories
+        </a>
+        <a href="{% url 'reminders:task_create' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> New Task
+        </a>
+    </div>
+</div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-secondary bg-opacity-25 border-0 text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">Pending</h5>
+                    <h2 class="display-6 text-light">{{ pending_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary bg-opacity-25 border-0 text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Overdue</h5>
+                    <h2 class="display-6 text-light">{{ overdue_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary bg-opacity-25 border-0 text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Due Soon</h5>
+                    <h2 class="display-6 text-light">{{ due_soon_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary bg-opacity-25 border-0 text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Completed</h5>
+                    <h2 class="display-6 text-light">{{ completed_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Table -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="table-secondary bg-opacity-25">
+                        <tr>
+                            <th>Task</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Deadline</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <strong>{{ task.title }}</strong>
+                                <div class="small text-secondary">{{ task.description|truncatechars:40 }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {% if task.priority == 'HIGH' %}bg-danger{% elif task.priority == 'MEDIUM' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    {{ task.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if task.status == 'PENDING' %}bg-secondary{% elif task.status == 'IN_PROGRESS' %}bg-primary{% elif task.status == 'COMPLETED' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if task.deadline %}
+                                    {{ task.deadline|date:"d M Y H:i" }}
+                                    {% if task.is_overdue %}
+                                        <span class="text-danger fw-bold ms-1">(Overdue)</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-secondary">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'reminders:task_toggle_status' task.id %}" class="btn btn-sm btn-outline-info me-1" title="Toggle Status">
+                                    <i class="fas fa-sync-alt"></i>
+                                </a>
+                                <a href="{% url 'reminders:task_update' task.id %}" class="btn btn-sm btn-outline-warning me-1" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'reminders:task_delete' task.id %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-secondary py-4">
+                                <i class="fas fa-check-circle fa-2x mb-2 d-block"></i>
+                                No tasks found. Create your first task!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
