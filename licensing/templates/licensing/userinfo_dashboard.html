@@ -8,7 +8,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-info">User Info Table Live Control</h5>
-            <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2">➕ Add New
+            <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2"> <i class="fas fa-plus"></i> Add New
                 Record</a>
             
         </div>
@@ -24,7 +24,7 @@
                         placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-success w-100 fw-bold text-light">🔍 Search</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-light"> <i class="fas fa-search"></i> Search</button>
                 </div>
 
                 <div class="col-md-2 text-end text-light">
@@ -64,7 +64,7 @@
                             <th>Edit/Update</th>
                             {% endif %}
                             <th>Action</th>
-                            <th>Genrate Invoice</th>
+                            <th>Invoice</th>
                             {% if request.user.is_superuser %}
                             <TH>Delete</TH>
                             <th>Copy Row</th>
@@ -95,10 +95,10 @@
                             <td class="text-center">
                                 {% if client.payment_status == client.amount %}
                                 <span
-                                    class="badge bg-success-subtle text-success border border-success px-2 py-1">ACTIVE</span>
+                                    class="badge bg-success-subtle text-success border border-success px-2 py-1"> <i class="fas fa-circle-check"></i>  Active</span>
                                 {% else %}
                                 <span
-                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">INACTIVE</span>
+                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1"> <i class="fas fa-circle-xmark"></i>  Inactive</span>
                                 {% endif %}
                             </td>
 
@@ -107,7 +107,7 @@
                             <td>
                                 <a href="{% url 'update_userinfo' client.id %}"
                                     class="btn btn-sm btn-outline-info fw-bold" title="Farmer record update karein">
-                                    <i class="fas fa-edit me-1"></i>📝Update
+                                    <i class="fas fa-edit me-1"></i>Update
                                 </a>
                                 {% else %}
                                 <!-- <span class="badge bg-dark border border-secondary text-muted px-2 py-1">📝
@@ -123,7 +123,7 @@
                                         data-url="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}"
                                         class="btn btn-outline-danger btn-sm fw-semibold"
                                         onclick="confirmToggleActivation(event, this, '{{ client.id }}', '{{ client.pacs_name }}', 'True');">
-                                        <i class="fas fa-ban me-1"></i>⚠️ Deactivate
+                                        <i class="fas fa-ban me-1"></i> Deactivate
                                     </a>
                                     {% else %}
                                     <span class="badge bg-dark border border-secondary text-muted px-2 py-1">⚠️
@@ -133,7 +133,7 @@
                                     {% else %}
                                     <button type="button" class="btn btn-outline-success btn-sm fw-bold"
                                         data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
-                                        ✅ Activate
+                                        <i class="fas fa-circle-check"></i> Activate
                                     </button>
                                     {% endif %}
 
@@ -149,7 +149,7 @@
                                 <a href="#" data-url="{% url 'generate_invoice' client.id %}"
                                     onclick="openInvoiceWithAmount(event, this.getAttribute('data-url'))"
                                     class="btn btn-sm btn-outline-info fw-bold" title="Download Invoice">
-                                    📄 Invoice
+                                    <i class="fas fa-file-invoice-dollar"></i>  Invoice
                                 </a>
                             </td>
 
@@ -160,13 +160,13 @@
                                     class="btn btn-outline-danger btn-sm fw-semibold"
                                     onclick="confirmUserDelete(event, this, '{{ client.id }}', '{{ client.pacs_name }} {{ client.mobile }}');"
                                     title="Permanently Delete User Profile">
-                                    <i class="fas fa-trash-alt"></i> ❌ Delete
+                                    <i class="fas fa-trash-alt"></i> Delete
                                 </a>
                             </td>
                             <td>
                                 <a href="{% url 'create_userinfo' %}?copy_id={{ client.id }}"
                                     class="btn btn-sm btn-outline-warning fw-bold">
-                                    📋 Copy
+                                     <i class="fas fa-copy"></i> Copy
                                 </a>
                             </td>
                             {% endif %}

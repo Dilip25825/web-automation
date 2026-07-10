@@ -22,5 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('reminders/', include('reminders.urls')),
     path('khata/', include('khata.urls')),
-    
+    path('downloads/', include('onedownload.urls')),
 ]
