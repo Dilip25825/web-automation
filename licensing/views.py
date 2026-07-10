@@ -163,7 +163,7 @@ def pacserp_dashboard(request):
         
     if not request.user.is_superuser:
         messages.error(request, "Only Admin can open ERP.")  # ⚠️ यहाँ 'e' हटाया
-        return redirect('main_hub.html')  # ✅ 'dashborad' की spelling सही करें
+        return redirect('main_hub')  # Redirect to named main hub route
     search_query = request.GET.get('search_id', '').strip()
     erp_records = []
     
