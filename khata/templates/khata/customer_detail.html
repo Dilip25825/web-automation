@@ -20,9 +20,10 @@
                         ₹{{ net_balance|stringformat:".2f" }}
                     </h3>
                     <small class="fw-semibold">
-                        {% if net_balance > 0 %}Aapko lene hain (Udhaar){% elif net_balance < 0 %}Aapko dene hain  (Advance){% else %}Hisaab Barabar{% endif %} </small>
+                        {% if net_balance > 0 %}Aapko lene hain (Udhaar){% elif net_balance < 0 %}Aapko dene hain
+                            (Advance){% else %}Hisaab Barabar{% endif %} </small>
                 </div>
-                <div class="card text-center shadow-sm border-0 p-3 mb-4">
+                <div class="flex justify-center items-center">
                     <div class="row text-center">
                         <div class="col-6 text-center">
                             <small class="text-muted">Total Diye</small>
@@ -52,7 +53,9 @@
                 ⏱ Interest Calculation
             </button>
             {% endif %}
-            <div class="card-header bg-purple-800 text-white w-100 fw-bold">Add New Transection</div>
+            <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white justify-center item-center">
+                <h3>Add New Transaction</h3>
+            </div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
@@ -78,7 +81,8 @@
                         <input type="text" name="remarks" class="form-control"
                             placeholder="Optional: Kis cheez ke liye?">
                     </div>
-                    <button type="submit" class="btn btn-success w-100 fw-bold"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold"><i class="fa-solid fa-floppy-disk"></i>
+                        Save</button>
                 </form>
             </div>
         </div>
@@ -87,7 +91,8 @@
     <div class="col-md-9">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white py-3">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div
+                    class="d-flex justify-content-between align-items-center flex-wrap gap-3 bg-gradient-to-r from-indigo-600 to-violet-600">
 
                     <span class="fw-bold fs-5">Ledger History</span>
 
@@ -97,8 +102,11 @@
                                 value="{{ start_date }}">
                             <input type="date" name="end_date" class="form-control form-control-sm"
                                 value="{{ end_date }}">
-                            <button type="submit" class="btn btn-sm btn-light fw-bold text-indigo-700"><i class="fa-solid fa-filter"></i> Filter</button>
-                            <a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-sm btn-danger">Reset</a>
+                            <button type="submit" class="btn btn-sm btn-light fw-bold text-indigo-700"><i
+                                    class="fa-solid fa-filter"></i> Filter</button>
+                            <a href="{% url 'khata:customer_detail' customer.id %}"
+                                class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition duration-200 ease-in-out shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 whitespace-nowrap">
+                                <i class="fa-solid fa-rotate-left"></i> Reset</a>
                         </form>
 
                         <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
@@ -224,9 +232,11 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i
+                            class="fa-solid fa-xmark"></i> Cancel</button>
                     <!-- Form submit button -->
-                    <button type="submit" class="btn btn-success fw-bold"><i class="fa-solid fa-calculator"></i> Hisaab Mein Jodein</button>
+                    <button type="submit" class="btn btn-success fw-bold"><i class="fa-solid fa-calculator"></i> Hisaab
+                        Mein Jodein</button>
                 </div>
             </form>
         </div>

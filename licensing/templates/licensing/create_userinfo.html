@@ -3,9 +3,8 @@
 {% block content %}
 <div class="container mt-4" style="max-width: 700px;">
     <div class="card shadow border-secondary bg-dark text-light">
-        <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center">
-            <h4 class="mb-0 fw-bold">{% if is_update %}Update Farmer Record{% else %}Add User Info Record{% endif %}</h4>
-            <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+        <div class="card-header flex justify-center item-center">
+            <h3 class="mb-0 fw-bold text-indigo-700">{% if is_update %}<i class="fa-regular fa-pen-to-square"></i> Update Userinfo Record{% else %} <i class="fa-solid fa-plus"></i> Add Userinfo Record{% endif %}</h3>
         </div>
         <div class="card-body">
             <form method="post" novalidate>
@@ -20,7 +19,12 @@
                     </div>
                     {% endfor %}
                 </div>
-                <div class="mt-4 text-end border-top border-secondary pt-3"><button type="submit" class="btn btn-primary fw-bold px-4">{% if is_update %}Update Record{% else %}Save Record{% endif %}</button></div>
+                <div class="mt-4 text-end border-top border-secondary pt-3">
+                    <button type="submit" class="btn btn-primary fw-semibold px-4 w-full">
+                        {% if is_update %}<i class="fa-solid fa-pen-to-square">
+                        </i> Update Record{% else %}<i class="fa-solid fa-floppy-disk">
+                        </i> Save Record{% endif %}</button>
+                </div>
             </form>
         </div>
     </div>

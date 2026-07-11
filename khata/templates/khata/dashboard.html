@@ -3,12 +3,91 @@
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-5">
   <div class="grid gap-4 md:grid-cols-2">
-    <a href="?filter=lene" class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Lene Hain</p><p class="mt-2 text-2xl font-extrabold text-indigo-700">₹{{ total_lene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i class="fa-solid fa-arrow-trend-up"></i></span></a>
-    <a href="?filter=dene" class="app-card flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'dene' %}ring-2 ring-rose-200{% endif %}"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Dene Hain</p><p class="mt-2 text-2xl font-extrabold text-rose-700">₹{{ total_dene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i class="fa-solid fa-arrow-trend-down"></i></span></a>
+    <a href="?filter=lene"
+      class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Lene Hain</p>
+        <p class="mt-2 text-2xl font-extrabold text-indigo-700">₹{{ total_lene_hain|stringformat:".2f" }}</p>
+      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i
+          class="fa-solid fa-arrow-trend-up"></i></span>
+    </a>
+    <a href="?filter=dene"
+      class="app-card flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'dene' %}ring-2 ring-rose-200{% endif %}">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Dene Hain</p>
+        <p class="mt-2 text-2xl font-extrabold text-rose-700">₹{{ total_dene_hain|stringformat:".2f" }}</p>
+      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i
+          class="fa-solid fa-arrow-trend-down"></i></span>
+    </a>
   </div>
   <div class="grid items-start gap-5 lg:grid-cols-3">
-    <section class="app-card overflow-hidden"><div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white"><h2 class="font-extrabold"><i class="fa-solid fa-user-plus mr-2"></i>Add Customer</h2></div><form action="{% url 'khata:add_customer' %}" method="post" class="space-y-4 p-5">{% csrf_token %}<div><label class="form-label">Customer name</label><input name="name" required placeholder="Enter name"></div><div><label class="form-label">Phone number</label><input name="phone" required placeholder="Mobile / phone number"></div><button class="btn btn-primary w-full"><i class="fa-solid fa-floppy-disk"></i>Save customer</button></form></section>
-    <section class="app-card overflow-hidden lg:col-span-2"><div class="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 p-5"><div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-extrabold text-slate-900"><i class="fa-solid fa-users mr-2 text-violet-600"></i>My Customers</h2><p class="mt-1 text-sm text-slate-500">Customer ledger overview</p></div>{% if current_filter != 'all' or search_query %}<a href="{% url 'khata:dashboard' %}" class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i>Clear filters</a>{% endif %}</div><form method="get" action="{% url 'khata:dashboard' %}" class="mt-4 flex gap-2">{% if current_filter != 'all' %}<input type="hidden" name="filter" value="{{ current_filter }}">{% endif %}<input name="search" value="{{ search_query }}" placeholder="Search customer or phone"><button class="btn btn-primary shrink-0"><i class="fa-solid fa-magnifying-glass"></i>Search</button></form></div><div class="overflow-x-auto"><table class="app-table"><thead><tr><th>#</th><th>Customer</th><th>Phone</th><th>Balance</th><th class="text-center">Actions</th></tr></thead><tbody>{% for customer in customers %}<tr><td>{{ forloop.counter }}</td><td><a href="{% url 'khata:customer_detail' customer.id %}" class="font-bold text-indigo-700 hover:text-violet-700">{{ customer.name }}</a></td><td><span class="text-slate-600">{{ customer.phone }}</span></td><td class="font-bold">{% if customer.balance > 0 %}<span class="text-indigo-700">₹{{ customer.balance|stringformat:".2f" }} <small>(Lene)</small></span>{% elif customer.balance < 0 %}<span class="text-rose-700">₹{{ customer.abs_balance|stringformat:".2f" }} <small>(Dene)</small></span>{% else %}<span class="text-slate-500">₹0.00 <small>(Clear)</small></span>{% endif %}</td><td><div class="flex justify-center gap-2"><a href="{% url 'khata:edit_customer' customer.b64_id %}" class="btn btn-outline-primary !p-2" title="Edit"><i class="fa-solid fa-pen"></i></a><a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-primary !p-2" title="Transactions"><i class="fa-solid fa-book-open"></i></a><form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-confirm-delete data-title="Delete customer?">{% csrf_token %}<button class="btn btn-outline-danger !p-2" title="Delete"><i class="fa-solid fa-trash"></i></button></form></div></td></tr>{% empty %}<tr><td colspan="5" class="py-12 text-center text-slate-500">No customers found.</td></tr>{% endfor %}</tbody></table></div><nav class="flex flex-wrap justify-center gap-2 p-5 text-sm">{% if customers.has_previous %}<a class="page-link" href="?page={{ customers.previous_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Previous</a>{% endif %}<span class="page-link">Page {{ customers.number }} of {{ customers.paginator.num_pages }}</span>{% if customers.has_next %}<a class="page-link" href="?page={{ customers.next_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Next</a>{% endif %}</nav></section>
+    <section class="app-card overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white">
+        <h2 class="font-extrabold"><i class="fa-solid fa-user-plus mr-2"></i>Add Customer</h2>
+      </div>
+      <form action="{% url 'khata:add_customer' %}" method="post" class="space-y-4 p-5">{% csrf_token %}<div><label
+            class="form-label">Customer name</label><input name="name" required placeholder="Enter name"></div>
+        <div><label class="form-label">Phone number</label><input name="phone" required
+            placeholder="Mobile / phone number"></div><button class="btn btn-primary w-full"><i
+            class="fa-solid fa-floppy-disk"></i>Save customer</button>
+      </form>
+    </section>
+    <section class="app-card overflow-hidden lg:col-span-2">
+      <div class="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-extrabold text-slate-900"><i class="fa-solid fa-users mr-2 text-violet-600"></i>My Customers
+            </h2>
+            <p class="mt-1 text-sm text-slate-500">Customer ledger overview</p>
+          </div>{% if current_filter != 'all' or search_query %}<a href="{% url 'khata:dashboard' %}"
+            class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i>Clear filters</a>{% endif %}
+        </div>
+        <form method="get" action="{% url 'khata:dashboard' %}" class="mt-4 flex gap-2">{% if current_filter != 'all'%}
+          <input type="hidden" name="filter" value="{{ current_filter }}">{% endif %}<input name="search"
+            value="{{ search_query }}" placeholder="Search customer or phone"><button
+            class="btn btn-primary shrink-0"><i class="fa-solid fa-magnifying-glass"></i>Search</button></form>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="app-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Balance</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>{% for customer in customers %}<tr>
+              <td>{{ forloop.counter }}</td>
+              <td><a href="{% url 'khata:customer_detail' customer.id %}"
+                  class="font-bold text-indigo-700 hover:text-violet-700">{{ customer.name }}</a></td>
+              <td><span class="text-slate-600">{{ customer.phone }}</span></td>
+              <td class="font-bold">{% if customer.balance > 0 %}<span class="text-indigo-700">
+                ₹{{ customer.balance|stringformat:".2f" }} <small>(Lene)</small></span>{% elif customer.balance < 0 %}<span class="text-rose-700">₹{{ customer.abs_balance|stringformat:".2f" }}
+                  <small>(Dene)</small></span>{% else %}<span class="text-slate-500">₹0.00
+                    <small>(Clear)</small></span>{% endif %}</td>
+              <td>
+                <div class="flex justify-center gap-2"><a href="{% url 'khata:edit_customer' customer.b64_id %}"
+                    class="btn btn-outline-primary !p-2" title="Edit"><i class="fa-solid fa-pen"></i></a><a
+                    href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-primary !p-2"
+                    title="Transactions"><i class="fa-solid fa-book-open"></i></a>
+                  <form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-confirm-delete
+                    data-title="Delete customer?">{% csrf_token %}<button class="btn btn-outline-danger !p-2"
+                      title="Delete"><i class="fa-solid fa-trash"></i></button></form>
+                </div>
+              </td>
+            </tr>{% empty %}<tr>
+              <td colspan="5" class="py-12 text-center text-slate-500">No customers found.</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      <nav class="flex flex-wrap justify-center gap-2 p-5 text-sm">{% if customers.has_previous %}<a class="page-link"
+          href="?page={{ customers.previous_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Previous</a>
+          {% endif %}<span class="page-link">Page {{ customers.number }} of {{ customers.paginator.num_pages }}</span>
+          {% if customers.has_next %}<a class="page-link"
+          href="?page={{ customers.next_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Next</a>{% endif %}</nav>
+    </section>
   </div>
 </div>
 {% endblock %}

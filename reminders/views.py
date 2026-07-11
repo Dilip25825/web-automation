@@ -174,3 +174,4 @@ def category_delete(request, pk):
         return redirect('reminders:category_list')
     
     return redirect('reminders:category_list')
+

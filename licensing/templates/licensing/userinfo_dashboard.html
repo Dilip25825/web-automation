@@ -8,7 +8,8 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-indigo-700">User Info Table Live Control</h5>
-            <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2"> <i class="fas fa-plus"></i> Add New
+            <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2"> <i
+                    class="fas fa-plus"></i> Add New
                 Record</a>
 
         </div>
@@ -20,7 +21,8 @@
                         placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-success w-100 fw-bold text-white"> <i class="fas fa-search"></i> Search</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-white"> <i
+                            class="fas fa-search"></i> Search</button>
                 </div>
 
                 <div class="col-md-2 text-end text-light">
@@ -34,8 +36,7 @@
             <h4 class="mb-0 fw-bold text-indigo-700">Total Record(s) : {{ clients.paginator.count }}</h4>
             {% endif %}
             <div class="table-responsive">
-                <table class="app-table"
-                    style="font-size: 14px;">
+                <table class="app-table" style="font-size: 14px;">
                     <thead class="table-dark text-center border-secondary">
                         <tr>
                             <th>ID</th>
@@ -54,7 +55,7 @@
                             <!-- {% if request.user.is_superuser %} -->
                             <th>Accepted By</th>
                             <!-- {% endif %} -->
-                             <th>Accepted Date</th>
+                            <th>Accepted Date</th>
                             <th>Status</th>
                             {% if request.user.is_superuser %}
                             <th>Edit/Update</th>
@@ -87,12 +88,14 @@
                             <!-- {% if request.user.is_superuser %} -->
                             <td>{{ client.accepte_by }}</td>
                             <!-- {% endif %} -->
-                             <td>{{ client.activation_date }}</td>
+                            <td>{{ client.activation_date }}</td>
                             <td class="text-center">
                                 {% if client.payment_status == client.amount %}
-                                <span class="status-pill status-active bg-green-100 text-green-800"><i class="fas fa-circle-check"></i> Active</span>
+                                <span class="status-pill status-active bg-green-100 text-green-800"><i
+                                        class="fas fa-circle-check"></i> Active</span>
                                 {% else %}
-                                <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i> Inactive</span>
+                                <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i>
+                                    Inactive</span>
                                 {% endif %}
                             </td>
 
@@ -125,9 +128,10 @@
                                     {% endif %}
 
                                     {% else %}
-                                    <button type="button" class="btn btn-success btn-sm fw-bold whitespace-nowrap"
+                                    <button type="button"
+                                        class="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200 whitespace-nowrap"
                                         data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
-                                        <i class="fas fa-circle-check"></i> Activate
+                                        <i class="fas fa-circle-check mr-2"></i> Activate
                                     </button>
                                     {% endif %}
 
@@ -143,7 +147,7 @@
                                 <a href="#" data-url="{% url 'generate_invoice' client.id %}"
                                     onclick="openInvoiceWithAmount(event, this.getAttribute('data-url'))"
                                     class="btn btn-sm btn-outline-primary fw-bold" title="Download Invoice">
-                                    <i class="fas fa-file-invoice-dollar"></i>  Invoice
+                                    <i class="fas fa-file-invoice-dollar"></i> Invoice
                                 </a>
                             </td>
 
@@ -160,7 +164,7 @@
                             <td>
                                 <a href="{% url 'create_userinfo' %}?copy_id={{ client.id }}"
                                     class="btn btn-sm btn-outline-primary fw-bold">
-                                     <i class="fas fa-copy"></i> Copy
+                                    <i class="fas fa-copy"></i> Copy
                                 </a>
                             </td>
                             {% endif %}
@@ -190,7 +194,8 @@
                                         action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
-                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id }}</span>
+                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id
+                                                    }}</span>
                                             </p>
                                             <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
                                             <p><strong>Activation Type:</strong> {{ client.for_whys }} {{client.f_year}}
@@ -240,48 +245,51 @@
                     </tbody>
                 </table>
             </div>
- {% if clients.has_other_pages %}
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="pagination justify-content-center">
+            {% if clients.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
 
-        {% if clients.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ clients.previous_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Prev</a>
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-            <span class="page-link">Prev</span>
-        </li>
-        {% endif %}
+                    {% if clients.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ clients.previous_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Prev</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Prev</span>
+                    </li>
+                    {% endif %}
 
-        {% for num in clients.paginator.page_range %}
+                    {% for num in clients.paginator.page_range %}
 
-            {% if clients.number == num %}
-                <li class="page-item active" aria-current="page">
-                    <span class="page-link">{{ num }}</span>
-                </li>
+                    {% if clients.number == num %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
 
-            {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num }}</a>
-                </li>
+                    {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %} <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num
+                            }}</a>
+                        </li>
+                        {% endif %}
+
+                        {% endfor %}
+
+                        {% if clients.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ clients.next_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        {% endif %}
+
+                </ul>
+            </nav>
             {% endif %}
-
-        {% endfor %}
-
-        {% if clients.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ clients.next_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Next</a>
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-            <span class="page-link">Next</span>
-        </li>
-        {% endif %}
-
-    </ul>
-</nav>
-{% endif %}
 
 
         </div>

@@ -17,8 +17,8 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-indigo-700">📊 PACS ERP Table Live Control</h5>
-            <a href="{% url 'create_pacserp' %}" class="btn btn-primary text-dark fw-bold btn-sm me-2">➕ Add New ERP
+            <h5 class="mb-0 fw-bold text-indigo-700"><i class="fa-solid fa-chart-area"></i> PACS ERP Table Live Control</h5>
+            <a href="{% url 'create_pacserp' %}" class="btn btn-primary text-dark fw-bold btn-sm me-2"><i class="fa-solid fa-plus"></i> Add New ERP
                 Record</a>
         </div>
         <div class="card-body">
@@ -30,19 +30,19 @@
                         placeholder="Search by Pacs Name, Operator Mobile or System ID...">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-success w-100 fw-bold text-white">🔍 Search</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-white"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                 </div>
                 <div class="col-md-2 text-end text-light">
                     <label for="customAmount">Enter Custom Amount</label>
                 </div>
                 <div class="col-md-1">
-                    <input type="number" name="customAmount" id="customAmount" class="form-control" placeholder="Amount" min="0">
+                    <input type="number" name="customAmount" id="customAmount" class="form-control" placeholder="Amount"
+                        min="0">
                 </div>
             </form>
 
             <div class="table-responsive">
-                <table class="app-table"
-                    style="font-size: 14px;">
+                <table class="app-table" style="font-size: 14px;">
                     <thead class="table-dark text-center border-secondary">
                         <tr>
                             <th>ID</th>
@@ -77,15 +77,17 @@
                             <td class="text-center text-light">{{ record.expiry_date|date:"Y-m-d"|default:"-" }}</td>
                             <td class="text-center">{{ record.operator_mobile|default:"-" }}</td>
                             <td class="text-center">{{ record.utr_number }}</td>
-                            <td class="text-wrap" style="max-width: 220px;"><small class="text-light">{{record.remark|default:"-" }}</small></td>
+                            <td class="text-wrap" style="max-width: 220px;"><small
+                                    class="text-light">{{record.remark|default:"-" }}</small></td>
                             <td class="text-center">
                                 {% now "Y-m-d" as today_date %}
-                                {% if record.expiry_date|date:"Y-m-d" < today_date %} <span
-                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">
-                                    EXPIRED</span>
+                                {% if record.expiry_date|date:"Y-m-d" < today_date %}<span class="inline-flex items-center gap-1.5 bg-red-100 text-red-700 border border-red-300 px-2.5 py-1 rounded-md text-xs font-semibold">
+    <i class="fa-solid fa-circle-xmark"></i> EXPIRED
+</span>
                                     {% else %}
-                                    <span
-                                        class="badge bg-primary-subtle text-indigo-700 border border-indigo-200 px-2 py-1">ACTIVE</span>
+                                    <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 border border-green-300 px-2.5 py-1 rounded-md text-xs font-semibold">
+    <i class="fa-solid fa-circle-check"></i> ACTIVE
+</span>
                                     {% endif %}
                             </td>
                             {% if request.user.is_superuser %}
@@ -102,18 +104,20 @@
                                 <div class="d-flex align-items-center justify-content-center gap-1">
                                     {% now "Y-m-d" as today_date %}
                                     {% if record.expiry_date|date:"Y-m-d" < today_date %} <button type="button"
-                                        class="btn btn-outline-success bg-green-100 text-green-700 btn-sm fw-bold" data-bs-toggle="modal"
-                                        data-bs-target="#erpModal{{ record.id }}"> Activate</button>
+                                        class="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200 ease-in-out whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                        data-bs-toggle="modal" data-bs-target="#erpModal{{ record.id }}">
+                                       <i class="fa-solid fa-circle-check"></i> Activate
+                                        </button>
                                         {% else %}
                                         {% if request.user.is_superuser %}
                                         <a href="#" data-url="{% url 'toggle_erp_activation' record.id %}"
                                             class="btn btn-outline-danger btn-sm"
                                             onclick="confirmDeactivate(event, this, '{{ record.id }}');">
-                                            ⚠️Deactivate
+                                            <i class="fa-solid fa-circle-exclamation"></i> Deactivate
                                         </a>
                                         {% else %}
                                         <span
-                                            class="badge bg-dark border border-secondary text-muted px-2 py-1">⚠️Deactivate</span>
+                                            class="badge bg-dark border border-secondary text-muted px-2 py-1"><i class="fa-solid fa-circle-exclamation"></i> Deactivate</span>
                                         {% endif %}
                                         {% endif %}
 
@@ -123,7 +127,7 @@
                             <td> <a href="#" data-url="{% url 'generate_erp_invoice' record.id %}"
                                     onclick="openErpInvoiceWithAmount(event, this.getAttribute('data-url'))"
                                     class="btn btn-sm btn-outline-primary" title="Download ERP Invoice">
-                                    📄 Invoice
+                                    <i class="fa-solid fa-file-pdf"></i> Invoice
                                 </a>
                             </td>
 
@@ -132,7 +136,7 @@
                                 <a href="#" data-url="{% url 'delete_record' record.id %}"
                                     class="btn btn-outline-danger btn-sm"
                                     onclick="confirmDelete(event, this, '{{ record.id }}');">
-                                    ❌Delete
+                                    <i class="fa-solid fa-trash"></i> Delete
                                 </a>
                                 {% else %}
                                 <!-- Non-admin users ke liye message -->
@@ -261,7 +265,8 @@
                                                     value="{{ record.amount }}" required min="0">
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label text-violet-700 small fw-bold">Expire Date</label>
+                                                <label class="form-label text-violet-700 small fw-bold">Expire
+                                                    Date</label>
                                                 <input type="date" name="expiry_date" class="form-control"
                                                     value="{{ record.expiry_date|date:'Y-m-d' }}" required>
                                             </div>
@@ -311,7 +316,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
         </div>
     </div>
 </div>
