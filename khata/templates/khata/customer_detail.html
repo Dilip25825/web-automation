@@ -10,11 +10,11 @@
     <div class="col-md-3 mb-4">
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body text-center">
-                <h4 class="fw-bold text-success mb-1">Name :<b> {{ customer.name }} </b></h4>
+                <h4 class="fw-bold text-indigo-700 mb-1">Name :<b> {{ customer.name }} </b></h4>
                 <p class="text-muted small mb-3">Phone: {{ customer.phone }}</p>
 
                 <div
-                    class="p-3 rounded {% if net_balance >= 0 %}bg-light text-danger{% else %}bg-light text-success{% endif %}">
+                    class="p-3 rounded {% if net_balance >= 0 %}bg-light text-danger{% else %}bg-light text-indigo-700{% endif %}">
                     <span class="small d-block text-uppercase fw-bold text-muted">Total Balance</span>
                     <h3 class="mb-0 fw-bold">
                         ₹{{ net_balance|stringformat:".2f" }}
@@ -22,15 +22,15 @@
                     <small class="fw-semibold">
                         {% if net_balance > 0 %}Aapko lene hain (Udhaar){% elif net_balance < 0 %}Aapko dene hain  (Advance){% else %}Hisaab Barabar{% endif %} </small>
                 </div>
-                <div class="card shadow-sm border-0 p-3 mb-4">
+                <div class="card text-center shadow-sm border-0 p-3 mb-4">
                     <div class="row text-center">
-                        <div class="col-6">
+                        <div class="col-6 text-center">
                             <small class="text-muted">Total Diye</small>
                             <h5 class="text-danger">₹{{ total_given }}</h5>
                         </div>
                         <div class="col-6">
                             <small class="text-muted">Total Mile</small>
-                            <h5 class="text-success">₹{{ total_got }}</h5>
+                            <h5 class="text-indigo-700">₹{{ total_got }}</h5>
                         </div>
                     </div>
                 </div>
@@ -47,12 +47,12 @@
             </a>
             {% endif %}
             {% if net_balance > 0 %}
-            <button type="button" class="btn btn-warning btn-sm w-100 fw-bold mb-3 shadow-sm" data-bs-toggle="modal"
+            <button type="button" class="btn btn-primary btn-sm w-100 fw-bold mb-3 shadow-sm" data-bs-toggle="modal"
                 data-bs-target="#interestModal">
                 ⏱ Interest Calculation
             </button>
             {% endif %}
-            <div class="card-header bg-success text-white fw-bold">Add New Transection</div>
+            <div class="card-header bg-purple-800 text-white w-100 fw-bold">Add New Transection</div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
@@ -78,7 +78,7 @@
                         <input type="text" name="remarks" class="form-control"
                             placeholder="Optional: Kis cheez ke liye?">
                     </div>
-                    <button type="submit" class="btn btn-success w-100 fw-bold">Save</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                 </form>
             </div>
         </div>
@@ -86,7 +86,7 @@
 
     <div class="col-md-9">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-success text-white py-3">
+            <div class="card-header bg-primary text-white py-3">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
                     <span class="fw-bold fs-5">Ledger History</span>
@@ -97,7 +97,7 @@
                                 value="{{ start_date }}">
                             <input type="date" name="end_date" class="form-control form-control-sm"
                                 value="{{ end_date }}">
-                            <button type="submit" class="btn btn-sm btn-light fw-bold text-success">Filter</button>
+                            <button type="submit" class="btn btn-sm btn-light fw-bold text-indigo-700"><i class="fa-solid fa-filter"></i> Filter</button>
                             <a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-sm btn-danger">Reset</a>
                         </form>
 
@@ -117,7 +117,7 @@
                                 <th class="ps-4">Date</th>
                                 <th>Vivran</th>
                                 <th class="text-end text-danger">Maine Diye</th>
-                                <th class="text-end text-success pe-4">Mujhe Mile</th>
+                                <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
                                 <th>Balance</th>
                                 <th>Edit</th>
                                 <th>Action</th>
@@ -134,11 +134,11 @@
                                     {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
                                 </td>
 
-                                <td class="text-end fw-bold text-success pe-4">
+                                <td class="text-end fw-bold text-indigo-700 pe-4">
                                     {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
                                 </td>
                                 <td
-                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-success{% endif %}">
+                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
                                     ₹{% if trans.running_balance < 0 %}
                                         {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %}
                                         {{trans.running_balance }} {% endif %} </td>
@@ -149,7 +149,7 @@
                                 </td>
                                 <td>
                                     <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
-                                        class="delete-form">
+                                        class="delete-form" data-confirm-delete data-title="Delete transaction?">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
                                             title="Delete Entry">X</button>
@@ -173,7 +173,7 @@
 <div class="modal fade" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-warning">
+            <div class="modal-header bg-primary">
                 <h5 class="modal-title fw-bold text-dark" id="interestModalLabel">Byaaj Calculation</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 
@@ -224,9 +224,9 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i> Cancel</button>
                     <!-- Form submit button -->
-                    <button type="submit" class="btn btn-success fw-bold">Hisaab Mein Jodein</button>
+                    <button type="submit" class="btn btn-success fw-bold"><i class="fa-solid fa-calculator"></i> Hisaab Mein Jodein</button>
                 </div>
             </form>
         </div>

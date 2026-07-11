@@ -7,24 +7,20 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-info">User Info Table Live Control</h5>
+            <h5 class="mb-0 fw-bold text-indigo-700">User Info Table Live Control</h5>
             <a href="{% url 'create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2"> <i class="fas fa-plus"></i> Add New
                 Record</a>
-            
+
         </div>
         <div class="card-body">
             <form method="GET" action="{% url 'userinfo_dashboard' %}"
                 class="row g-2 mb-4 d-flex justify-content-center align-items-center">
-                <!-- Sahi Tareeka (Bootstrap Standard ke sath) -->
-
-
-
                 <div class="col-md-2">
                     <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
                         placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
                 </div>
                 <div class="col-md-1">
-                    <button type="submit" class="btn btn-success w-100 fw-bold text-light"> <i class="fas fa-search"></i> Search</button>
+                    <button type="submit" class="btn btn-success w-100 fw-bold text-white"> <i class="fas fa-search"></i> Search</button>
                 </div>
 
                 <div class="col-md-2 text-end text-light">
@@ -35,10 +31,10 @@
                 </div>
             </form>
             {% if clients %}
-            <h4 class="mb-0 fw-bold text-info">Total Record(s) : {{ clients.paginator.count }}</h4>
+            <h4 class="mb-0 fw-bold text-indigo-700">Total Record(s) : {{ clients.paginator.count }}</h4>
             {% endif %}
             <div class="table-responsive">
-                <table class="table table-dark table-striped table-hover align-middle text-nowrap border-secondary"
+                <table class="app-table"
                     style="font-size: 14px;">
                     <thead class="table-dark text-center border-secondary">
                         <tr>
@@ -50,7 +46,7 @@
                             <!-- <th>IsActive</th> -->
                             <th>Payment Status</th>
                             <th>Amount</th>
-                            <th>Entry count</th>
+                            <th class="text-center">Entry Count</th>
                             <th>Operator Mobile</th>
                             <!-- <th>Date Time</th> -->
                             <th>IsPri</th>
@@ -83,7 +79,7 @@
                             <!-- <td>{{ client.is_active }}</td> -->
                             <td class="text-center">{{ client.payment_status }}</td>
                             <td class="text-end">{{ client.amount }}</td>
-                            <th>{{client.entry_count}}</th>
+                            <td class="text-center font-semibold">{{ client.entry_count|default:"0" }}</td>
                             <td class="text-center">{{ client.operator_mobile|default:"-" }}</td>
                             <!-- <td>{{ client.date_time|date:"Y-m-d H:i:s"|default:"-" }}</td> -->
                             <td>{{ client.is_pri }}</td>
@@ -94,11 +90,9 @@
                              <td>{{ client.activation_date }}</td>
                             <td class="text-center">
                                 {% if client.payment_status == client.amount %}
-                                <span
-                                    class="badge bg-success-subtle text-success border border-success px-2 py-1"> <i class="fas fa-circle-check"></i>  Active</span>
+                                <span class="status-pill status-active bg-green-100 text-green-800"><i class="fas fa-circle-check"></i> Active</span>
                                 {% else %}
-                                <span
-                                    class="badge bg-danger-subtle text-danger border border-danger px-2 py-1"> <i class="fas fa-circle-xmark"></i>  Inactive</span>
+                                <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i> Inactive</span>
                                 {% endif %}
                             </td>
 
@@ -106,7 +100,7 @@
                             {% if request.user.is_superuser %}
                             <td>
                                 <a href="{% url 'update_userinfo' client.id %}"
-                                    class="btn btn-sm btn-outline-info fw-bold" title="Farmer record update karein">
+                                    class="btn btn-sm btn-outline-primary fw-bold" title="Farmer record update karein">
                                     <i class="fas fa-edit me-1"></i>Update
                                 </a>
                                 {% else %}
@@ -116,12 +110,12 @@
                             {% endif %}
 
                             <td class="text-center">
-                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                     {% if client.payment_status == client.amount %}
                                     {% if request.user.is_superuser %}
                                     <a href="#"
                                         data-url="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}"
-                                        class="btn btn-outline-danger btn-sm fw-semibold"
+                                        class="btn btn-outline-danger btn-sm fw-semibold whitespace-nowrap"
                                         onclick="confirmToggleActivation(event, this, '{{ client.id }}', '{{ client.pacs_name }}', 'True');">
                                         <i class="fas fa-ban me-1"></i> Deactivate
                                     </a>
@@ -131,7 +125,7 @@
                                     {% endif %}
 
                                     {% else %}
-                                    <button type="button" class="btn btn-outline-success btn-sm fw-bold"
+                                    <button type="button" class="btn btn-success btn-sm fw-bold whitespace-nowrap"
                                         data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
                                         <i class="fas fa-circle-check"></i> Activate
                                     </button>
@@ -142,13 +136,13 @@
                             </td>
                             <td>
                                 <!-- <a href="{% url 'generate_invoice' client.id %}"
-                                    class="btn btn-sm btn-outline-info fw-bold" title="Download Invoice"
+                                    class="btn btn-sm btn-outline-primary fw-bold" title="Download Invoice"
                                     target="_blank">
                                     📄 Invoice
                                 </a> -->
                                 <a href="#" data-url="{% url 'generate_invoice' client.id %}"
                                     onclick="openInvoiceWithAmount(event, this.getAttribute('data-url'))"
-                                    class="btn btn-sm btn-outline-info fw-bold" title="Download Invoice">
+                                    class="btn btn-sm btn-outline-primary fw-bold" title="Download Invoice">
                                     <i class="fas fa-file-invoice-dollar"></i>  Invoice
                                 </a>
                             </td>
@@ -157,7 +151,7 @@
                             {% if request.user.is_superuser %}
                             <td>
                                 <a href="#" data-url="{% url 'delete_userinfo' client.id %}"
-                                    class="btn btn-outline-danger btn-sm fw-semibold"
+                                    class="btn btn-outline-danger btn-sm fw-semibold whitespace-nowrap"
                                     onclick="confirmUserDelete(event, this, '{{ client.id }}', '{{ client.pacs_name }} {{ client.mobile }}');"
                                     title="Permanently Delete User Profile">
                                     <i class="fas fa-trash-alt"></i> Delete
@@ -165,7 +159,7 @@
                             </td>
                             <td>
                                 <a href="{% url 'create_userinfo' %}?copy_id={{ client.id }}"
-                                    class="btn btn-sm btn-outline-warning fw-bold">
+                                    class="btn btn-sm btn-outline-primary fw-bold">
                                      <i class="fas fa-copy"></i> Copy
                                 </a>
                             </td>
@@ -186,7 +180,7 @@
                             tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content shadow-lg">
-                                    <div class="modal-header bg-dark text-info border-bottom border-info">
+                                    <div class="modal-header bg-dark text-indigo-700 border-bottom border-indigo-200">
                                         <h5 class="modal-title fw-bold">🚀 Activate PACS: {{ client.pacs_name }}</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                             aria-label="Close"></button>
@@ -196,21 +190,21 @@
                                         action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
-                                            <p><strong>PACS ID:</strong> <span class="text-info">{{ client.id }}</span>
+                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id }}</span>
                                             </p>
                                             <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
                                             <p><strong>Activation Type:</strong> {{ client.for_whys }} {{client.f_year}}
                                             </p>
 
                                             <div class="mb-3">
-                                                <label class="form-label text-info small fw-bold">Enter Activation
+                                                <label class="form-label text-indigo-700 small fw-bold">Enter Activation
                                                     Amount (In Rs.)</label>
                                                 <input type="number" name="amount" class="form-control"
                                                     value="{{ client.amount }}" required min="0">
                                             </div>
 
                                             <div class="mb-3">
-                                                <label class="form-label text-info small fw-bold">Enter UTR /
+                                                <label class="form-label text-indigo-700 small fw-bold">Enter UTR /
                                                     Transaction Number</label>
                                                 <input type="text" name="utr_number" class="form-control"
                                                     value="{{ client.utr_number|default:'' }}"
@@ -221,7 +215,7 @@
                                                 <label class="form-label d-block text-muted small fw-bold">Activating As
                                                     Admin:</label>
                                                 <span
-                                                    class="badge bg-dark border border-secondary text-success p-2 fs-6 w-100 text-start">
+                                                    class="badge bg-dark border border-secondary text-indigo-700 p-2 fs-6 w-100 text-start">
                                                     👤 {{ request.user.username }}
                                                 </span>
                                             </div>
@@ -229,7 +223,7 @@
                                         <div class="modal-footer border-top border-secondary">
                                             <button type="button" class="btn btn-secondary"
                                                 data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-info text-dark fw-bold">Save &
+                                            <button type="submit" class="btn btn-primary text-dark fw-bold">Save &
                                                 Activate</button>
                                         </div>
                                     </form>
@@ -261,18 +255,18 @@
         {% endif %}
 
         {% for num in clients.paginator.page_range %}
-            
+
             {% if clients.number == num %}
                 <li class="page-item active" aria-current="page">
                     <span class="page-link">{{ num }}</span>
                 </li>
-            
+
             {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num }}</a>
                 </li>
             {% endif %}
-            
+
         {% endfor %}
 
         {% if clients.has_next %}
@@ -390,7 +384,7 @@
             : "Kya Aap PACS ID: " + clientId + " (" + clientName + ") Ka Profile Active Karna Chahte Hain?";
 
         var alertIcon = isClientActive ? 'warning' : 'question';
-        var confirmButtonColor = isClientActive ? '#e74c3c' : '#2ecc71'; // Red for warning/deactivate, Green for active
+        var confirmButtonColor = isClientActive ? '#e74c3c' : '#2563eb'; // Red for warning/deactivate, Blue for active
         var confirmButtonText = isClientActive ? 'Haan, Deactivate karein!' : 'Haan, Active karein!';
 
         // 5. Fire SweetAlert2 Modal

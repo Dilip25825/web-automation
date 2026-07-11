@@ -18,7 +18,7 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-info">User Info Table Live Control</h5>
+            <h5 class="mb-0 fw-bold text-indigo-700">User Info Table Live Control</h5>
             <a href="/" class="btn btn-outline-secondary btn-sm">⬅️ Back to Central Hub</a>
         </div>
         <div class="card-body">
@@ -76,7 +76,7 @@
                             <td class="text-center">
                                 {% if client.payment_status == client.amount %}
                                 <span
-                                    class="badge bg-success-subtle text-success border border-success px-2 py-1">ACTIVE</span>
+                                    class="badge bg-primary-subtle text-indigo-700 border border-indigo-200 px-2 py-1">ACTIVE</span>
                                 {% else %}
                                 <span
                                     class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">INACTIVE</span>
@@ -103,7 +103,7 @@
                             tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content shadow-lg">
-                                    <div class="modal-header bg-dark text-info border-bottom border-info">
+                                    <div class="modal-header bg-dark text-indigo-700 border-bottom border-indigo-200">
                                         <h5 class="modal-title fw-bold">🚀 Activate PACS: {{ client.pacs_name }}</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                             aria-label="Close"></button>
@@ -113,19 +113,19 @@
                                         action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
-                                            <p><strong>PACS ID:</strong> <span class="text-info">{{ client.id }}</span>
+                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id }}</span>
                                             </p>
                                             <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
 
                                             <div class="mb-3">
-                                                <label class="form-label text-info small fw-bold">Enter Activation
+                                                <label class="form-label text-indigo-700 small fw-bold">Enter Activation
                                                     Amount (In Rs.)</label>
                                                 <input type="number" name="amount" class="form-control"
                                                     value="{{ client.amount }}" required min="1">
                                             </div>
 
                                             <div class="mb-3">
-                                                <label class="form-label text-info small fw-bold">Enter UTR /
+                                                <label class="form-label text-indigo-700 small fw-bold">Enter UTR /
                                                     Transaction Number</label>
                                                 <input type="text" name="utr_number" class="form-control"
                                                     value="{{ client.utr_number|default:'' }}"
@@ -136,7 +136,7 @@
                                                 <label class="form-label d-block text-muted small fw-bold">Activating As
                                                     Admin:</label>
                                                 <span
-                                                    class="badge bg-dark border border-secondary text-success p-2 fs-6 w-100 text-start">
+                                                    class="badge bg-dark border border-secondary text-indigo-700 p-2 fs-6 w-100 text-start">
                                                     👤 {{ request.user.username }}
                                                 </span>
                                             </div>
@@ -144,7 +144,7 @@
                                         <div class="modal-footer border-top border-secondary">
                                             <button type="button" class="btn btn-secondary"
                                                 data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-info text-dark fw-bold">Save &
+                                            <button type="submit" class="btn btn-primary text-dark fw-bold">Save &
                                                 Activate</button>
                                         </div>
                                     </form>

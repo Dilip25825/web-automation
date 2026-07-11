@@ -1,263 +1,599 @@
-<!-- templates/licensing/base.html -->
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Web Automation{% endblock %}</title>
-
-    <!-- Bootstrap 5 (Dark) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome (Icons) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <!-- SweetAlert2 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Tailwind CSS (Optional - for new components) -->
-
-
     <style>
         body {
-            padding-top: 0px;
-            background-color: #0f172a !important;
-            color: #f8fafc !important;
+            background: #f5f7ff;
+            color: #172033
         }
 
+        .app-card,
         .card {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 10px 28px rgba(65, 62, 145, .08)
+        }
+
+        .app-table,
+        table {
+            width: 100%;
+            min-width: 760px;
+            border-collapse: collapse;
+            font-size: .875rem
+        }
+
+        .app-table th,
+        table th {
+            background: #f1f5ff;
+            color: #475569;
+            font-size: .72rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            font-weight: 800;
+            text-align: left;
+            padding: .85rem 1rem;
+            white-space: nowrap
+        }
+
+        .app-table td,
+        table td {
+            border-top: 1px solid #e8edf6;
+            padding: .85rem 1rem;
+            vertical-align: middle
+        }
+
+        .app-table tbody tr:hover,
+        table tbody tr:hover {
+            background: #f8faff
+        }
+
+        input:not([type=checkbox]):not([type=radio]),
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: .6rem;
+            background: #fff;
+            color: #172033;
+            padding: .625rem .75rem
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 3px solid #ddd6fe;
+            border-color: #7c3aed
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            border-radius: .55rem;
+            padding: .55rem .85rem;
+            font-weight: 700;
+            font-size: .84rem;
+            transition: all .18s ease
+        }
+
+        .btn:hover {
+            transform: translateY(-1px)
+        }
+
+        .btn-primary,
+        .btn-success {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            box-shadow: 0 4px 10px #6366f133
+        }
+
+        .btn-primary:hover,
+        .btn-success:hover {
+            background: linear-gradient(135deg, #1d4ed8, #6d28d9)
+        }
+
+        .btn-outline-primary {
+            border: 1px solid #2563eb;
+            color: #2563eb;
+            background: #eff6ff
+        }
+
+        .btn-outline-primary {
+            border: 1px solid #7c3aed;
+            color: #6d28d9;
+            background: #f5f3ff
+        }
+
+        .btn-outline-danger {
+            border: 1px solid #e11d48;
+            color: #be123c;
+            background: #fff1f2
+        }
+
+        .btn-outline-light,
+        .btn-outline-secondary {
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            background: #fff
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: .28rem .62rem;
+            font-size: .73rem;
+            font-weight: 800
+        }
+
+        .bg-primary {
+            background: #dcfce7;
+            color: #15803d
+        }
+
+        .bg-danger {
+            background: #ffe4e6;
+            color: #be123c
+        }
+
+        .bg-primary {
+            background: #fef3c7;
+            color: #a16207
+        }
+
+        .bg-secondary,
+        .bg-primary {
+            background: #e0e7ff;
+            color: #4338ca
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            border-radius: 999px;
+            padding: .33rem .65rem;
+            font-size: .74rem;
+            font-weight: 800
+        }
+
+        .status-active {
+            background: #e0e7ff;
+            color: #4338ca
+        }
+
+        .status-inactive {
+            background: #ffe4e6;
+            color: #be123c
+        }
+
+        .container,
+        .container-fluid {
+            width: 100%;
+            margin: auto
+        }
+
+        .container {
+            max-width: 1280px
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -.5rem
+        }
+
+        .row>* {
+            padding: .5rem
+        }
+
+        .col-12 {
+            width: 100%
+        }
+
+        .col-md-1 {
+            width: 8.333%
+        }
+
+        .col-md-2 {
+            width: 16.666%
+        }
+
+        .col-md-3 {
+            width: 25%
+        }
+
+        .col-md-4 {
+            width: 33.333%
+        }
+
+        .col-md-6 {
+            width: 50%
+        }
+
+        .col-md-8 {
+            width: 66.666%
+        }
+
+        .col-md-9 {
+            width: 75%
+        }
+
+        .col-md-10 {
+            width: 83.333%
+        }
+
+        .col-lg-4 {
+            width: 33.333%
+        }
+
+        .col-lg-7 {
+            width: 58.333%
+        }
+
+        .col-lg-8 {
+            width: 66.666%
+        }
+
+        .d-flex {
+            display: flex
+        }
+
+        .flex-wrap {
+            flex-wrap: wrap
+        }
+
+        .align-items-center {
+            align-items: center
+        }
+
+        .justify-content-between {
+            justify-content: space-between
+        }
+
+        .justify-content-center {
+            justify-content: center
+        }
+
+        .gap-1 {
+            gap: .25rem
+        }
+
+        .gap-2 {
+            gap: .5rem
+        }
+
+        .table-responsive {
+            overflow-x: auto
+        }
+
+        .text-center {
+            text-align: center
+        }
+
+        .text-end {
+            text-align: right
+        }
+
+        .text-white,
+        .text-light {
+            color: #172033
+        }
+
+        .text-muted,
+        .text-secondary {
+            color: #64748b
+        }
+
+        .text-indigo-700 {
+            color: #4338ca
+        }
+
+        .text-danger {
+            color: #be123c
+        }
+
+        .fw-bold,
+        .fw-semibold {
+            font-weight: 700
+        }
+
+        .mb-0 {
+            margin-bottom: 0
+        }
+
+        .mb-3 {
+            margin-bottom: 1rem
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem
+        }
+
+        .me-1 {
+            margin-right: .25rem
+        }
+
+        .me-2 {
+            margin-right: .5rem
+        }
+
+        .p-0 {
+            padding: 0
+        }
+
+        .p-3 {
+            padding: 1rem
+        }
+
+        .p-4 {
+            padding: 1.5rem
         }
 
         .card-header {
-            background-color: #0f172a !important;
-            border-bottom: 1px solid #334155 !important;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem
         }
 
-        .form-control {
-            background-color: #0f172a !important;
-            border: 1px solid #475569 !important;
-            color: #f8fafc !important;
+        .card-body {
+            padding: 1rem
         }
 
-        .form-control:focus {
-            background-color: #0f172a !important;
-            color: #f8fafc !important;
-            border-color: #10b981 !important;
-            box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25) !important;
+        .form-label {
+            display: block;
+            margin-bottom: .3rem;
+            font-size: .875rem;
+            font-weight: 700
         }
 
-        .table-dark {
-            --bs-table-bg: #1e293b !important;
-            --bs-table-striped-bg: #111827 !important;
+        .pagination {
+            display: flex;
+            gap: .25rem;
+            list-style: none;
+            padding: 0
+        }
+
+        .page-link {
+            display: block;
+            border: 1px solid #cbd5e1;
+            border-radius: .4rem;
+            padding: .4rem .65rem;
+            color: #4338ca;
+            background: #fff
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: #17203366;
+            padding: 1rem;
+            overflow: auto
+        }
+
+        .modal.is-open {
+            display: block
+        }
+
+        .modal-dialog {
+            max-width: 32rem;
+            margin: 8vh auto
         }
 
         .modal-content {
-            background-color: #1e293b !important;
-            border: 1px solid #475569 !important;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            box-shadow: 0 20px 50px #17203333
         }
 
-        .dropdown-menu {
-            background-color: #1e293b !important;
-            border: 1px solid #475569 !important;
+        .modal-header,
+        .modal-footer,
+        .modal-body {
+            padding: 1rem
         }
 
-        .dropdown-item:hover {
-            background-color: #334155 !important;
+        .app-modal-panel {
+            animation: modalIn .22s ease-out
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(.98)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        @media(max-width:768px) {
+
+            .col-md-1,
+            .col-md-2,
+            .col-md-3,
+            .col-md-4,
+            .col-md-6,
+            .col-md-8,
+            .col-md-9,
+            .col-md-10,
+            .col-lg-4,
+            .col-lg-7,
+            .col-lg-8 {
+                width: 100%
+            }
         }
     </style>
 </head>
 
-<body>
-    <!-- ========================================================== -->
-    <!-- NAVBAR (Only ONE - Directly in base.html)                   -->
-    <!-- ========================================================== -->
-    <nav class="navbar navbar-expand-lg bg-dark border-bottom border-secondary"
-        style="background-color: #0d1117 !important; position: sticky; top: 0; z-index: 9999; width: 100%;">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold text-light" href="{% url 'main_hub' %}">
-                <i class="fas fa-cogs me-2"></i>Web Automation With Excel
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-           {% if request.user.is_authenticated %}
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold {% if request.path == '/' %}active{% endif %}"
-                            href="{% url 'main_hub' %}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold {% if 'userinfo' in request.path %}active{% endif %}"
-                            href="{% url 'userinfo_dashboard' %}">
-                            <i class="fas fa-users me-1"></i>UserInfo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold {% if 'pacserp' in request.path %}active{% endif %}"
-                            href="{% url 'pacserp_dashboard' %}">
-                            <i class="fas fa-tractor me-1"></i>ERP
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold {% if 'reminders' in request.path %}active{% endif %}"
-                            href="{% url 'reminders:dashboard' %}">
-                            <i class="fas fa-tasks me-1"></i>Reminders
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'khata' in request.path %}active{% endif %}"
-                            href="{% url 'khata:dashboard' %}">
-                            <i class="fas fa-book me-1"></i>Khata
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold {% if 'downloads' in request.path %}active{% endif %}"
-                            href="/downloads/">
-                            <i class="fas fa-download me-1"></i>Download
-                        </a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>{{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <form action="{% url 'logout' %}" method="post" id="logoutForm">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item text-danger" id="logoutBtn">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link fw-bold" href="{% url 'login' %}">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login
-                        </a>
-                    </li>
-                    {% endif %}
+<body class="min-h-screen font-sans antialiased">
+    <nav class="sticky top-0 z-40 border-b border-indigo-100 bg-white/95 shadow-sm backdrop-blur">
+        <div class="mx-auto flex min-h-16 max-w-[1920px] items-center gap-5 px-4"><a
+                class="shrink-0 text-lg font-extrabold text-indigo-950 sm:text-xl" href="{% url 'main_hub' %}"><i
+                    class="fa-solid fa-gears mr-2 text-violet-600"></i>Web Automation With Excel</a>{% if request.user.is_authenticated %}
+                    <button class="ml-auto rounded p-2 text-indigo-800 lg:hidden"
+                data-menu-toggle><i class="fa-solid fa-bars"></i></button>
+            <div class="hidden w-full items-center justify-between lg:flex">
+                <div class="flex items-center gap-1 text-sm font-bold text-slate-600"><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
+                        href="{% url 'main_hub' %}"><i class="fa-solid fa-house-chimney"></i> Home</a><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
+                        href="{% url 'userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> UserInfo</a><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
+                        href="{% url 'pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP</a><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
+                        href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
+                        href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a><a
+                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="/downloads/"><i  class="fa-solid fa-download"></i> Download</a></div>
 
-                    
-                </ul>
-            </div>
-            {% endif %}
+                        
+                <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button
+                        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-700"
+                        data-logout><i class="fa-solid fa-right-from-bracket"></i>{{ user.username }} · Logout</button>
+                </form>
+            </div>{% endif %}
         </div>
     </nav>
-
-    <!-- ========================================================== -->
-    <!-- MAIN CONTENT                                               -->
-    <!-- ========================================================== -->
-    <!-- <main class="py-3"> -->
-    <!-- <div class="container"> -->
-    <!-- Django Messages (will be shown via SweetAlert2 toasts) -->
-    {% block content %}
-    {% endblock %}
-    <!-- </div> -->
-    <!-- </main> -->
-
-    <!-- ========================================================== -->
-    <!-- FOOTER                                                     -->
-    <!-- ========================================================== -->
-    <footer class="footer mt-auto py-3 bg-dark border-top border-secondary">
-        <div class="container text-center text-light small">
-            &copy; {% now "Y" %} Web Automation with Excel — All Rights Reserved
-        </div>
-    </footer>
-
-    <!-- ========================================================== -->
-    <!-- SCRIPTS                                                    -->
-    <!-- ========================================================== -->
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- SweetAlert2 Auto-Toasts + Delete Confirmation + Logout Confirmation -->
+    <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">{% block content %}{% endblock %}</main>
+    <footer class="mt-8 border-t border-indigo-100 bg-white px-4 py-4 text-center text-xs text-slate-500">&copy; {% now "Y" %} Web Automation With Excel</footer>
+    
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // ============================================
-            // 1. AUTO-TOAST FOR DJANGO MESSAGES
-            // ============================================
-            {% if messages %}
-            {% for message in messages %}
-            Swal.fire({
-                toast: true,
-                position: 'center',
-                icon: '{{ message.tags }}',
-                title: '{{ message|escapejs }}',
-                showConfirmButton: false,
-                timer: 3500,
-                timerProgressBar: true,
-                background: '#1e293b',
-                color: '#f1f5f9',
-            });
-            {% endfor %}
-            {% endif %}
-
-            // ============================================
-            // 2. CONFIRM DELETE FOR .confirm-delete LINKS
-            // ============================================
-            document.querySelectorAll('.confirm-delete').forEach(function (link) {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const href = this.getAttribute('href');
-                    const title = this.getAttribute('data-title') || 'Delete this item?';
-                    const text = this.getAttribute('data-text') || 'You won\'t be able to revert this!';
-
-                    Swal.fire({
-                        title: title,
-                        text: text,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Yes, delete it!',
-                        cancelButtonText: 'Cancel',
-                        background: '#1e293b',
-                        color: '#f1f5f9',
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = href;
-                        }
-                    });
-                });
-            });
-
-            // ============================================
-            // 3. LOGOUT CONFIRMATION
-            // ============================================
-            const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const form = document.getElementById('logoutForm');
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will be logged out.",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, logout!',
-            cancelButtonText: 'Cancel',
-            background: '#1e293b',
-            color: '#f1f5f9',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();  // Form POST submit karega
+    // ============================================
+    // 1. MODAL TOGGLE (Bootstrap 5 के साथ काम करेगा)
+    // ============================================
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const target = document.querySelector(this.dataset.bsTarget);
+            if (target) {
+                target.classList.add('is-open');
+                target.dispatchEvent(new Event('shown.bs.modal'));
             }
         });
     });
+
+    document.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            if (modal) {
+                modal.classList.remove('is-open');
+                // Bootstrap 5 के modal को hide करें
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) {
+                    bsModal.hide();
+                }
             }
         });
-    </script>
+    });
 
+    // ============================================
+    // 2. MENU TOGGLE (मोबाइल मेनू के लिए)
+    // ============================================
+    const menuToggle = document.querySelector('[data-menu-toggle]');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+            const menu = document.querySelector(this.dataset.menuTarget || '#menu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+                menu.classList.toggle('block');
+            }
+        });
+    }
+
+    // ============================================
+    // 3. CONFIRM DELETE (SweetAlert2 के साथ)
+    // ============================================
+    document.querySelectorAll('[data-confirm-delete]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: this.dataset.title || 'Delete this item?',
+                text: this.dataset.text || 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: this.dataset.confirmText || 'Yes, delete',
+                confirmButtonColor: this.dataset.confirmColor || '#e11d48',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        });
+    });
+
+    // ============================================
+    // 4. LOGOUT CONFIRMATION
+    // ============================================
+    const logoutBtn = document.querySelector('[data-logout]');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: this.dataset.title || 'Log out?',
+                text: this.dataset.text || 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: this.dataset.confirmText || 'Logout',
+                confirmButtonColor: '#e11d48',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    // Form submit करें
+                    const form = this.closest('form');
+                    if (form) {
+                        form.submit();
+                    } else {
+                        // अगर form नहीं है तो logout URL पर redirect करें
+                        window.location.href = this.dataset.logoutUrl || '/logout/';
+                    }
+                }
+            });
+        });
+    }
+
+    // ============================================
+    // 5. DJANGO MESSAGES (SweetAlert2 Toast)
+    // ============================================
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: '{{ message.tags }}' === 'error' ? 'error' : '{{ message.tags }}' || 'info',
+                title: '{{ message|escapejs }}',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        {% endfor %}
+    {% endif %}
+
+    // ============================================
+    // 6. (OPTIONAL) Bootstrap 5 Modal को properly handle करें
+    // ============================================
+    // अगर Bootstrap 5 का Modal इस्तेमाल कर रहे हैं तो
+    document.addEventListener('DOMContentLoaded', function() {
+        // सभी modals को Bootstrap 5 से initialize करें
+        document.querySelectorAll('.modal').forEach(modal => {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                new bootstrap.Modal(modal);
+            }
+        });
+    });
+</script>
     {% block extra_js %}{% endblock %}
 </body>
 

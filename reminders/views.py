@@ -37,6 +37,7 @@ def dashboard(request):
         'due_soon_count': due_soon.count(),
         'pending_count': pending.count(),
         'completed_count': completed.count(),
+        'form': TaskForm(),
     }
     return render(request, 'reminders/dashboard.html', context)
 
@@ -54,9 +55,9 @@ def task_create(request):
             task.save()
             messages.success(request, f'✅ Task "{task.title}" created!')
             return redirect('reminders:dashboard')
-    else:
-        form = TaskForm()
-    return render(request, 'reminders/task_form.html', {'form': form, 'action': 'Create'})
+        messages.error(request, 'Please correct the task details and try again.')
+        return redirect('reminders:dashboard')
+    return redirect('reminders:dashboard')
 
 @login_required
 def task_update(request, pk):
@@ -78,7 +79,7 @@ def task_delete(request, pk):
         task.delete()
         messages.warning(request, f'🗑️ Task "{task.title}" deleted.')
         return redirect('reminders:dashboard')
-    return render(request, 'reminders/task_confirm_delete.html', {'task': task})
+    return redirect('reminders:dashboard')
 
 @login_required
 def task_toggle_status(request, pk):
@@ -136,4 +137,4 @@ def category_delete(request, pk):
         messages.success(request, f'🗑️ Category "{category_name}" deleted successfully!')
         return redirect('reminders:category_list')
     
-    return render(request, 'reminders/category_confirm_delete.html', {'category': category})
+    return redirect('reminders:category_list')

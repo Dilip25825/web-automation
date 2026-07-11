@@ -2,28 +2,134 @@
 {% block title %}Login | Software Admin{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height: 75vh;">
-    <div class="login-card" style="border: 1px solid #d1d5db; background: #1e293b; border-radius: 15px; width: 100%; max-width: 400px; padding: 2rem; box-shadow: 0 10px 25px rgba(216, 216, 216, 0.5);">
-        <div class="text-center mb-4">
-            <h3 class="text-success">⚙️ Admin Login</h3>
-            <p class="text-muted small">Enter credentials to access Control Panel</p>
-        </div>
+<style>
+    .login-container {
+        min-height: 100vh;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+    .login-card-modern {
+        background: #ffffff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 400px;
+        padding: 2.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .login-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #4F46E5, #7C3AED);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2.5rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    }
+    .login-title-modern {
+        color: #111827;
+        font-size: 1.75rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    .login-subtitle-modern {
+        color: #6B7280;
+        text-align: center;
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+    }
+    .form-label-modern {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    .form-control-modern {
+        border: 2px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #FAFBFC;
+    }
+    .form-control-modern:focus {
+        border-color: #4F46E5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        background: #ffffff;
+    }
+    .btn-modern {
+        background: linear-gradient(135deg, #4F46E5, #7C3AED);
+        border: none;
+        color: white;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 100%;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    }
+    .btn-modern:active {
+        transform: translateY(0);
+    }
+    .alert-modern {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        color: #991B1B;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-card-modern">
+        <div class="login-icon">⚙️</div>
+        <h3 class="login-title-modern">Welcome Back</h3>
+        <p class="login-subtitle-modern">Sign in to manage your software licenses</p>
 
         {% if form.errors %}
-            <div class="alert alert-danger small py-2">Invalid Username or Password.</div>
+            <div class="alert-modern">
+                <i class="fa-solid fa-circle-exclamation me-2"></i>
+                Invalid credentials. Please check your username and password.
+            </div>
         {% endif %}
 
         <form method="POST">
             {% csrf_token %}
             <div class="mb-3">
-                <label class="form-label small">Username</label>
-                <input type="text" name="username" class="form-control bg-dark text-light border-secondary" placeholder="Enter username" required>
+                <label class="form-label-modern">Username</label>
+                <input type="text" name="username" class="form-control form-control-modern" 
+                       placeholder="Enter your username" required>
             </div>
             <div class="mb-3">
-                <label class="form-label small">Password</label>
-                <input type="password" name="password" class="form-control bg-dark text-light border-secondary" placeholder="Enter password" required>
+                <label class="form-label-modern">Password</label>
+                <input type="password" name="password" class="form-control form-control-modern" 
+                       placeholder="Enter your password" required>
             </div>
-            <button type="submit" class="btn btn-success w-100 mt-3 py-2 fw-bold">Sign In</button>
+            <button type="submit" class="btn-modern">
+                <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Sign In
+            </button>
         </form>
     </div>
 </div>

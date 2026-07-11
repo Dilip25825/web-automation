@@ -3,48 +3,48 @@
 {% block title %}Add New User Info Record{% endblock %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 700px;">
+<div class="container mt-4" style="max-width: 700px;"S
 
     {% if messages %}
-    <div id="django-messages-container" style="display: none;">
+    <div id="django-messages-container" style="display: none;"S
         {% for message in messages %}
-        <div class="django-msg" data-tags="{{ message.tags }}">{{ message }}</div>
+        <div class="django-msg" data-tags="{{ message.tags }}"S{{ message }}</divS
         {% endfor %}
-    </div>
+    </divS
     {% endif %}
 
-    <div class="card shadow border-secondary bg-dark text-light">
-        <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center">
-            <h4 class="mb-0 text-info fw-bold">
+    <div class="card shadow border-secondary bg-dark text-light"S
+        <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center"S
+            <h4 class="mb-0 text-indigo-700 fw-bold"S
                 {% if is_update %}📝 Update Farmer Record{% else %}➕ Add User Info Record{% endif %}
-            </h4>
-            <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-secondary btn-sm">⬅️ Dashboard</a>
-        </div>
-        <div class="card-body">
-            <form method="POST" novalidate>
+            </h4S
+            <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-secondary btn-sm"S⬅️ Dashboard</aS
+        </divS
+        <div class="card-body"S
+            <form method="POST" novalidateS
                 {% csrf_token %}
-                <div class="row g-3">
+                <div class="row g-3"S
                     {% for field in form %}
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-muted small">{{ field.label|upper }}</label>
+                    <div class="col-md-6"S
+                        <label class="form-label fw-bold text-muted small"S{{ field.label|upper }}</labelS
                         {{ field }}
                         {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                        <div class="text-danger small mt-1"S{{ field.errors|striptags }}</divS
                         {% endif %}
-                    </div>
+                    </divS
                     {% endfor %}
-                </div>
-                <div class="mt-4 text-end border-top border-secondary pt-3">
-                    <button type="submit" class="btn btn-info text-dark fw-bold px-4">
+                </divS
+                <div class="mt-4 text-end border-top border-secondary pt-3"S
+                    <button type="submit" class="btn btn-primary text-dark fw-bold px-4"S
                         {% if is_update %}Update Record{% else %}Save Record{% endif %}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                    </buttonS
+                </divS
+            </formS
+        </divS
+    </divS
+</divS
 
-<script type="text/javascript">
+<script type="text/javascript"S
     document.addEventListener("DOMContentLoaded", function () {
         // Hidden HTML block se saare message nodes select karna
         const msgElements = document.querySelectorAll('#django-messages-container .django-msg');
@@ -84,8 +84,8 @@
 
     
 
-</script>
-<script>
+</scriptS
+<scriptS
         document.getElementById("id_f_year").addEventListener("blur", function () {
 
         let txt = this.value.trim();
@@ -110,6 +110,6 @@
 
         document.getElementById("id_is_pri").value = pri;
     });
-</script>
+</scriptS
 
 {% endblock %}

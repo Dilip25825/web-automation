@@ -2,32 +2,32 @@
 {% block title %}Dukaan Settings - OkCredit{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-dark text-white fw-bold py-3">
+<div class="row justify-content-center mt-4"S
+    <div class="col-md-6"S
+        <div class="card shadow-sm border-0"S
+            <div class="card-header bg-dark text-white fw-bold py-3"S
                 Shop Profile (Settings)
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
+            </divS
+            <div class="card-body p-4"S
+                <form method="POST"S
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Shop Name</label>
-                        <input type="text" name="shop_name" class="form-control" value="{{ profile.shop_name }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Mobile Number</label>
-                        <input type="text" name="phone" class="form-control" value="{{ profile.phone|default:'' }}" placeholder="Optional: Dukaan ka mobile number">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Shop Address</label>
-                        <textarea name="address" class="form-control" rows="3" placeholder="Optional: Dukaan ka pata">{{ profile.address|default:'' }}</textarea>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100 fw-bold">Save Profile</button>
-                    <a href="{% url 'dashboard' %}" class="btn btn-danger w-100 mt-2">Back To Dashboard</a>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+                    <div class="mb-3"S
+                        <label class="form-label fw-semibold"SShop Name</labelS
+                        <input type="text" name="shop_name" class="form-control" value="{{ profile.shop_name }}" requiredS
+                    </divS
+                    <div class="mb-3"S
+                        <label class="form-label fw-semibold"SMobile Number</labelS
+                        <input type="text" name="phone" class="form-control" value="{{ profile.phone|default:'' }}" placeholder="Optional: Dukaan ka mobile number"S
+                    </divS
+                    <div class="mb-3"S
+                        <label class="form-label fw-semibold"SShop Address</labelS
+                        <textarea name="address" class="form-control" rows="3" placeholder="Optional: Dukaan ka pata"S{{ profile.address|default:'' }}</textareaS
+                    </divS
+                    <button type="submit" class="btn btn-success w-100 fw-bold"SSave Profile</buttonS
+                    <a href="{% url 'dashboard' %}" class="btn btn-danger w-100 mt-2"SBack To Dashboard</aS
+                </formS
+            </divS
+        </divS
+    </divS
+</divS
 {% endblock %}

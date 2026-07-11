@@ -6,7 +6,7 @@
 <div class="row justify-content-center mt-4">
     <div class="col-md-5">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-success text-light fw-bold">Edit Transection ({{ customer.name }})</div>
+            <div class="card-header bg-primary text-light fw-bold">Edit Transection ({{ customer.name }})</div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
@@ -29,8 +29,8 @@
                         <label class="form-label fw-semibold">Remarks (Optional)</label>
                         <input type="text" name="remarks" class="form-control" value="{{ trans.remarks|default:'' }}">
                     </div>
-                    <button type="submit" class="btn btn-success w-100 fw-bold">Update Entry</button>
-                    <a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-warning w-100 mt-2">Cancel</a>
+                    <button type="submit" class="btn btn-success w-100 fw-bold"><i class="fa-solid fa-pen-to-square"></i> Update Entry</button>
+                    <a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-primary w-100 mt-2"><i class="fa-solid fa-xmark"></i> Cancel</a>
                 </form>
             </div>
         </div>
