@@ -21,7 +21,6 @@ class UserInfoForm(forms.ModelForm):
             'state': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. MADHYA PRADESH'}),
             'operator_mobile': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'payment_status' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
-            'payment_status' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'amount' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'utr_number': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'f_year': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. 2024-2025'}),
@@ -59,7 +58,7 @@ class UserInfoForm(forms.ModelForm):
             
         except Exception as e:
             # FALLBACK LOGIC: Agar table exist na kare ya migration issue ho, to server crash nahi hoga
-            self.fields['for_why'].choices = [('', f'-- Error loading purposes: {str(e)} --')]
+            self.fields['for_whys'].choices = [('', '-- Select Purpose --')]
 
     
 

@@ -5,6 +5,23 @@ from .models import Task, TaskCategory
 from .forms import TaskForm
 from django.utils import timezone
 from datetime import timedelta
+from django.core.cache import cache
+from django.db.models import Count, Q
+
+
+STATS_CACHE_VERSION_KEY = 'reminders:dashboard-stats-version'
+
+
+def _dashboard_stats_cache_key(user):
+    version = cache.get_or_set(STATS_CACHE_VERSION_KEY, 1, None)
+    scope = 'all' if user.is_superuser else f'user-{user.pk}'
+    return f'reminders:dashboard-stats:{version}:{scope}'
+
+
+def _invalidate_dashboard_stats_cache():
+    """Make all cached dashboard counts obsolete after a task change."""
+    version = cache.get_or_set(STATS_CACHE_VERSION_KEY, 1, None)
+    cache.set(STATS_CACHE_VERSION_KEY, version + 1, None)
 
 @login_required
 def dashboard(request):
@@ -24,19 +41,34 @@ def dashboard(request):
         'created_by',  )
     
     pending = tasks.filter(status__in=['PENDING', 'IN_PROGRESS'])
-    overdue = pending.filter(deadline__lt=today)
-    due_soon = pending.filter(deadline__gte=today, deadline__lte=week_later)
-    completed = tasks.filter(status='COMPLETED')
-    
+
     # Pending tasks limit karein (already hai)
     pending_tasks = pending.order_by('-priority', 'deadline')[:20]
-    
+
+    stats_cache_key = _dashboard_stats_cache_key(request.user)
+    stats = cache.get(stats_cache_key)
+    if stats is None:
+        stats = tasks.aggregate(
+            overdue_count=Count(
+                'id',
+                filter=Q(status__in=['PENDING', 'IN_PROGRESS'], deadline__lt=today),
+            ),
+            due_soon_count=Count(
+                'id',
+                filter=Q(
+                    status__in=['PENDING', 'IN_PROGRESS'],
+                    deadline__gte=today,
+                    deadline__lte=week_later,
+                ),
+            ),
+            pending_count=Count('id', filter=Q(status__in=['PENDING', 'IN_PROGRESS'])),
+            completed_count=Count('id', filter=Q(status='COMPLETED')),
+        )
+        cache.set(stats_cache_key, stats, timeout=60)
+
     context = {
         'tasks': pending_tasks,
-        'overdue_count': overdue.count(),
-        'due_soon_count': due_soon.count(),
-        'pending_count': pending.count(),
-        'completed_count': completed.count(),
+        **stats,
         'form': TaskForm(),
     }
     return render(request, 'reminders/dashboard.html', context)
@@ -53,6 +85,7 @@ def task_create(request):
             if not task.assigned_to:
                 task.assigned_to = request.user
             task.save()
+            _invalidate_dashboard_stats_cache()
             messages.success(request, f'✅ Task "{task.title}" created!')
             return redirect('reminders:dashboard')
         messages.error(request, 'Please correct the task details and try again.')
@@ -66,6 +99,7 @@ def task_update(request, pk):
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
+            _invalidate_dashboard_stats_cache()
             messages.success(request, f'✅ Task "{task.title}" updated!')
             return redirect('reminders:dashboard')
     else:
@@ -77,6 +111,7 @@ def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk)
     if request.method == 'POST':
         task.delete()
+        _invalidate_dashboard_stats_cache()
         messages.warning(request, f'🗑️ Task "{task.title}" deleted.')
         return redirect('reminders:dashboard')
     return redirect('reminders:dashboard')
@@ -87,6 +122,7 @@ def task_toggle_status(request, pk):
     status_cycle = {'PENDING': 'IN_PROGRESS', 'IN_PROGRESS': 'COMPLETED', 'COMPLETED': 'PENDING'}
     task.status = status_cycle.get(task.status, 'PENDING')
     task.save()
+    _invalidate_dashboard_stats_cache()
     messages.info(request, f'🔄 Task "{task.title}" status changed to {task.get_status_display()}')
     return redirect('reminders:dashboard')
 

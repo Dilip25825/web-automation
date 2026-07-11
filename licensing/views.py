@@ -389,12 +389,12 @@ def create_pacserp(request):
         form = PacsErpForm(request.POST)
         try:
             if form.is_valid():
-                erp_id = form.cleaned_data.get('system_id')
+                erp_id = form.cleaned_data.get('erp_id')
                 pacs_name = form.cleaned_data.get('pacs_name')
                 
                 # DUPLICATE CHECK LOGIC: System ID unique honi chahiye ERP portal par
-                if tblPacsErp.objects.filter(system_id=erp_id).exists():
-                    messages.error(request, f"Duplicate Entry Check: System ID '{erp_id}' ke sath ek record pehle se active hai!")
+                if erp_id and tblPacsErp.objects.filter(erp_id=erp_id).exists():
+                    messages.error(request, f"Duplicate Entry Check: ERP ID '{erp_id}' ke sath ek record pehle se active hai!")
                     return render(request, 'licensing/create_pacserp.html', {'form': form})
                 
                 # SAFE COMMIT FALSE: Pehle data ko memory me hold kiya, direct database me nahi bheja
@@ -402,7 +402,7 @@ def create_pacserp(request):
                 
                 # FORCE INJECT VALUES: database model class names ke mutabik isActive ko 1 kiya
                 new_record.is_active = 1  # <-- Ye line automatic default 1 set karegi
-                new_record.lastLogin = datetime.now()
+                new_record.last_login = timezone.now()
                 
                 # Final database save layer
                 new_record.save()

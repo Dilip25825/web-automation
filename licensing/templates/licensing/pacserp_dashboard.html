@@ -32,6 +32,12 @@
                 <div class="col-md-1">
                     <button type="submit" class="btn btn-success w-100 fw-bold text-white">🔍 Search</button>
                 </div>
+                <div class="col-md-2 text-end text-light">
+                    <label for="customAmount">Enter Custom Amount</label>
+                </div>
+                <div class="col-md-1">
+                    <input type="number" name="customAmount" id="customAmount" class="form-control" placeholder="Amount" min="0">
+                </div>
             </form>
 
             <div class="table-responsive">
@@ -114,8 +120,9 @@
 
                                 </div>
                             </td>
-                            <td> <a href="{% url 'generate_erp_invoice' record.id %}"
-                                    class="btn btn-sm btn-outline-primary" title="Download ERP Invoice" target="_blank">
+                            <td> <a href="#" data-url="{% url 'generate_erp_invoice' record.id %}"
+                                    onclick="openErpInvoiceWithAmount(event, this.getAttribute('data-url'))"
+                                    class="btn btn-sm btn-outline-primary" title="Download ERP Invoice">
                                     📄 Invoice
                                 </a>
                             </td>
@@ -309,4 +316,15 @@
     </div>
 </div>
 
+<script>
+    function openErpInvoiceWithAmount(event, baseUrl) {
+        event.preventDefault();
+
+        const amountInput = document.querySelector('input[name="customAmount"]');
+        const amountValue = amountInput ? amountInput.value : '';
+        const finalUrl = baseUrl + '?customAmount=' + encodeURIComponent(amountValue);
+
+        window.open(finalUrl, '_blank');
+    }
+</script>
 {% endblock %}

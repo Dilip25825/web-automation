@@ -1,115 +1,37 @@
 {% extends 'licensing/base.html' %}
-
-{% block title %}Add New User Info Record{% endblock %}
-
+{% block title %}{% if is_update %}Update User Info{% else %}Add User Info{% endif %}{% endblock %}
 {% block content %}
-<div class="container mt-4" style="max-width: 700px;"S
-
-    {% if messages %}
-    <div id="django-messages-container" style="display: none;"S
-        {% for message in messages %}
-        <div class="django-msg" data-tags="{{ message.tags }}"S{{ message }}</divS
-        {% endfor %}
-    </divS
-    {% endif %}
-
-    <div class="card shadow border-secondary bg-dark text-light"S
-        <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center"S
-            <h4 class="mb-0 text-indigo-700 fw-bold"S
-                {% if is_update %}📝 Update Farmer Record{% else %}➕ Add User Info Record{% endif %}
-            </h4S
-            <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-secondary btn-sm"S⬅️ Dashboard</aS
-        </divS
-        <div class="card-body"S
-            <form method="POST" novalidateS
+<div class="container mt-4" style="max-width: 700px;">
+    <div class="card shadow border-secondary bg-dark text-light">
+        <div class="card-header border-bottom border-secondary d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 fw-bold">{% if is_update %}Update Farmer Record{% else %}Add User Info Record{% endif %}</h4>
+            <a href="{% url 'userinfo_dashboard' %}" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+        </div>
+        <div class="card-body">
+            <form method="post" novalidate>
                 {% csrf_token %}
-                <div class="row g-3"S
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="row g-3">
                     {% for field in form %}
-                    <div class="col-md-6"S
-                        <label class="form-label fw-bold text-muted small"S{{ field.label|upper }}</labelS
+                    <div class="col-md-6">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-bold text-muted small">{{ field.label|upper }}</label>
                         {{ field }}
-                        {% if field.errors %}
-                        <div class="text-danger small mt-1"S{{ field.errors|striptags }}</divS
-                        {% endif %}
-                    </divS
+                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|striptags }}</div>{% endif %}
+                    </div>
                     {% endfor %}
-                </divS
-                <div class="mt-4 text-end border-top border-secondary pt-3"S
-                    <button type="submit" class="btn btn-primary text-dark fw-bold px-4"S
-                        {% if is_update %}Update Record{% else %}Save Record{% endif %}
-                    </buttonS
-                </divS
-            </formS
-        </divS
-    </divS
-</divS
-
-<script type="text/javascript"S
-    document.addEventListener("DOMContentLoaded", function () {
-        // Hidden HTML block se saare message nodes select karna
-        const msgElements = document.querySelectorAll('#django-messages-container .django-msg');
-
-        msgElements.forEach(function (element) {
-            let msgType = element.getAttribute('data-tags');
-            let msgText = element.innerText;
-            let alertTitle = "Notification";
-
-            // Error Handle: Agar duplicate entry ya data validation fail ho jaye
-            if (msgType === 'error' || msgType === 'danger') {
-                msgType = 'error';
-                alertTitle = 'Error / Duplicate!';
-            } else if (msgType === 'success') {
-                msgType = 'success';
-                alertTitle = 'Success!';
-            } else if (msgType === 'warning') {
-                msgType = 'warning';
-                alertTitle = 'Warning!';
-            } else {
-                msgType = 'info';
-                alertTitle = 'Info';
-            }
-
-            // SweetAlert Toast Notification Trigger karna
-            Swal.fire({
-                title: alertTitle,
-                text: msgText,
-                icon: msgType,
-                timer: 4000,
-                showConfirmButton: false,
-                position: 'top-end',
-                toast: true
-            });
-        });
-    });
-
-    
-
-</scriptS
-<scriptS
-        document.getElementById("id_f_year").addEventListener("blur", function () {
-
-        let txt = this.value.trim();
-
-        // End me R ho to Rollover
-        txt = txt.replace(/\s+R$/i, " ROLLOVER");
-
-        // End me IS ho to ISSClaim
-        txt = txt.replace(/\s+I$/i, " ISSClaim");
-        txt = txt.replace(/\s+P$/i, " ISSClaim");
-
-        this.value = txt;
-
-        // id_is_pri set karna
-        let pri = 1;
-
-        if (txt.includes("ISSClaim")) {
-            pri = 3;
-        } else if (txt.includes("ROLLOVER")) {
-            pri = 4;
-        }
-
-        document.getElementById("id_is_pri").value = pri;
-    });
-</scriptS
-
+                </div>
+                <div class="mt-4 text-end border-top border-secondary pt-3"><button type="submit" class="btn btn-primary fw-bold px-4">{% if is_update %}Update Record{% else %}Save Record{% endif %}</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('id_f_year')?.addEventListener('blur', function () {
+    let value = this.value.trim();
+    value = value.replace(/\s+R$/i, ' ROLLOVER').replace(/\s+[IP]$/i, ' ISSClaim');
+    this.value = value;
+    const priority = document.getElementById('id_is_pri');
+    if (priority) priority.value = value.includes('ISSClaim') ? 3 : value.includes('ROLLOVER') ? 4 : 1;
+});
+</script>
 {% endblock %}

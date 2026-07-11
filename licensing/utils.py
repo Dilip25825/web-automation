@@ -249,7 +249,12 @@ def generate_erp_invoice_pdf(request, record):
 
         # Calculations (Backwards GST Breakdown Engine)
         total_paid = float(record.amount if record.amount else 0.0)
-
+        custom_amount = request.GET.get('customAmount', '').strip()
+        if custom_amount:
+            try:
+                total_paid = float(custom_amount)
+            except (TypeError, ValueError):
+                pass
         if total_paid > 0:
             subtotal = round(total_paid / 1.18, 2)
             tax_amount = round(total_paid - subtotal, 2)
