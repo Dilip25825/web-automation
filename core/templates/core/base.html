@@ -577,6 +577,7 @@
             {% else %}
                 <div class="ml-auto flex items-center gap-2 text-sm font-bold">
                     <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-download"></i> Downloads</a>
+                    <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-tags"></i> Pricing</a>
                     <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
                 </div>
             {% endif %}
