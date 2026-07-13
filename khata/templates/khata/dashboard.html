@@ -2,7 +2,7 @@
 {% block title %}Khata Dashboard{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-5">
-  <div class="grid gap-4 md:grid-cols-3">
+  <div class="grid gap-4 md:grid-cols-4">
     <a href="?filter=lene"
       class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
       <div>
@@ -27,6 +27,17 @@
         <p class="mt-1 text-sm text-slate-600">View all transactions with date filters</p>
             <p class="mt-2 text-lg font-extrabold text-violet-700">
           <i class="fa-regular fa-eye me-1"></i>Open Reports
+        </p>
+      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-violet-100 text-xl text-indigo-700"><i
+          class="fa-solid fa-chart-line"></i></span>
+    </a>
+      <a href="{% url 'khata:shop_profile' %}"
+      class="app-card flex items-center justify-between border-l-4 border-violet-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Settings</p>
+        <p class="mt-1 text-sm text-slate-600">Manage your account and preferences</p>
+            <p class="mt-2 text-lg font-extrabold text-violet-700">
+          <i class="fa-regular fa-eye me-1"></i>Open Settings
         </p>
       </div><span class="grid h-11 w-11 place-items-center rounded-full bg-violet-100 text-xl text-indigo-700"><i
           class="fa-solid fa-chart-line"></i></span>
