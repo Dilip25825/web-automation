@@ -1,17 +1,36 @@
 {% extends 'core/base.html' %}
+
 {% block title %}Software Admin | Home{% endblock %}
+
 {% block content %}
-<section class="mx-auto max-w-6xl space-y-8 py-6">
-  <div class="overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-12 text-white shadow-xl sm:px-10"><p class="text-sm font-bold uppercase tracking-[0.22em] text-indigo-100">Software Admin</p>{% if request.user.is_authenticated %}<h1 class="mt-3 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">Manage your software, work and downloads from one place.</h1>{% else %}<h1 class="mt-3 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">Apne Excel work ko automate karein.</h1><p class="mt-4 max-w-3xl text-base text-indigo-100">KRP Automation, ERP Automation, PMFBY Automation aur other smart automation solutions ek hi platform par.</p>{% endif %}{% if request.user.is_authenticated %}<p class="mt-4 max-w-2xl text-base text-indigo-100">This is the public home page. More product and landing-page sections can be added here later.</p>{% endif %}<div class="mt-7 flex flex-wrap gap-3"><a href="{% url 'downloads:public_downloads' %}" class="btn bg-white text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-download"></i>Browse Downloads</a>{% if request.user.is_authenticated %}<a href="{% url 'core:dashboard' %}" class="btn border border-white/40 bg-white/10 text-white hover:bg-white/20"><i class="fa-solid fa-table-columns"></i>Open Dashboard</a>{% else %}<a href="{% url 'accounts:login' %}" class="btn border border-white/40 bg-white/10 text-white hover:bg-white/20"><i class="fa-solid fa-right-to-bracket"></i>Login</a>{% endif %}</div></div>
-  <section>
-    <div class="mb-5 text-center"><p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Automation Solutions</p><h2 class="mt-2 text-3xl font-extrabold text-slate-900">Automation that makes everyday work simpler</h2><p class="mt-2 text-slate-500">Choose the solution that fits your workflow.</p></div>
-    <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="app-card min-h-[230px] p-6 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-13 w-13 place-items-center rounded-2xl bg-indigo-100 text-2xl text-indigo-700"><i class="fa-solid fa-file-excel"></i></span><h3 class="mt-5 text-xl font-extrabold text-slate-900">Excel Work Automation</h3><p class="mt-2 text-sm leading-6 text-slate-500">Automate repetitive Excel work, reports and data processing with reliable workflows.</p></article>
-      <article class="app-card min-h-[230px] p-6 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-13 w-13 place-items-center rounded-2xl bg-violet-100 text-2xl text-violet-700"><i class="fa-solid fa-gears"></i></span><h3 class="mt-5 text-xl font-extrabold text-slate-900">KRP Automation</h3><p class="mt-2 text-sm leading-6 text-slate-500">Streamline KRP processes with structured data handling and faster operational workflows.</p></article>
-      <article class="app-card min-h-[230px] p-6 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-13 w-13 place-items-center rounded-2xl bg-blue-100 text-2xl text-blue-700"><i class="fa-solid fa-building-columns"></i></span><h3 class="mt-5 text-xl font-extrabold text-slate-900">ERP Automation</h3><p class="mt-2 text-sm leading-6 text-slate-500">Manage ERP-related records and routine operations with a cleaner automated process.</p></article>
-      <article class="app-card min-h-[230px] p-6 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-13 w-13 place-items-center rounded-2xl bg-emerald-100 text-2xl text-emerald-700"><i class="fa-solid fa-wheat-awn"></i></span><h3 class="mt-5 text-xl font-extrabold text-slate-900">PMFBY Automation</h3><p class="mt-2 text-sm leading-6 text-slate-500">Support PMFBY workflows with organized information, tracking and time-saving automation.</p></article>
+<section class="mx-auto max-w-6xl space-y-10 py-6">
+    <div class="overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-12 text-white shadow-xl sm:px-10">
+        <p class="text-sm font-bold uppercase tracking-[0.22em] text-indigo-100">Software Admin</p>
+        {% if request.user.is_authenticated %}
+            <h1 class="mt-3 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">Manage your software, work and automation from one place.</h1>
+            <p class="mt-4 max-w-2xl text-base text-indigo-100">More product and landing-page sections can be added here later.</p>
+        {% else %}
+            <h1 class="mt-3 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">Apne Excel work ko automate karein.</h1>
+            <p class="mt-4 max-w-3xl text-base text-indigo-100">KRP Automation, ERP Automation, PMFBY Automation aur other smart automation solutions ek hi platform par.</p>
+        {% endif %}
+        <div class="mt-7 flex flex-wrap gap-3">
+            <a href="{% url 'core:pricing' %}" class="btn bg-white text-indigo-700 hover:bg-indigo-50"><i class="fa-solid fa-tags"></i>View Pricing</a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'core:dashboard' %}" class="btn border border-white/40 bg-white/10 text-white hover:bg-white/20"><i class="fa-solid fa-table-columns"></i>Open Dashboard</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn border border-white/40 bg-white/10 text-white hover:bg-white/20"><i class="fa-solid fa-right-to-bracket"></i>Login</a>
+            {% endif %}
+        </div>
     </div>
-  </section>
-  <section class="app-card overflow-hidden"><div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5"><div><h2 class="text-xl font-extrabold text-slate-900"><i class="fa-solid fa-download mr-2 text-violet-600"></i>Public Downloads</h2><p class="mt-1 text-sm text-slate-500">Quick access to available software links.</p></div><a href="{% url 'downloads:public_downloads' %}" class="btn btn-outline-primary">View all</a></div><div class="divide-y divide-slate-100">{% for link in download_links %}<div class="flex flex-col justify-between gap-3 px-6 py-4 sm:flex-row sm:items-center"><div><p class="font-bold text-slate-800">{{ link.name }}</p><p class="mt-1 text-sm text-slate-500">{{ link.description|default:'Software download link' }}</p></div><a href="{{ link.drive_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><i class="fa-solid fa-download"></i>Download</a></div>{% empty %}<p class="px-6 py-10 text-center text-slate-500">No public downloads are available yet.</p>{% endfor %}</div></section>
+
+    <section>
+        <div class="mb-6 text-center"><p class="text-sm font-bold uppercase tracking-[0.2em] text-violet-600">Automation Solutions</p><h2 class="mt-2 text-3xl font-extrabold text-slate-900">Automation that makes everyday work simpler</h2><p class="mt-2 text-slate-500">Choose the solution that fits your workflow.</p></div>
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="app-card min-h-[290px] p-7 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-14 w-14 place-items-center rounded-2xl bg-indigo-100 text-3xl text-indigo-700 shadow-sm"><i class="fa-solid fa-file-excel"></i></span><h3 class="mt-6 text-2xl font-extrabold text-slate-900">Excel Work Automation</h3><p class="mt-3 text-base leading-7 text-slate-500">Automate repetitive Excel work, reports and data processing with reliable workflows.</p></article>
+            <article class="app-card min-h-[290px] p-7 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-14 w-14 place-items-center rounded-2xl bg-violet-100 text-3xl text-violet-700 shadow-sm"><i class="fa-solid fa-gears"></i></span><h3 class="mt-6 text-2xl font-extrabold text-slate-900">KRP Automation</h3><p class="mt-3 text-base leading-7 text-slate-500">Streamline KRP processes with structured data handling and faster operational workflows.</p></article>
+            <article class="app-card min-h-[290px] p-7 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-14 w-14 place-items-center rounded-2xl bg-blue-100 text-3xl text-blue-700 shadow-sm"><i class="fa-solid fa-building-columns"></i></span><h3 class="mt-6 text-2xl font-extrabold text-slate-900">ERP Automation</h3><p class="mt-3 text-base leading-7 text-slate-500">Manage ERP-related records and routine operations with a cleaner automated process.</p></article>
+            <article class="app-card min-h-[290px] p-7 transition hover:-translate-y-1 hover:shadow-xl"><span class="grid h-14 w-14 place-items-center rounded-2xl bg-emerald-100 text-3xl text-emerald-700 shadow-sm"><i class="fa-solid fa-wheat-awn"></i></span><h3 class="mt-6 text-2xl font-extrabold text-slate-900">PMFBY Automation</h3><p class="mt-3 text-base leading-7 text-slate-500">Support PMFBY workflows with organised information, tracking and time-saving automation.</p></article>
+        </div>
+    </section>
 </section>
 {% endblock %}
