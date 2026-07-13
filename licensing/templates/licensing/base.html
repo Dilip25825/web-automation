@@ -420,6 +420,98 @@
             }
         }
 
+        /* Mobile menu overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 45;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .mobile-menu-overlay.active {
+            display: block;
+        }
+
+        /* Mobile menu panel */
+        .mobile-menu-panel {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            max-width: 85%;
+            height: 100vh;
+            z-index: 50;
+            background: white;
+            padding: 1.5rem 1rem;
+            transition: right 0.3s ease;
+            box-shadow: -4px 0 30px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .mobile-menu-panel.open {
+            right: 0;
+        }
+        
+        .mobile-menu-panel .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #475569;
+            cursor: pointer;
+        }
+        
+        .mobile-menu-panel .nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: #475569;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        
+        .mobile-menu-panel .nav-item:hover {
+            background: #f1f5ff;
+            color: #4338ca;
+        }
+        
+        .mobile-menu-panel .nav-item i {
+            width: 1.5rem;
+            margin-right: 0.75rem;
+        }
+        
+        .mobile-menu-panel .divider {
+            border-top: 1px solid #e2e8f0;
+            margin: 0.75rem 0;
+        }
+        
+        .mobile-menu-panel .logout-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background: #fef2f2;
+            color: #e11d48;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .mobile-menu-panel .logout-btn:hover {
+            background: #fee2e2;
+        }
+        
+        .mobile-menu-panel .logout-btn i {
+            width: 1.5rem;
+            margin-right: 0.75rem;
+        }
+
         @media(max-width:768px) {
 
             .col-md-1,
@@ -447,11 +539,13 @@
             </a>
             
             {% if request.user.is_authenticated %}
+                <!-- Mobile Menu Toggle Button -->
                 <button id="mobileMenuToggle" class="ml-auto rounded p-2 text-indigo-800 lg:hidden">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 
-                <div id="mainMenu" class="hidden w-full items-center justify-between lg:flex">
+                <!-- Desktop Menu (Hidden on mobile) -->
+                <div class="hidden w-full items-center justify-between lg:flex">
                     <div class="flex items-center gap-1 text-sm font-bold text-slate-600">
                         <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'main_hub' %}">
                             <i class="fa-solid fa-house-chimney"></i> Home
@@ -483,6 +577,46 @@
             {% endif %}
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileOverlay" class="mobile-menu-overlay"></div>
+    
+    <!-- Mobile Menu Panel -->
+    <div id="mobilePanel" class="mobile-menu-panel">
+        <button id="closeMobileMenu" class="close-btn">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <div style="margin-top: 2rem;">
+            <a class="nav-item" href="{% url 'main_hub' %}">
+                <i class="fa-solid fa-house-chimney"></i> Home
+            </a>
+            <a class="nav-item" href="{% url 'userinfo_dashboard' %}">
+                <i class="fa-solid fa-users"></i> UserInfo
+            </a>
+            <a class="nav-item" href="{% url 'pacserp_dashboard' %}">
+                <i class="fa-solid fa-tractor"></i> ERP
+            </a>
+            <a class="nav-item" href="{% url 'reminders:dashboard' %}">
+                <i class="fa-solid fa-bell"></i> Reminders
+            </a>
+            <a class="nav-item" href="{% url 'khata:dashboard' %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Khata
+            </a>
+            <a class="nav-item" href="/downloads/">
+                <i class="fa-solid fa-download"></i> Download
+            </a>
+            
+            <div class="divider"></div>
+            
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} · Logout
+                </button>
+            </form>
+        </div>
+    </div>
 
     <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
         {% block content %}{% endblock %}
@@ -516,27 +650,56 @@
     });
 
     // ============================================
-    // 2. MOBILE MENU TOGGLE (FIXED)
+    // 2. MOBILE MENU TOGGLE (Side Panel)
     // ============================================
     document.addEventListener('DOMContentLoaded', function() {
         const toggleBtn = document.getElementById('mobileMenuToggle');
-        const mainMenu = document.getElementById('mainMenu');
+        const closeBtn = document.getElementById('closeMobileMenu');
+        const panel = document.getElementById('mobilePanel');
+        const overlay = document.getElementById('mobileOverlay');
+        const body = document.body;
         
-        if (toggleBtn && mainMenu) {
+        function openMenu() {
+            panel.classList.add('open');
+            overlay.classList.add('active');
+            body.style.overflow = 'hidden';
+            const icon = toggleBtn.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-xmark';
+        }
+        
+        function closeMenu() {
+            panel.classList.remove('open');
+            overlay.classList.remove('active');
+            body.style.overflow = '';
+            const icon = toggleBtn.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-bars';
+        }
+        
+        if (toggleBtn) {
             toggleBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                mainMenu.classList.toggle('hidden');
-                mainMenu.classList.toggle('flex');
-                
-                // Change icon
-                const icon = this.querySelector('i');
-                if (mainMenu.classList.contains('hidden')) {
-                    icon.className = 'fa-solid fa-bars';
+                if (panel.classList.contains('open')) {
+                    closeMenu();
                 } else {
-                    icon.className = 'fa-solid fa-xmark';
+                    openMenu();
                 }
             });
         }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeMenu);
+        }
+        
+        if (overlay) {
+            overlay.addEventListener('click', closeMenu);
+        }
+        
+        // Close menu on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && panel.classList.contains('open')) {
+                closeMenu();
+            }
+        });
     });
 
     // ============================================
@@ -602,23 +765,6 @@
             });
         {% endfor %}
     {% endif %}
-
-    // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
-        const mainMenu = document.getElementById('mainMenu');
-        const toggleBtn = document.getElementById('mobileMenuToggle');
-        
-        if (mainMenu && toggleBtn) {
-            // Check if click is outside menu and toggle button
-            if (!mainMenu.contains(e.target) && !toggleBtn.contains(e.target)) {
-                if (!mainMenu.classList.contains('hidden')) {
-                    mainMenu.classList.add('hidden');
-                    mainMenu.classList.remove('flex');
-                    toggleBtn.querySelector('i').className = 'fa-solid fa-bars';
-                }
-            }
-        }
-    });
 
     </script>
     {% block extra_js %}{% endblock %}
