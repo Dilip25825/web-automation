@@ -269,8 +269,7 @@
 
                     {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %} <li class="page-item">
                         <a class="page-link"
-                            href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num
-                            }}</a>
+                            href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num }}</a>
                         </li>
                         {% endif %}
 

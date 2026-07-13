@@ -1,1 +1,32 @@
-{% extends 'licensing/base.html' %}{% block title %}Dashboard | Web Auto{% endblock %}{% block content %}<section class="mx-auto max-w-5xl py-6 text-center"><div class="rounded-3xl bg-gradient-to-r from-blue-600 via-violet-600 to-violet-500 px-6 py-10 text-white shadow-xl"><h1 class="text-3xl font-extrabold sm:text-4xl">Welcome back, {{ user.username }}!</h1><p class="mt-3 text-blue-50">Manage activations, customers, downloads and tasks from one place.</p></div><div class="mt-6 grid gap-5 sm:grid-cols-2"><a href="{% url 'userinfo_dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i class="fa-solid fa-users text-2xl text-blue-600"></i><h2 class="mt-3 text-xl font-extrabold">UserInfo</h2><p class="mt-1 text-sm text-slate-500">{{ total_userinfo }} records</p></a><a href="{% url 'pacserp_dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i class="fa-solid fa-tractor text-2xl text-violet-600"></i><h2 class="mt-3 text-xl font-extrabold">ERP</h2><p class="mt-1 text-sm text-slate-500">{{ total_erp }} records</p></a><a href="{% url 'reminders:dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i class="fa-solid fa-list-check text-2xl text-violet-600"></i><h2 class="mt-3 text-xl font-extrabold">Reminders</h2><p class="mt-1 text-sm text-slate-500">Keep your pending work on track.</p></a><a href="{% url 'khata:dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i class="fa-solid fa-book text-2xl text-indigo-600"></i><h2 class="mt-3 text-xl font-extrabold">Khata</h2><p class="mt-1 text-sm text-slate-500">Manage credits and debtors.</p></a></div></section>{% endblock %}
+{% extends 'licensing/base.html' %}
+{% block title %}Dashboard | Web Auto{% endblock %}
+{% block content %}
+
+<section
+    class="mx-auto max-w-5xl py-6 text-center">
+    <div
+        class="rounded-3xl bg-gradient-to-r from-blue-600 via-violet-600 to-violet-500 px-6 py-10 text-white shadow-xl">
+        <h1 class="text-3xl font-extrabold sm:text-4xl">Welcome back, {{ user.username }}!</h1>
+        <p class="mt-3 text-blue-50">Manage activations, customers, downloads and tasks from one place.</p>
+    </div>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2"><a href="{% url 'userinfo_dashboard' %}"
+            class="app-card p-6 text-left transition hover:-translate-y-1"><i
+                class="fa-solid fa-users text-2xl text-blue-600"></i>
+            <h2 class="mt-3 text-xl font-extrabold">UserInfo</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ total_userinfo }} records</p>
+        </a><a href="{% url 'pacserp_dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i
+                class="fa-solid fa-tractor text-2xl text-violet-600"></i>
+            <h2 class="mt-3 text-xl font-extrabold">ERP</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ total_erp }} records</p>
+        </a><a href="{% url 'reminders:dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i
+                class="fa-solid fa-list-check text-2xl text-violet-600"></i>
+            <h2 class="mt-3 text-xl font-extrabold">Reminders</h2>
+            <p class="mt-1 text-sm text-slate-500">Keep your pending work on track.</p>
+        </a><a href="{% url 'khata:dashboard' %}" class="app-card p-6 text-left transition hover:-translate-y-1"><i
+                class="fa-solid fa-book text-2xl text-indigo-600"></i>
+            <h2 class="mt-3 text-xl font-extrabold">Khata</h2>
+            <p class="mt-1 text-sm text-slate-500">Manage credits and debtors.</p>
+        </a></div>
+</section>
+
+{% endblock %}
