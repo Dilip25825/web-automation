@@ -1,0 +1,38 @@
+<div>
+<label class="form-label">Task title <span class="text-rose-600">*</span>
+</label>
+<input id="{{ prefix }}-title" name="title" required>
+</div>
+<div>
+<label class="form-label">Description</label>
+<textarea id="{{ prefix }}-description" name="description" rows="3">
+</textarea>
+</div>
+<div class="grid gap-4 sm:grid-cols-2">
+<div>
+<label class="form-label">Category</label>
+<select id="{{ prefix }}-category" name="category">
+<option value="">No category</option>{% for c in form.category.field.queryset %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select>
+</div>
+<div>
+<label class="form-label">Assigned to</label>
+<select id="{{ prefix }}-assigned-to" name="assigned_to">
+<option value="">Me</option>{% for user in form.assigned_to.field.queryset %}<option value="{{ user.pk }}">{{ user.username }}</option>{% endfor %}</select>
+</div>
+<div>
+<label class="form-label">Priority</label>
+<select id="{{ prefix }}-priority" name="priority">{% for value,label in form.priority.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+</div>
+<div>
+<label class="form-label">Status</label>
+<select id="{{ prefix }}-status" name="status">{% for value,label in form.status.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+</div>
+<div>
+<label class="form-label">Deadline</label>
+<input id="{{ prefix }}-deadline" type="datetime-local" name="deadline">
+</div>
+<div>
+<label class="form-label">Reminder time</label>
+<input id="{{ prefix }}-reminder-at" type="datetime-local" name="reminder_at">
+</div>
+</div>

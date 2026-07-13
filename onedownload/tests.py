@@ -20,11 +20,11 @@ class DownloadLinkViewsTests(TestCase):
         self.assertContains(response, self.link.name)
         self.assertContains(response, self.link.drive_link)
 
-    def test_manage_page_requires_superuser(self):
+    def test_link_create_requires_superuser(self):
         user = get_user_model().objects.create_user(username='regularuser', password='secret123')
         self.client.force_login(user)
 
-        response = self.client.get(reverse('manage_links'))
+        response = self.client.post(reverse('link_create'))
 
         self.assertEqual(response.status_code, 302)
         self.assertIn('/admin/login/', response.url)

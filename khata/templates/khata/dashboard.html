@@ -31,17 +31,22 @@
       </div><span class="grid h-11 w-11 place-items-center rounded-full bg-violet-100 text-xl text-indigo-700"><i
           class="fa-solid fa-chart-line"></i></span>
     </a>
-      <a href="{% url 'khata:shop_profile' %}"
-      class="app-card flex items-center justify-between border-l-4 border-violet-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
-      <div>
-        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Settings</p>
-        <p class="mt-1 text-sm text-slate-600">Manage your account and preferences</p>
-            <p class="mt-2 text-lg font-extrabold text-violet-700">
-          <i class="fa-regular fa-eye me-1"></i>Open Settings
+     <a href="{% url 'khata:shop_profile' %}"
+   class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md group">
+    <div>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">
+            <i class="fa-solid fa-gear me-1 text-indigo-500"></i>Settings
         </p>
-      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-violet-100 text-xl text-indigo-700"><i
-          class="fa-solid fa-chart-line"></i></span>
-    </a>
+        <p class="mt-1 text-sm text-slate-600">Manage your account and preferences</p>
+        <p class="mt-2 text-lg font-extrabold text-indigo-700 group-hover:text-violet-700 transition">
+            <i class="fa-regular fa-pen-to-square me-1"></i>Open Settings
+            <i class="fa-solid fa-arrow-right ms-1 text-sm group-hover:translate-x-1 transition"></i>
+        </p>
+    </div>
+    <span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700 group-hover:bg-violet-100 group-hover:text-violet-700 transition">
+        <i class="fa-solid fa-sliders"></i>
+    </span>
+</a>
   </div>
 
 
@@ -93,8 +98,7 @@
                   <small>(Dene)</small></span>{% else %}<span class="text-slate-500">₹0.00
                     <small>(Clear)</small></span>{% endif %}</td>
               <td>
-                <div class="flex justify-center gap-2"><a href="{% url 'khata:edit_customer' customer.b64_id %}"
-                    class="btn btn-outline-primary !p-2" title="Edit"><i class="fa-solid fa-pen"></i></a><a
+                <div class="flex justify-center gap-2"><button type="button" class="btn btn-outline-primary !p-2" title="Edit" data-edit-customer data-bs-toggle="modal" data-bs-target="#editCustomerModal" data-update-url="{% url 'khata:update_customer' customer.b64_id %}" data-customer-name="{{ customer.name }}" data-customer-phone="{{ customer.phone }}"><i class="fa-solid fa-pen"></i></button><a
                     href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-primary !p-2"
                     title="Transactions"><i class="fa-solid fa-book-open"></i></a>
                   <form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-confirm-delete
@@ -114,5 +118,30 @@
           href="?page={{ customers.next_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Next</a>{% endif %}</nav>
     </section>
   </div>
+</div><div class="modal" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 30rem;">
+    <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
+      <form id="editCustomerForm" method="post">{% csrf_token %}
+        <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
+          <div><p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Customer details</p><h5 class="modal-title text-xl font-extrabold" id="editCustomerModalLabel"><i class="fa-solid fa-user-pen me-2"></i>Edit Customer</h5></div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="padding: 1.5rem;">
+          <div class="mb-4"><label class="form-label fw-semibold text-slate-700" for="editCustomerName">Customer name</label><input id="editCustomerName" name="name" class="form-control" required></div>
+          <div><label class="form-label fw-semibold text-slate-700" for="editCustomerPhone">Phone number</label><input id="editCustomerPhone" name="phone" class="form-control" required></div>
+        </div>
+        <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Update customer</button></div>
+      </form>
+    </div>
+  </div>
 </div>
+<script>
+  document.querySelectorAll('[data-edit-customer]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      document.getElementById('editCustomerForm').action = this.dataset.updateUrl;
+      document.getElementById('editCustomerName').value = this.dataset.customerName;
+      document.getElementById('editCustomerPhone').value = this.dataset.customerPhone;
+    });
+  });
+</script>
 {% endblock %}

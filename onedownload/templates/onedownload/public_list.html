@@ -1,44 +1,84 @@
 {% extends 'licensing/base.html' %}
+
 {% block title %}Download | Web Automation{% endblock %}
-{% block content %}<section class="app-card overflow-hidden">
+
+{% block content %}
+<section class="app-card overflow-hidden">
     <div class="flex flex-col justify-between gap-3 border-b border-line p-5 sm:flex-row sm:items-center">
         <div>
-            <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-download mr-2 text-violet-600"></i>Downloads
-            </h1>
+            <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-download mr-2 text-violet-600"></i>Downloads</h1>
             <p class="mt-1 text-sm text-slate-400">Software links ready for quick access.</p>
-        </div>{% if user.is_authenticated and user.is_superuser %}<a href="{% url 'manage_links' %}"
-            class="btn btn-outline-primary"><i class="fa-solid fa-gear"></i>Manage links</a>{% endif %}
+        </div>
+        {% if user.is_authenticated and user.is_superuser %}
+            <div class="flex flex-wrap gap-2">
+                <button type="button" data-modal-open="add-category-modal" class="btn btn-outline-primary"><i class="fa-solid fa-folder-plus"></i>Add Category</button>
+                <button type="button" data-modal-open="add-link-modal" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add New Link</button>
+            </div>
+        {% endif %}
     </div>
-    <div class="flex flex-wrap gap-2 border-b border-line p-4"><a href="{% url 'public_downloads' %}"
-            class="btn {% if not selected_category %}btn-primary{% else %}btn-outline-light{% endif %}"><i
-                class="fa-solid fa-folder"></i>All</a>{% for category in categories %}<a
-            href="{% url 'public_downloads' %}?category={{ category.name|urlencode }}"
-            class="btn {% if selected_category == category.name %}btn-primary{% else %}btn-outline-light{% endif %}">{{category.name }}</a>{% endfor %}</div>{% if links %}<div class="overflow-x-auto">
-        <table class="app-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Software</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody>{% for link in links %}<tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td class="font-semibold text-dark">{{ link.name }}</td>
-                    <td><span class="badge bg-primary">{{ link.category }}</span></td>
-                    <td class="max-w-md text-slate-800">{{ link.description|default:"No description available." }}</td>
-                    <td>
-                        <div class="flex justify-center gap-2"><a href="{{ link.drive_link }}" target="_blank"
-                                rel="noopener noreferrer" class="btn btn-primary"><i
-                                    class="fa-solid fa-download"></i>Download</a><button
-                                class="btn btn-outline-primary copy-link-btn" data-link="{{ link.drive_link }}"><i
-                                    class="fa-solid fa-copy"></i>Copy</button></div>
-                    </td>
-                </tr>{% endfor %}</tbody>
-        </table>
-    </div>{% else %}<p class="p-10 text-center text-slate-400">No download links have been added yet.</p>{% endif %}
-</section>{% endblock %}{% block extra_js %}
-<script>document.querySelectorAll('.copy-link-btn').forEach(b => b.onclick = () => navigator.clipboard.writeText(b.dataset.link).then(() => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Link copied', showConfirmButton: false, timer: 1600, background: '#172033', color: '#e2e8f0' })));</script>
+
+    <div class="flex flex-wrap gap-2 border-b border-line p-4" id="download-category-filters">
+        <button type="button" data-category-filter="" class="btn btn-primary"><i class="fa-solid fa-folder"></i>All</button>
+        {% for category in categories %}
+            <button type="button" data-category-filter="{{ category.name }}" class="btn btn-outline-light"><i class="fa-solid fa-folder"></i>{{ category.name }}</button>
+        {% endfor %}
+    </div>
+
+    {% if links %}
+        <div class="overflow-x-auto">
+            <table class="app-table">
+                <thead><tr><th>#</th><th>Software</th><th>Category</th><th>Description</th><th class="text-center">Actions</th></tr></thead>
+                <tbody id="download-links-table">
+                    {% for link in links %}
+                        <tr data-category="{{ link.category }}">
+                            <td class="download-row-number">{{ forloop.counter }}</td>
+                            <td class="font-semibold text-dark">{{ link.name }}</td>
+                            <td><span class="badge bg-primary">{{ link.category }}</span></td>
+                            <td class="max-w-md text-slate-800">{{ link.description|default:"No description available." }}</td>
+                            <td><div class="flex justify-center gap-2">
+                                <a href="{{ link.drive_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><i class="fa-solid fa-download"></i>Download</a>
+                                <button class="btn btn-outline-primary copy-link-btn" data-link="{{ link.drive_link }}"><i class="fa-solid fa-copy"></i>Copy</button>
+                                {% if user.is_authenticated and user.is_superuser %}
+                                    <button type="button" data-modal-open="edit-link-modal" data-edit-link data-update-url="{% url 'link_update' link.pk %}" data-name="{{ link.name }}" data-description="{{ link.description }}" data-category="{{ link.category }}" data-drive-link="{{ link.drive_link }}" data-active="{{ link.is_active|yesno:'true,false' }}" class="btn btn-outline-primary !p-2" title="Edit link"><i class="fa-solid fa-pen-to-square"></i></button>
+                                {% endif %}
+                            </div></td>
+                        </tr>
+                    {% endfor %}
+                    <tr id="no-category-results" class="hidden"><td colspan="5" class="p-10 text-center text-slate-400">No download links in this category.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="p-10 text-center text-slate-400">No download links have been added yet.</p>
+    {% endif %}
+</section>
+
+{% if user.is_authenticated and user.is_superuser %}
+<div id="add-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5"><div><h2 class="text-xl font-extrabold text-slate-900"><i class="fa-solid fa-link mr-2 text-violet-600"></i>Add New Link</h2><p class="mt-1 text-sm text-slate-500">Add a software download link.</p></div><button type="button" data-modal-close="add-link-modal" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'link_create' %}" class="space-y-4 p-6">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='new-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Create Link</button></div></form></div></div>
+<div id="edit-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5"><div><h2 class="text-xl font-extrabold text-slate-900"><i class="fa-solid fa-pen-to-square mr-2 text-violet-600"></i>Edit Download Link</h2><p class="mt-1 text-sm text-slate-500">Update link details without leaving this page.</p></div><button type="button" data-modal-close="edit-link-modal" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button></div><form id="edit-link-form" method="post" class="space-y-4 p-6">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='edit-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="edit-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Update Link</button></div></form></div></div>
+<div id="add-category-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto"><div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5"><div><h2 class="text-xl font-extrabold text-slate-900"><i class="fa-solid fa-folder-plus mr-2 text-violet-600"></i>Add Category</h2><p class="mt-1 text-sm text-slate-500">New categories become available in link forms immediately after saving.</p></div><button type="button" data-modal-close="add-category-modal" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'category_create' %}" class="space-y-4 p-6">{% csrf_token %}<div><label class="form-label" for="category-name">Category name</label><input id="category-name" name="name" required placeholder="e.g. Utilities"></div><div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-category-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Add Category</button></div></form><div class="border-t border-slate-100 px-6 py-5"><p class="mb-3 text-sm font-bold text-slate-700">Existing categories</p><div class="flex flex-wrap gap-2">{% for category in categories %}<form method="post" action="{% url 'category_delete' category.pk %}" data-confirm-delete data-title="Delete category?" data-text="Links in this category will move to General.">{% csrf_token %}<button class="btn btn-outline-primary !px-3" {% if category.name == 'General' %}disabled{% endif %}>{{ category.name }}{% if category.name != 'General' %}<i class="fa-solid fa-xmark ml-2"></i>{% endif %}</button></form>{% endfor %}</div></div></div></div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const categoryButtons = document.querySelectorAll('[data-category-filter]');
+    const downloadRows = document.querySelectorAll('#download-links-table tr[data-category]');
+    const noCategoryResults = document.getElementById('no-category-results');
+    const setModal = (id, show) => document.getElementById(id)?.classList.replace(show ? 'hidden' : 'flex', show ? 'flex' : 'hidden');
+
+    categoryButtons.forEach((button) => button.addEventListener('click', () => {
+        const category = button.dataset.categoryFilter;
+        let visibleCount = 0;
+        downloadRows.forEach((row) => { const matches = !category || row.dataset.category === category; row.classList.toggle('hidden', !matches); if (matches) visibleCount += 1; });
+        noCategoryResults?.classList.toggle('hidden', visibleCount !== 0);
+        categoryButtons.forEach((item) => { item.classList.remove('btn-primary'); item.classList.add('btn-outline-light'); });
+        button.classList.remove('btn-outline-light'); button.classList.add('btn-primary');
+    }));
+    document.querySelectorAll('[data-modal-open]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalOpen, true)));
+    document.querySelectorAll('[data-modal-close]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalClose, false)));
+    ['add-link-modal', 'edit-link-modal', 'add-category-modal'].forEach((id) => document.getElementById(id)?.addEventListener('click', (event) => { if (event.target.id === id) setModal(id, false); }));
+    document.querySelectorAll('[data-edit-link]').forEach((button) => button.addEventListener('click', function () { document.getElementById('edit-link-form').action = this.dataset.updateUrl; document.getElementById('edit-link-name').value = this.dataset.name; document.getElementById('edit-link-description').value = this.dataset.description; document.getElementById('edit-link-category').value = this.dataset.category; document.getElementById('edit-link-drive-link').value = this.dataset.driveLink; document.getElementById('edit-link-is-active').checked = this.dataset.active === 'true'; }));
+    document.querySelectorAll('.copy-link-btn').forEach((button) => button.addEventListener('click', () => navigator.clipboard.writeText(button.dataset.link).then(() => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Link copied', showConfirmButton: false, timer: 1600, background: '#172033', color: '#e2e8f0' }))));
+</script>
 {% endblock %}

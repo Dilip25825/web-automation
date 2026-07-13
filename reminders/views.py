@@ -7,8 +7,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.core.cache import cache
 from django.db.models import Count, Q
-
-
+from django.views.decorators.http import require_POST
 STATS_CACHE_VERSION_KEY = 'reminders:dashboard-stats-version'
 
 
@@ -41,9 +40,33 @@ def dashboard(request):
         'created_by',  )
     
     pending = tasks.filter(status__in=['PENDING', 'IN_PROGRESS'])
+    active_filter = request.GET.get('filter', 'pending')
+    filters = {
+        'pending': {
+            'tasks': pending,
+            'label': 'Pending Tasks',
+            'description': 'Tasks that are pending or currently in progress.',
+        },
+        'overdue': {
+            'tasks': pending.filter(deadline__lt=today),
+            'label': 'Overdue Tasks',
+            'description': 'Active tasks whose deadline has already passed.',
+        },
+        'due_soon': {
+            'tasks': pending.filter(deadline__gte=today, deadline__lte=week_later),
+            'label': 'Due This Week',
+            'description': 'Active tasks due within the next seven days.',
+        },
+        'completed': {
+            'tasks': tasks.filter(status='COMPLETED'),
+            'label': 'Completed Tasks',
+            'description': 'Tasks that have been marked as completed.',
+        },
+    }
+    if active_filter not in filters:
+        active_filter = 'pending'
 
-    # Pending tasks limit karein (already hai)
-    pending_tasks = pending.order_by('-priority', 'deadline')[:20]
+    selected_tasks = filters[active_filter]['tasks'].order_by('-priority', 'deadline')
 
     stats_cache_key = _dashboard_stats_cache_key(request.user)
     stats = cache.get(stats_cache_key)
@@ -67,9 +90,14 @@ def dashboard(request):
         cache.set(stats_cache_key, stats, timeout=60)
 
     context = {
-        'tasks': pending_tasks,
+        'tasks': selected_tasks,
+        'active_filter': active_filter,
+        'table_title': filters[active_filter]['label'],
+        'table_description': filters[active_filter]['description'],
+        'selected_count': selected_tasks.count(),
         **stats,
         'form': TaskForm(),
+        'categories': TaskCategory.objects.annotate(task_count=Count('task')).order_by('name'),
     }
     return render(request, 'reminders/dashboard.html', context)
 
@@ -93,19 +121,17 @@ def task_create(request):
     return redirect('reminders:dashboard')
 
 @login_required
+@require_POST
 def task_update(request, pk):
     task = get_object_or_404(Task, pk=pk)
-    if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            form.save()
-            _invalidate_dashboard_stats_cache()
-            messages.success(request, f'✅ Task "{task.title}" updated!')
-            return redirect('reminders:dashboard')
+    form = TaskForm(request.POST, instance=task)
+    if form.is_valid():
+        form.save()
+        _invalidate_dashboard_stats_cache()
+        messages.success(request, f'Task "{task.title}" updated!')
     else:
-        form = TaskForm(instance=task)
-    return render(request, 'reminders/task_form.html', {'form': form, 'action': 'Update'})
-
+        messages.error(request, 'Please correct the task details and try again.')
+    return redirect('reminders:dashboard')
 @login_required
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk)
@@ -130,50 +156,51 @@ def task_toggle_status(request, pk):
 # ========== CATEGORY MANAGEMENT VIEWS ==========
 
 @login_required
-def category_list(request):
-    """List all categories with add/delete options"""
-    categories = TaskCategory.objects.all().order_by('name')
-    return render(request, 'reminders/category_list.html', {'categories': categories})
-
-@login_required
+@require_POST
 def category_create(request):
-    """Add a new category via AJAX or normal POST"""
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        icon = request.POST.get('icon', 'fa-tag')
-        color = request.POST.get('color', 'primary')
-        
-        if name:
-            # Duplicate check
-            if TaskCategory.objects.filter(name__iexact=name).exists():
-                messages.error(request, f'❌ Category "{name}" already exists!')
-            else:
-                TaskCategory.objects.create(name=name, icon=icon, color=color)
-                messages.success(request, f'✅ Category "{name}" created successfully!')
-        else:
-            messages.error(request, '❌ Category name is required.')
-        
-        return redirect('reminders:category_list')
-    
-    return render(request, 'reminders/category_form.html')
+    name = request.POST.get('name', '').strip()
+    icon = request.POST.get('icon', 'fa-tag').strip() or 'fa-tag'
+    color = request.POST.get('color', 'indigo').strip() or 'indigo'
 
+    if not name:
+        messages.error(request, 'Category name is required.')
+    elif TaskCategory.objects.filter(name__iexact=name).exists():
+        messages.error(request, f'Category "{name}" already exists!')
+    else:
+        TaskCategory.objects.create(name=name, icon=icon, color=color)
+        messages.success(request, f'Category "{name}" created successfully!')
+    return redirect('reminders:dashboard')
 
 
 @login_required
-def category_delete(request, pk):
-    """Delete a category (only if not in use)"""
+@require_POST
+def category_update(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
-    
-    # Check if any task is using this category
+    name = request.POST.get('name', '').strip()
+    icon = request.POST.get('icon', 'fa-tag').strip() or 'fa-tag'
+    color = request.POST.get('color', 'indigo').strip() or 'indigo'
+
+    if not name:
+        messages.error(request, 'Category name is required.')
+    elif TaskCategory.objects.filter(name__iexact=name).exclude(pk=category.pk).exists():
+        messages.error(request, f'Category "{name}" already exists!')
+    else:
+        category.name = name
+        category.icon = icon
+        category.color = color
+        category.save(update_fields=['name', 'icon', 'color'])
+        messages.success(request, f'Category "{name}" updated successfully!')
+    return redirect('reminders:dashboard')
+
+
+@login_required
+@require_POST
+def category_delete(request, pk):
+    category = get_object_or_404(TaskCategory, pk=pk)
     if Task.objects.filter(category=category).exists():
-        messages.error(request, f'❌ Cannot delete "{category.name}" because it is assigned to existing tasks!')
-        return redirect('reminders:category_list')
-    
-    if request.method == 'POST':
+        messages.error(request, f'Cannot delete "{category.name}" because it is assigned to existing tasks!')
+    else:
         category_name = category.name
         category.delete()
-        messages.success(request, f'🗑️ Category "{category_name}" deleted successfully!')
-        return redirect('reminders:category_list')
-    
-    return redirect('reminders:category_list')
-
+        messages.success(request, f'Category "{category_name}" deleted successfully!')
+    return redirect('reminders:dashboard')

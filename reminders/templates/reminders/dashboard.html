@@ -1,18 +1,133 @@
-﻿{% extends 'licensing/base.html' %}
+{% extends 'licensing/base.html' %}
 {% block title %}Task Reminders{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-6">
   <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-7 text-white shadow-lg sm:px-8">
-    <div class="flex flex-col justify-between gap-5 md:flex-row md:items-center"><div><p class="text-sm font-semibold tracking-wide text-indigo-100">WORKSPACE</p><h1 class="mt-1 text-3xl font-extrabold">Task Reminders</h1><p class="mt-2 max-w-xl text-sm text-indigo-100">Plan deadlines, monitor priorities and keep every follow-up visible.</p></div><div class="flex flex-wrap gap-2"><a href="{% url 'reminders:category_list' %}" class="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20"><i class="fa-solid fa-tags"></i>Manage Categories</a><button type="button" data-modal-open="task-modal" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-extrabold text-indigo-700 shadow transition hover:-translate-y-0.5"><i class="fa-solid fa-plus"></i>New Task</button></div></div>
+    <div class="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+<div>
+<p class="text-sm font-semibold tracking-wide text-indigo-100">WORKSPACE</p>
+<h1 class="mt-1 text-3xl font-extrabold">Task Reminders</h1>
+<p class="mt-2 max-w-xl text-sm text-indigo-100">Plan deadlines, monitor priorities and keep every follow-up visible.</p>
+</div>
+<div class="flex flex-wrap gap-2">
+<button type="button" data-modal-open="category-modal" class="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20">
+<i class="fa-solid fa-tags">
+</i>Manage Categories</button>
+<button type="button" data-modal-open="task-modal" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-extrabold text-indigo-700 shadow transition hover:-translate-y-0.5">
+<i class="fa-solid fa-plus">
+</i>New Task</button>
+</div>
+</div>
   </section>
   <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <div class="app-card flex items-center gap-4 p-5"><span class="grid h-12 w-12 place-items-center rounded-xl bg-indigo-100 text-xl text-indigo-700"><i class="fa-solid fa-list-check"></i></span><div><p class="text-sm font-bold text-slate-500">Pending</p><p class="text-3xl font-extrabold text-slate-900">{{ pending_count }}</p></div></div>
-    <div class="app-card flex items-center gap-4 p-5"><span class="grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-xl text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i></span><div><p class="text-sm font-bold text-slate-500">Overdue</p><p class="text-3xl font-extrabold text-rose-700">{{ overdue_count }}</p></div></div>
-    <div class="app-card flex items-center gap-4 p-5"><span class="grid h-12 w-12 place-items-center rounded-xl bg-violet-100 text-xl text-violet-700"><i class="fa-solid fa-calendar-day"></i></span><div><p class="text-sm font-bold text-slate-500">Due this week</p><p class="text-3xl font-extrabold text-violet-700">{{ due_soon_count }}</p></div></div>
-    <div class="app-card flex items-center gap-4 p-5"><span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 text-xl text-blue-700"><i class="fa-solid fa-circle-check"></i></span><div><p class="text-sm font-bold text-slate-500">Completed</p><p class="text-3xl font-extrabold text-blue-700">{{ completed_count }}</p></div></div>
-  </section>
-  <section class="app-card overflow-hidden"><div class="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center"><div><h2 class="text-lg font-extrabold text-slate-900"><i class="fa-solid fa-clipboard-list mr-2 text-violet-600"></i>Current Tasks</h2><p class="mt-1 text-sm text-slate-500">Showing active tasks, ordered by priority and deadline.</p></div><span class="inline-flex w-fit items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700"><i class="fa-solid fa-clock"></i>{{ pending_count }} active</span></div><div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Task</th><th>Category</th><th>Priority</th><th>Status</th><th>Deadline</th><th class="text-center">Actions</th></tr></thead><tbody>{% for task in tasks %}<tr><td class="min-w-64"><p class="font-extrabold text-slate-900">{{ task.title }}</p>{% if task.description %}<p class="mt-1 max-w-sm text-xs leading-5 text-slate-500">{{ task.description|truncatechars:70 }}</p>{% endif %}</td><td>{% if task.category %}<span class="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700"><i class="fa-solid {{ task.category.icon|default:'fa-tag' }}"></i>{{ task.category.name }}</span>{% else %}<span class="text-sm text-slate-400">No category</span>{% endif %}</td><td>{% if task.priority == 'HIGH' %}<span class="badge bg-danger"><i class="fa-solid fa-arrow-up mr-1"></i>High</span>{% elif task.priority == 'MEDIUM' %}<span class="badge bg-primary"><i class="fa-solid fa-minus mr-1"></i>Medium</span>{% else %}<span class="badge bg-secondary"><i class="fa-solid fa-arrow-down mr-1"></i>Low</span>{% endif %}</td><td>{% if task.status == 'IN_PROGRESS' %}<span class="badge bg-primary"><i class="fa-solid fa-spinner mr-1"></i>In progress</span>{% else %}<span class="badge bg-secondary"><i class="fa-regular fa-clock mr-1"></i>Pending</span>{% endif %}</td><td class="whitespace-nowrap">{% if task.deadline %}<p class="font-bold text-slate-700">{{ task.deadline|date:"d M Y" }}</p><p class="mt-0.5 text-xs text-slate-500">{{ task.deadline|date:"h:i A" }}</p>{% if task.is_overdue %}<span class="mt-1 inline-block text-xs font-bold text-rose-700">Overdue</span>{% endif %}{% else %}<span class="text-slate-400">No deadline</span>{% endif %}</td><td><div class="flex justify-center gap-2"><a href="{% url 'reminders:task_toggle_status' task.id %}" class="btn btn-outline-primary !p-2" title="Change status"><i class="fa-solid fa-rotate"></i></a><a href="{% url 'reminders:task_update' task.id %}" class="btn btn-outline-primary !p-2" title="Edit task"><i class="fa-solid fa-pen"></i></a><form method="post" action="{% url 'reminders:task_delete' task.id %}" data-confirm-delete data-title="Delete task?" data-text="{{ task.title|escapejs }} will be deleted permanently.">{% csrf_token %}<button class="btn btn-outline-danger !p-2" title="Delete task"><i class="fa-solid fa-trash"></i></button></form></div></td></tr>{% empty %}<tr><td colspan="6" class="py-14 text-center"><i class="fa-solid fa-clipboard-check mb-3 block text-4xl text-violet-300"></i><p class="font-bold text-slate-700">No active tasks</p><p class="mt-1 text-sm text-slate-500">Create a task to start tracking your work.</p></td></tr>{% endfor %}</tbody></table></div></section>
+    <a href="?filter=pending" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'pending' %}ring-2 ring-indigo-400{% endif %}">
+<span class="grid h-12 w-12 place-items-center rounded-xl bg-indigo-100 text-xl text-indigo-700">
+<i class="fa-solid fa-list-check">
+</i>
+</span>
+<div>
+<p class="text-sm font-bold text-slate-500">Pending</p>
+<p class="text-3xl font-extrabold text-slate-900">{{ pending_count }}</p>
 </div>
-<div id="task-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4" role="dialog" aria-modal="true"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5"><div><h2 class="text-xl font-extrabold text-slate-900"><i class="fa-solid fa-square-plus mr-2 text-violet-600"></i>Add New Task</h2><p class="mt-1 text-sm text-slate-500">Fill the details below to create a reminder.</p></div><button type="button" data-modal-close="task-modal" class="grid h-9 w-9 place-items-center rounded-full text-slate-400 transition hover:bg-white hover:text-slate-800" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'reminders:task_create' %}" class="space-y-5 p-6">{% csrf_token %}<div><label class="form-label">Task title <span class="text-rose-600">*</span></label><input name="title" required placeholder="e.g. Follow up with client"></div><div><label class="form-label">Description</label><textarea name="description" rows="3" placeholder="Add optional details"></textarea></div><div class="grid gap-4 sm:grid-cols-2"><div><label class="form-label">Category</label><select name="category"><option value="">No category</option>{% for c in form.category.field.queryset %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select></div><div><label class="form-label">Assigned to</label><select name="assigned_to"><option value="">Me</option>{% for user in form.assigned_to.field.queryset %}<option value="{{ user.pk }}">{{ user.username }}</option>{% endfor %}</select></div><div><label class="form-label">Priority</label><select name="priority">{% for value,label in form.priority.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div><div><label class="form-label">Status</label><select name="status">{% for value,label in form.status.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div><div><label class="form-label"><i class="fa-regular fa-calendar mr-1 text-violet-600"></i>Deadline</label><input type="datetime-local" name="deadline"></div><div><label class="form-label"><i class="fa-regular fa-bell mr-1 text-violet-600"></i>Reminder time</label><input type="datetime-local" name="reminder_at"></div></div><div class="flex flex-col-reverse justify-end gap-2 border-t border-slate-100 pt-5 sm:flex-row"><button type="button" data-modal-close="task-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Create Task</button></div></form></div></div>
+</a>
+    <a href="?filter=overdue" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'overdue' %}ring-2 ring-rose-400{% endif %}">
+<span class="grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-xl text-rose-700">
+<i class="fa-solid fa-triangle-exclamation">
+</i>
+</span>
+<div>
+<p class="text-sm font-bold text-slate-500">Overdue</p>
+<p class="text-3xl font-extrabold text-rose-700">{{ overdue_count }}</p>
+</div>
+</a>
+    <a href="?filter=due_soon" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'due_soon' %}ring-2 ring-violet-400{% endif %}">
+<span class="grid h-12 w-12 place-items-center rounded-xl bg-violet-100 text-xl text-violet-700">
+<i class="fa-solid fa-calendar-day">
+</i>
+</span>
+<div>
+<p class="text-sm font-bold text-slate-500">Due this week</p>
+<p class="text-3xl font-extrabold text-violet-700">{{ due_soon_count }}</p>
+</div>
+</a>
+    <a href="?filter=completed" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'completed' %}ring-2 ring-blue-400{% endif %}">
+<span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 text-xl text-blue-700">
+<i class="fa-solid fa-circle-check">
+</i>
+</span>
+<div>
+<p class="text-sm font-bold text-slate-500">Completed</p>
+<p class="text-3xl font-extrabold text-blue-700">{{ completed_count }}</p>
+</div>
+</a>
+  </section>
+  <section class="app-card overflow-hidden">
+<div class="flex flex-col justify-between gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center">
+<div>
+<h2 class="text-lg font-extrabold text-slate-900">
+<i class="fa-solid fa-clipboard-list mr-2 text-violet-600">
+</i>{{ table_title }}</h2>
+<p class="mt-1 text-sm text-slate-500">{{ table_description }}</p>
+</div>
+<span class="inline-flex w-fit items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700">
+<i class="fa-solid fa-list">
+</i>{{ selected_count }} shown</span>
+</div>
+<div class="overflow-x-auto">
+<table class="app-table">
+<thead>
+<tr>
+<th>Task</th>
+<th>Category</th>
+<th>Priority</th>
+<th>Status</th>
+<th>Deadline</th>
+<th class="text-center">Actions</th>
+</tr>
+</thead>
+<tbody>{% for task in tasks %}<tr>
+<td class="min-w-64">
+<p class="font-extrabold text-slate-900">{{ task.title }}</p>{% if task.description %}<p class="mt-1 max-w-sm text-xs leading-5 text-slate-500">{{ task.description|truncatechars:70 }}</p>{% endif %}</td>
+<td>{% if task.category %}{% if task.category.color == 'rose' or task.category.color == 'danger' %}<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">{% elif task.category.color == 'emerald' or task.category.color == 'success' %}<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{% elif task.category.color == 'blue' or task.category.color == 'info' %}<span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{% elif task.category.color == 'violet' or task.category.color == 'warning' or task.category.color == 'secondary' %}<span class="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">{% else %}<span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{% endif %}<i class="fa-solid {{ task.category.icon|default:'fa-tag' }}">
+</i>{{ task.category.name }}</span>{% else %}<span class="text-sm text-slate-400">No category</span>{% endif %}</td>
+<td>{% if task.priority == 'HIGH' %}<span class="badge bg-danger">High</span>{% elif task.priority == 'MEDIUM' %}<span class="badge bg-primary">Medium</span>{% else %}<span class="badge bg-secondary">Low</span>{% endif %}</td>
+<td>{% if task.status == 'IN_PROGRESS' %}<span class="badge bg-primary">In progress</span>{% elif task.status == 'COMPLETED' %}<span class="badge bg-success">Completed</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}</td>
+<td class="whitespace-nowrap">{% if task.deadline %}<p class="font-bold text-slate-700">{{ task.deadline|date:"d M Y" }}</p>
+<p class="mt-0.5 text-xs text-slate-500">{{ task.deadline|date:"h:i A" }}</p>{% if task.is_overdue %}<span class="mt-1 inline-block text-xs font-bold text-rose-700">Overdue</span>{% endif %}{% else %}<span class="text-slate-400">No deadline</span>{% endif %}</td>
+<td>
+<div class="flex justify-center gap-2">
+<a href="{% url 'reminders:task_toggle_status' task.id %}" class="btn btn-outline-primary !p-2" title="Change status">
+<i class="fa-solid fa-rotate">
+</i>
+</a>
+<button type="button" data-modal-open="edit-task-modal" data-edit-task data-update-url="{% url 'reminders:task_update' task.id %}" data-title="{{ task.title }}" data-description="{{ task.description }}" data-category="{{ task.category_id }}" data-priority="{{ task.priority }}" data-status="{{ task.status }}" data-deadline="{{ task.deadline|date:'Y-m-d\TH:i' }}" data-reminder-at="{{ task.reminder_at|date:'Y-m-d\TH:i' }}" data-assigned-to="{{ task.assigned_to_id }}" class="btn btn-outline-primary !p-2" title="Edit task">
+<i class="fa-solid fa-pen-to-square">
+</i>
+</button>
+<form method="post" action="{% url 'reminders:task_delete' task.id %}" data-confirm-delete data-title="Delete task?" data-text="{{ task.title|escapejs }} will be deleted permanently.">{% csrf_token %}<button class="btn btn-outline-danger !p-2" title="Delete task">
+<i class="fa-solid fa-trash">
+</i>
+</button>
+</form>
+</div>
+</td>
+</tr>{% empty %}<tr>
+<td colspan="6" class="py-14 text-center">
+<i class="fa-solid fa-clipboard-check mb-3 block text-4xl text-violet-300">
+</i>
+<p class="font-bold text-slate-700">No tasks in this list</p>
+</td>
+</tr>{% endfor %}</tbody>
+</table>
+</div>
+</section>
+</div>
+{% include 'reminders/dashboard_modals.html' %}
 {% endblock %}
-{% block extra_js %}<script>document.querySelectorAll('[data-modal-open]').forEach(button=>button.addEventListener('click',()=>document.getElementById(button.dataset.modalOpen).classList.replace('hidden','flex')));document.querySelectorAll('[data-modal-close]').forEach(button=>button.addEventListener('click',()=>document.getElementById(button.dataset.modalClose).classList.replace('flex','hidden')));document.getElementById('task-modal')?.addEventListener('click',event=>{if(event.target.id==='task-modal')event.currentTarget.classList.replace('flex','hidden')});</script>{% endblock %}
+{% block extra_js %}<script>
+function setModal(id, show){document.getElementById(id).classList[show?'replace':'replace'](show?'hidden':'flex',show?'flex':'hidden')}
+document.querySelectorAll('[data-modal-open]').forEach(b=>b.addEventListener('click',()=>setModal(b.dataset.modalOpen,true)));document.querySelectorAll('[data-modal-close]').forEach(b=>b.addEventListener('click',()=>setModal(b.dataset.modalClose,false)));
+['task-modal','edit-task-modal','category-modal','edit-category-modal'].forEach(id=>document.getElementById(id)?.addEventListener('click',e=>{if(e.target.id===id)setModal(id,false)}));
+document.querySelectorAll('[data-edit-task]').forEach(b=>b.addEventListener('click',function(){let f=document.getElementById('edit-task-form');f.action=this.dataset.updateUrl;['title','description','category','priority','status','deadline','reminderAt','assignedTo'].forEach(k=>document.getElementById('edit-task-'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())).value=this.dataset[k]||'')}));
+document.querySelectorAll('[data-edit-category]').forEach(b=>b.addEventListener('click',function(){let f=document.getElementById('edit-category-form');f.action=this.dataset.updateUrl;document.getElementById('edit-category-name').value=this.dataset.name;document.getElementById('edit-category-icon').value=this.dataset.icon;let colors={primary:'indigo',secondary:'violet',success:'emerald',warning:'violet',danger:'rose',info:'blue',dark:'indigo'};document.getElementById('edit-category-color').value=colors[this.dataset.color]||this.dataset.color||'indigo'}));
+</script>{% endblock %}

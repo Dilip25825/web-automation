@@ -160,11 +160,9 @@
                             </td>
                             <td
                                 class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
-                                ₹{% if trans.running_balance < 0 %} {{trans.running_balance|stringformat:"d"|slice:"1:"
-                                    }} {% else %} {{trans.running_balance }} {% endif %} </td>
+                                ₹{% if trans.running_balance < 0 %} {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %} {{trans.running_balance }} {% endif %} </td>
                             <td>
-                                <a href="{% url 'khata:edit_transaction' trans.b64_id %}"
-                                    class="btn btn-sm btn-outline-secondary px-2 py-0 me-1" title="Edit Entry">✏️</a>
+                                <button type="button" class="btn btn-sm btn-outline-primary px-2 py-0 me-1 text-indigo-700 hover:text-violet-700" title="Edit Transaction" data-edit-transaction data-bs-toggle="modal" data-bs-target="#editTransactionModal" data-update-url="{% url 'khata:update_transaction' trans.b64_id %}" data-date="{{ trans.date|date:'Y-m-d' }}" data-amount="{{ trans.amount }}" data-type="{{ trans.trans_type }}" data-remarks="{{ trans.remarks|default:'' }}">Edit</button>
                             </td>
                             <td>
                                 <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
@@ -187,74 +185,80 @@
         </div>
     </div>
 </div>
+</div><div class="modal" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 34rem;">
+        <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
+            <form id="editTransactionForm" method="post">{% csrf_token %}
+                <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
+                    <div><p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Ledger entry</p><h5 class="modal-title text-xl font-extrabold" id="editTransactionModalLabel"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Transaction</h5></div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <div class="row"><div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionDate">Date</label><input id="editTransactionDate" type="date" name="date" class="form-control" required></div><div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionAmount">Amount</label><input id="editTransactionAmount" type="number" step="0.01" name="amount" class="form-control" required></div></div>
+                    <div class="mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionType">Entry type</label><select id="editTransactionType" name="trans_type" class="form-select" required><option value="GIVEN">Maine Diye (Udhaar / Credit)</option><option value="GOT">Mujhe Mile (Jama / Payment)</option></select></div>
+                    <div><label class="form-label fw-semibold text-slate-700" for="editTransactionRemarks">Remarks <span class="text-muted fw-normal">(optional)</span></label><input id="editTransactionRemarks" type="text" name="remarks" class="form-control" placeholder="Entry remarks"></div>
+                </div>
+                <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Update transaction</button></div>
+            </form>
+        </div>
+    </div>
 </div>
+<script>
+    document.querySelectorAll('[data-edit-transaction]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.getElementById('editTransactionForm').action = this.dataset.updateUrl;
+            document.getElementById('editTransactionDate').value = this.dataset.date;
+            document.getElementById('editTransactionAmount').value = this.dataset.amount;
+            document.getElementById('editTransactionType').value = this.dataset.type;
+            document.getElementById('editTransactionRemarks').value = this.dataset.remarks;
+        });
+    });
+</script>
 <!-- Interest Calculator Pop-up Modal -->
-<div class="modal fade" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary">
-                <h5 class="modal-title fw-bold text-dark" id="interestModalLabel">Byaaj Calculation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-
-            </div>
-
+<div class="modal" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 34rem;">
+        <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
             <form action="{% url 'khata:add_interest' encoded_id %}" method="POST">
                 {% csrf_token %}
-                <div class="modal-body">
-
-                    <!-- Principal Amount (Bakaaya Rakam) - Read Only -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Principal</label>
-                        <input type="number" id="principalAmt" class="form-control bg-light"
-                            value="{{ net_balance|stringformat:'.2f' }}" readonly>
+                <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
+                    <div>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Ledger interest</p>
+                        <h5 class="modal-title text-xl font-extrabold" id="interestModalLabel"><i class="fa-solid fa-calculator me-2"></i>Interest Calculation</h5>
                     </div>
-
-                    <div class="row">
-                        <!-- Rate per month -->
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Rate % / Month</label>
-                            <input type="number" step="0.01" name="rate" id="interestRate" class="form-control"
-                                placeholder="Jaise 2" required value="2">
-                        </div>
-
-
-                        <!-- Time in months -->
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Time in Month</label>
-                            <!-- value me backend se calculated mahine aayenge, par ise manually badla (edit) bhi ja sakta hai -->
-                            <input type="number" step="0.01" name="months" id="interestMonths" class="form-control"
-                                placeholder="Kitne mahine?" value="{{ auto_months }}" required>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Auto-calculated Interest Amount -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-danger">Total Byaaj</label>
-                        <input type="number" step="0.01" name="interest_amount" id="totalInterest"
-                            class="form-control fw-bold text-danger" required readonly>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Date</label>
-                        <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
-                    </div>
-
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"><i
-                            class="fa-solid fa-xmark"></i> Cancel</button>
-                    <!-- Form submit button -->
-                    <button type="submit" class="btn btn-success fw-bold"><i class="fa-solid fa-calculator"></i> Hisaab
-                        Mein Jodein</button>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <div class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+                        <label class="form-label fw-semibold text-indigo-700" for="principalAmt">Principal amount</label>
+                        <input type="number" id="principalAmt" class="form-control bg-white fw-bold text-indigo-700" value="{{ net_balance|stringformat:'.2f' }}" readonly>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-4">
+                            <label class="form-label fw-semibold text-slate-700" for="interestRate">Rate % / month</label>
+                            <input type="number" step="0.01" name="rate" id="interestRate" class="form-control" placeholder="e.g. 2" required value="2">
+                        </div>
+                        <div class="col-6 mb-4">
+                            <label class="form-label fw-semibold text-slate-700" for="interestMonths">Time in months</label>
+                            <input type="number" step="0.01" name="months" id="interestMonths" class="form-control" placeholder="Months" value="{{ auto_months }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-4 rounded-xl border border-violet-100 bg-violet-50 p-3">
+                        <label class="form-label fw-semibold text-violet-700" for="totalInterest">Total interest</label>
+                        <input type="number" step="0.01" name="interest_amount" id="totalInterest" class="form-control bg-white fw-bold text-violet-700" required readonly>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold text-slate-700" for="interestDate">Date</label>
+                        <input type="date" id="interestDate" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="fa-solid fa-xmark me-1"></i> Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold"><i class="fa-solid fa-calculator me-1"></i> Add to ledger</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-
 <!-- Live Calculation ke liye JavaScript -->
 <!-- Live Calculation ke liye JavaScript -->
 <script>

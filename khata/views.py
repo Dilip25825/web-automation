@@ -13,9 +13,7 @@ from xhtml2pdf import pisa
 from django.http import HttpResponse
 from .models import ShopProfile
 from django.core.paginator import Paginator #
-
-                 
-
+from django.views.decorators.http import require_POST
 # @login_required
 # def dashboard(request):
 #     try:
@@ -170,42 +168,27 @@ def add_customer(request):
 
 
 @login_required
-def edit_customer(request, b64_id):
-    # Error Handling: Code me koi problem aaye to app crash na ho
+@require_POST
+def update_customer(request, b64_id):
+    """Update a customer from the dashboard modal."""
     try:
-        # Base64 decode karke actual ID nikalna
         actual_id = int(base64.b64decode(b64_id).decode('utf-8'))
         customer = get_object_or_404(Customer, id=actual_id, user=request.user)
+        name = request.POST.get('name', '').strip()
+        phone = request.POST.get('phone', '').strip()
 
-        if request.method == 'POST':
-            name = request.POST.get('name')
-            phone = request.POST.get('phone')
+        if Customer.objects.filter(user=request.user, phone=phone).exclude(id=customer.id).exists():
+            messages.warning(request, "Yeh phone number pehle se hi kisi aur grahak ke naam par darj hai!")
+            return redirect('khata:dashboard')
 
-            # Duplicate Check: Kahi ye naya phone number kisi doosre grahak ka to nahi?
-            # exclude() ka use isliye kiya taaki khud ke current number ko duplicate na maane
-            if Customer.objects.filter(user=request.user, phone=phone).exclude(id=customer.id).exists():
-                messages.warning(request, "Yeh phone number pehle se hi kisi aur grahak ke naam par darj hai! (Duplicate Error)")
-                return redirect('edit_customer', b64_id=b64_id)
-
-            # Details update karke save karna
-            customer.name = name
-            customer.phone = phone
-            customer.save()
-            messages.success(request, "Grahak ki jankari safaltapoorvak update ho gayi!")
-            return redirect('dashboard')
-
-        # GET request aane par edit form dikhana
-        context = {
-            'customer': customer,
-            'b64_id': b64_id
-        }
-        return render(request, 'khata/edit_customer.html', context)
-
+        customer.name = name
+        customer.phone = phone
+        customer.save()
+        messages.success(request, "Grahak ki jankari safaltapoorvak update ho gayi!")
+        return redirect('khata:dashboard')
     except Exception as e:
-        # Error aane par wapas dashboard bhejna
         messages.error(request, f"Grahak edit karne me error aayi: {str(e)}")
-        return redirect('dashboard')
-
+        return redirect('khata:dashboard')
 @login_required
 def delete_customer(request, customer_id):
     # Error Handling ke liye try block (App crash hone se rokne ke liye)
@@ -326,54 +309,25 @@ def customer_detail(request, customer_id):
         
     except Exception as e:
         messages.error(request, f"Hisaab kholne mein samasya aayi: {str(e)}")
-        return redirect('dashboard')
+        return redirect('khata:dashboard')
 
 @login_required
-def edit_transaction(request, b64_trans_id):
-    # Error Handling lagaya gaya hai
+@require_POST
+def update_transaction(request, b64_trans_id):
+    """Update a transaction from the customer-detail modal."""
     try:
         actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
         trans = get_object_or_404(Transaction, id=actual_trans_id, customer__user=request.user)
-
-        if request.method == 'POST':
-            amount = request.POST.get('amount')
-            trans_type = request.POST.get('trans_type')
-            remarks = request.POST.get('remarks')
-            date_str = request.POST.get('date')
-            trans_date = parse_date(date_str)
-
-            # Duplicate Check: Existing entry ko chhod kar baaki check karna
-            # if Transaction.objects.filter(
-            #     customer=trans.customer, amount=amount, trans_type=trans_type, date=trans_date
-            # ).exclude(id=trans.id).exists():
-            #     messages.warning(request, "Same aisi len-den ki entry pehle se maujood hai!")
-            #     return redirect('edit_transaction', b64_trans_id=b64_trans_id)
-
-            # Entry update karna
-            trans.amount = amount
-            trans.trans_type = trans_type
-            trans.remarks = remarks
-            trans.date = trans_date
-            trans.save()
-            
-            messages.success(request, "Len-den ki entry update ho gayi!")
-            return redirect('khata:customer_detail', customer_id=trans.customer.id)
-
-        # GET method ke liye Date ko HTML (YYYY-MM-DD) format me convert karna
-        date_formatted = trans.date.strftime('%Y-%m-%d') if trans.date else ''
-
-        context = {
-            'trans': trans,
-            'customer': trans.customer,
-            'b64_trans_id': b64_trans_id,
-            'date_formatted': date_formatted
-        }
-        return render(request, 'khata/edit_transaction.html', context)
-
+        trans.amount = request.POST.get('amount')
+        trans.trans_type = request.POST.get('trans_type')
+        trans.remarks = request.POST.get('remarks', '').strip()
+        trans.date = parse_date(request.POST.get('date'))
+        trans.save()
+        messages.success(request, "Len-den ki entry update ho gayi!")
+        return redirect('khata:customer_detail', customer_id=trans.customer.id)
     except Exception as e:
         messages.error(request, f"Entry edit karne me samasya: {str(e)}")
         return redirect('khata:dashboard')
-
 @login_required
 def delete_transaction(request, b64_trans_id):
     # Try block error aane se rokne ke liye
@@ -416,7 +370,7 @@ def add_interest(request, b64_id):
             # Duplicate Check: Check karein ki same date pe same Byaaj pehle toh nahi joda gaya
             if Transaction.objects.filter(customer=customer, amount=interest_amount, trans_type='GIVEN', date=trans_date, remarks=remarks).exists():
                 messages.warning(request, "Byaaj ki yeh entry is tareekh par pehle se lag chuki hai! (Duplicate Error)")
-                return redirect('customer_detail', customer_id=customer.id)
+                return redirect('khata:customer_detail', customer_id=customer.id)
 
             # Agar duplicate nahi hai, toh nayi entry save karein
             new_trans = Transaction(
@@ -429,12 +383,12 @@ def add_interest(request, b64_id):
             new_trans.save()
             messages.success(request, f"₹{interest_amount} ka Byaaj khate mein safaltapoorvak jod diya gaya!")
             
-        return redirect('customer_detail', customer_id=customer.id)
+        return redirect('khata:customer_detail', customer_id=customer.id)
         
     except Exception as e:
         # Error aane par handle karein aur dashboard par wapas bhej dein
         messages.error(request, f"Byaaj jodne mein samasya aayi: {str(e)}")
-        return redirect('dashboard')
+        return redirect('khata:dashboard')
     
 @login_required
 def download_ledger_pdf(request, b64_id):
@@ -494,13 +448,13 @@ def download_ledger_pdf(request, b64_id):
         
         if pisa_status.err:
             messages.error(request, "PDF generate karne mein error aayi.")
-            return redirect('customer_detail', customer_id=customer.id)
+            return redirect('khata:customer_detail', customer_id=customer.id)
             
         return response
         
     except Exception as e:
         messages.error(request, f"PDF report nikalne me samasya: {str(e)}")
-        return redirect('dashboard')
+        return redirect('khata:dashboard')
 
 @login_required
 def shop_profile(request):
@@ -531,7 +485,7 @@ def shop_profile(request):
     except Exception as e:
         # Kuch dikkat aane par error message show karein
         messages.error(request, f"Profile kholne mein samasya aayi: {str(e)}")
-        return redirect('khata/dashboard')
+        return redirect('khata:dashboard')
 
 
 @login_required
@@ -562,31 +516,3 @@ def report_page(request):
         'end_date': end_date,
     }
     return render(request, 'khata/report.html', context)
-
-# @login_required
-# def report_page(request):
-#     start_date = request.GET.get('start_date')
-#     end_date = request.GET.get('end_date')
-    
-#     # Transactions filter karna
-#     transactions = Transaction.objects.filter(customer__user=request.user).order_by('-date')
-
-#     for trans in transactions:
-#     # Customer ki ID ko encode karke object me store kar rahe hain
-#         trans.customer.b64_id = base64.b64encode(str(trans.customer.id).encode('utf-8')).decode('utf-8')
-    
-#     # Date wise filter logic
-#     if start_date and end_date:
-#         transactions = transactions.filter(date__range=[start_date, end_date])
-    
-#     # Pagination logic (20 entries per page)
-#     paginator = Paginator(transactions, 10) 
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-    
-#     context = {
-#         'transactions': page_obj, # Ab yahan sirf 20 entries aayengi
-#         'start_date': start_date,
-#         'end_date': end_date,
-#     }
-#     return render(request, 'khata/report.html', context)
