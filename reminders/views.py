@@ -157,6 +157,8 @@ def category_create(request):
     
     return render(request, 'reminders/category_form.html')
 
+
+
 @login_required
 def category_delete(request, pk):
     """Delete a category (only if not in use)"""

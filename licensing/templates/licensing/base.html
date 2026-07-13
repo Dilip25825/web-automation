@@ -7,6 +7,7 @@
     <title>{% block title %}Web Automation{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
@@ -440,42 +441,60 @@
 
 <body class="min-h-screen font-sans antialiased">
     <nav class="sticky top-0 z-40 border-b border-indigo-100 bg-white/95 shadow-sm backdrop-blur">
-        <div class="mx-auto flex min-h-16 max-w-[1920px] items-center gap-5 px-4"><a
-                class="shrink-0 text-lg font-extrabold text-violet-700 sm:text-xl" href="{% url 'main_hub' %}"><i
-                    class="fa-solid fa-gears mr-2 text-violet-600"></i>Web Automation With Excel</a>{% if request.user.is_authenticated %}
-                    <button class="ml-auto rounded p-2 text-indigo-800 lg:hidden"
-                data-menu-toggle><i class="fa-solid fa-bars"></i></button>
-            <div class="hidden w-full items-center justify-between lg:flex">
-                <div class="flex items-center gap-1 text-sm font-bold text-slate-600"><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
-                        href="{% url 'main_hub' %}"><i class="fa-solid fa-house-chimney"></i> Home</a><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
-                        href="{% url 'userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> UserInfo</a><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
-                        href="{% url 'pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP</a><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
-                        href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700"
-                        href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a><a
-                        class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="/downloads/"><i  class="fa-solid fa-download"></i> Download</a></div>
+        <div class="mx-auto flex min-h-16 max-w-[1920px] items-center gap-5 px-4">
+            <a class="shrink-0 text-lg font-extrabold text-violet-700 sm:text-xl" href="{% url 'main_hub' %}">
+                <i class="fa-solid fa-gears mr-2 text-violet-600"></i>Web Automation With Excel
+            </a>
+            
+            {% if request.user.is_authenticated %}
+                <button id="mobileMenuToggle" class="ml-auto rounded p-2 text-indigo-800 lg:hidden">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                
+                <div id="mainMenu" class="hidden w-full items-center justify-between lg:flex">
+                    <div class="flex items-center gap-1 text-sm font-bold text-slate-600">
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'main_hub' %}">
+                            <i class="fa-solid fa-house-chimney"></i> Home
+                        </a>
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'userinfo_dashboard' %}">
+                            <i class="fa-solid fa-users"></i> UserInfo
+                        </a>
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'pacserp_dashboard' %}">
+                            <i class="fa-solid fa-tractor"></i> ERP
+                        </a>
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'reminders:dashboard' %}">
+                            <i class="fa-solid fa-bell"></i> Reminders
+                        </a>
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="{% url 'khata:dashboard' %}">
+                            <i class="fa-solid fa-file-invoice-dollar"></i> Khata
+                        </a>
+                        <a class="rounded-lg px-3 py-2 hover:bg-indigo-50 hover:text-indigo-700" href="/downloads/">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                    </div>
 
-                        
-                <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button
-                        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-700"
-                        data-logout><i class="fa-solid fa-right-from-bracket"></i>{{ user.username }} · Logout</button>
-                </form>
-            </div>{% endif %}
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-rose-50 hover:text-rose-700" data-logout>
+                            <i class="fa-solid fa-right-from-bracket"></i>{{ user.username }} · Logout
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
         </div>
     </nav>
 
-
-    <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">{% block content %}{% endblock %}</main>
+    <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
+        {% block content %}{% endblock %}
+    </main>
     
-    <footer class="mt-8 border-t border-indigo-100 bg-white px-4 py-4 text-center text-xs text-slate-500">&copy; {% now "Y" %} Web Automation With Excel</footer>
+    <footer class="mt-8 border-t border-indigo-100 bg-white px-4 py-4 text-center text-xs text-slate-500">
+        &copy; {% now "Y" %} Web Automation With Excel
+    </footer>
     
     <script>
     // ============================================
-    // 1. MODAL TOGGLE (Bootstrap 5 के साथ काम करेगा)
+    // 1. MODAL TOGGLE
     // ============================================
     document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
         button.addEventListener('click', function() {
@@ -492,31 +511,36 @@
             const modal = this.closest('.modal');
             if (modal) {
                 modal.classList.remove('is-open');
-                // Bootstrap 5 के modal को hide करें
-                const bsModal = bootstrap.Modal.getInstance(modal);
-                if (bsModal) {
-                    bsModal.hide();
-                }
             }
         });
     });
 
     // ============================================
-    // 2. MENU TOGGLE (मोबाइल मेनू के लिए)
+    // 2. MOBILE MENU TOGGLE (FIXED)
     // ============================================
-    const menuToggle = document.querySelector('[data-menu-toggle]');
-    if (menuToggle) {
-        menuToggle.addEventListener('click', function() {
-            const menu = document.querySelector(this.dataset.menuTarget || '#menu');
-            if (menu) {
-                menu.classList.toggle('hidden');
-                menu.classList.toggle('block');
-            }
-        });
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('mobileMenuToggle');
+        const mainMenu = document.getElementById('mainMenu');
+        
+        if (toggleBtn && mainMenu) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                mainMenu.classList.toggle('hidden');
+                mainMenu.classList.toggle('flex');
+                
+                // Change icon
+                const icon = this.querySelector('i');
+                if (mainMenu.classList.contains('hidden')) {
+                    icon.className = 'fa-solid fa-bars';
+                } else {
+                    icon.className = 'fa-solid fa-xmark';
+                }
+            });
+        }
+    });
 
     // ============================================
-    // 3. CONFIRM DELETE (SweetAlert2 के साथ)
+    // 3. CONFIRM DELETE (SweetAlert2)
     // ============================================
     document.querySelectorAll('[data-confirm-delete]').forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -540,37 +564,31 @@
     // ============================================
     // 4. LOGOUT CONFIRMATION
     // ============================================
-    const logoutBtn = document.querySelector('[data-logout]');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
+    document.querySelectorAll('[data-logout]').forEach(button => {
+        button.addEventListener('click', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: this.dataset.title || 'Log out?',
-                text: this.dataset.text || 'Are you sure you want to logout?',
+                title: 'Log out?',
+                text: 'Are you sure you want to logout?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: this.dataset.confirmText || 'Logout',
+                confirmButtonText: 'Logout',
                 confirmButtonColor: '#e11d48',
                 cancelButtonText: 'Cancel'
             }).then(result => {
                 if (result.isConfirmed) {
-                    // Form submit करें
                     const form = this.closest('form');
                     if (form) {
                         form.submit();
-                    } else {
-                        // अगर form नहीं है तो logout URL पर redirect करें
-                        window.location.href = this.dataset.logoutUrl || '/logout/';
                     }
                 }
             });
         });
-    }
+    });
 
     // ============================================
     // 5. DJANGO MESSAGES (SweetAlert2 Toast)
     // ============================================
-    
     {% if messages %}
         {% for message in messages %}
             Swal.fire({
@@ -585,19 +603,24 @@
         {% endfor %}
     {% endif %}
 
-    // ============================================
-    // 6. (OPTIONAL) Bootstrap 5 Modal को properly handle करें
-    // ============================================
-    // अगर Bootstrap 5 का Modal इस्तेमाल कर रहे हैं तो
-    document.addEventListener('DOMContentLoaded', function() {
-        // सभी modals को Bootstrap 5 से initialize करें
-        document.querySelectorAll('.modal').forEach(modal => {
-            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                new bootstrap.Modal(modal);
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        const mainMenu = document.getElementById('mainMenu');
+        const toggleBtn = document.getElementById('mobileMenuToggle');
+        
+        if (mainMenu && toggleBtn) {
+            // Check if click is outside menu and toggle button
+            if (!mainMenu.contains(e.target) && !toggleBtn.contains(e.target)) {
+                if (!mainMenu.classList.contains('hidden')) {
+                    mainMenu.classList.add('hidden');
+                    mainMenu.classList.remove('flex');
+                    toggleBtn.querySelector('i').className = 'fa-solid fa-bars';
+                }
             }
-        });
+        }
     });
-</script>
+
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 
