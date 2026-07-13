@@ -521,7 +521,7 @@ def shop_profile(request):
             profile.save()
             
             messages.success(request, "Dukaan ka profile safaltapoorvak update ho gaya!")
-            return redirect('dashboard')
+            return redirect('khata:dashboard')
 
         context = {
             'profile': profile
@@ -531,7 +531,7 @@ def shop_profile(request):
     except Exception as e:
         # Kuch dikkat aane par error message show karein
         messages.error(request, f"Profile kholne mein samasya aayi: {str(e)}")
-        return redirect('dashboard')
+        return redirect('khata/dashboard')
 
 
 @login_required

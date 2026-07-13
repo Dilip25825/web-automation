@@ -2,7 +2,7 @@
 {% block title %}Khata Dashboard{% endblock %}
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-5">
-  <div class="grid gap-4 md:grid-cols-2">
+  <div class="grid gap-4 md:grid-cols-3">
     <a href="?filter=lene"
       class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
       <div>
@@ -19,7 +19,21 @@
       </div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i
           class="fa-solid fa-arrow-trend-down"></i></span>
     </a>
+
+      <a href="{% url 'khata:report_page' %}"
+      class="app-card flex items-center justify-between border-l-4 border-violet-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
+      <div>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Reports</p>
+        <p class="mt-1 text-sm text-slate-600">View all transactions with date filters</p>
+            <p class="mt-2 text-lg font-extrabold text-violet-700">
+          <i class="fa-regular fa-eye me-1"></i>Open Reports
+        </p>
+      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-violet-100 text-xl text-indigo-700"><i
+          class="fa-solid fa-chart-line"></i></span>
+    </a>
   </div>
+
+
   <div class="grid items-start gap-5 lg:grid-cols-3">
     <section class="app-card overflow-hidden">
       <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white">

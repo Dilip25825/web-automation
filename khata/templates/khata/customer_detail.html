@@ -91,91 +91,102 @@
     <div class="col-md-9">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white py-3">
-                <div
-                    class="d-flex justify-content-between align-items-center flex-wrap gap-3 bg-gradient-to-r from-indigo-600 to-violet-600">
+                <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 rounded-t-xl overflow-x-auto">
+                    <div class="flex items-center gap-4 min-w-max">
+                        <!-- Left Side - Title -->
+                        <span class="font-bold text-white text-lg whitespace-nowrap">Ledger History</span>
 
-                    <span class="fw-bold fs-5">Ledger History</span>
+                        <!-- Right Side - Filters & Buttons -->
+                        <div class="flex items-center gap-2">
+                            <form method="GET" class="flex items-center gap-2">
+                                <input type="date" name="start_date"
+                                    class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
+                                    style="min-width: 140px;" value="{{ start_date|default:'' }}">
 
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <form method="GET" class="d-flex align-items-center gap-2">
-                            <input type="date" name="start_date" class="form-control form-control-sm"
-                                value="{{ start_date }}">
-                            <input type="date" name="end_date" class="form-control form-control-sm"
-                                value="{{ end_date }}">
-                            <button type="submit" class="btn btn-sm btn-light fw-bold text-indigo-700"><i
-                                    class="fa-solid fa-filter"></i> Filter</button>
-                            <a href="{% url 'khata:customer_detail' customer.id %}"
-                                class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition duration-200 ease-in-out shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 whitespace-nowrap">
-                                <i class="fa-solid fa-rotate-left"></i> Reset</a>
-                        </form>
+                                <input type="date" name="end_date"
+                                    class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
+                                    style="min-width: 140px;" value="{{ end_date|default:'' }}">
 
-                        <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
-                            class="btn btn-sm btn-light fw-bold text-danger">📄 PDF Download</a>
+                                <button type="submit"
+                                    class="bg-white hover:bg-gray-100 text-indigo-700 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                    <i class="fa-solid fa-filter text-xs"></i> Filter
+                                </button>
+
+                                <a href="{% url 'khata:customer_detail' customer.id %}"
+                                    class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                    <i class="fa-solid fa-rotate-left text-xs"></i> Reset
+                                </a>
+                            </form>
+
+                            <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
+                                class="bg-white hover:bg-gray-100 text-red-600 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                <i class="fa-regular fa-file-pdf text-xs"></i> PDF Download
+                            </a>
+                        </div>
                     </div>
-
                 </div>
+
             </div>
+        </div>
 
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Sr</th>
-                                <th class="ps-4">Date</th>
-                                <th>Vivran</th>
-                                <th class="text-end text-danger">Maine Diye</th>
-                                <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
-                                <th>Balance</th>
-                                <th>Edit</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for trans in transactions %}
-                            <tr>
-                                <td>{{forloop.counter}}</td>
-                                <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
-                                <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sr</th>
+                            <th class="ps-4">Date</th>
+                            <th>Vivran</th>
+                            <th class="text-end text-danger">Maine Diye</th>
+                            <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
+                            <th>Balance</th>
+                            <th>Edit</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions %}
+                        <tr>
+                            <td>{{forloop.counter}}</td>
+                            <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
+                            <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
 
-                                <td class="text-end fw-bold text-danger">
-                                    {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                                </td>
+                            <td class="text-end fw-bold text-danger">
+                                {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                            </td>
 
-                                <td class="text-end fw-bold text-indigo-700 pe-4">
-                                    {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                                </td>
-                                <td
-                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
-                                    ₹{% if trans.running_balance < 0 %}
-                                        {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %}
-                                        {{trans.running_balance }} {% endif %} </td>
-                                <td>
-                                    <a href="{% url 'khata:edit_transaction' trans.b64_id %}"
-                                        class="btn btn-sm btn-outline-secondary px-2 py-0 me-1"
-                                        title="Edit Entry">✏️</a>
-                                </td>
-                                <td>
-                                    <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
-                                        class="delete-form" data-confirm-delete data-title="Delete transaction?">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
-                                            title="Delete Entry">X</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
-                                    nahi hua hai.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                            <td class="text-end fw-bold text-indigo-700 pe-4">
+                                {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                            </td>
+                            <td
+                                class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
+                                ₹{% if trans.running_balance < 0 %} {{trans.running_balance|stringformat:"d"|slice:"1:"
+                                    }} {% else %} {{trans.running_balance }} {% endif %} </td>
+                            <td>
+                                <a href="{% url 'khata:edit_transaction' trans.b64_id %}"
+                                    class="btn btn-sm btn-outline-secondary px-2 py-0 me-1" title="Edit Entry">✏️</a>
+                            </td>
+                            <td>
+                                <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
+                                    class="delete-form" data-confirm-delete data-title="Delete transaction?">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
+                                        title="Delete Entry">X</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
+                                nahi hua hai.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 </div>
 <!-- Interest Calculator Pop-up Modal -->
 <div class="modal fade" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
