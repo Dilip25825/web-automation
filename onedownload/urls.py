@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'downloads'
+
 urlpatterns = [
     path('', views.public_downloads, name='public_downloads'),
     path('links/create/', views.link_create, name='link_create'),

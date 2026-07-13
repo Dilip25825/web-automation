@@ -15,7 +15,7 @@ class DownloadLinkViewsTests(TestCase):
         )
 
     def test_public_page_shows_active_links_without_login(self):
-        response = self.client.get(reverse('public_downloads'))
+        response = self.client.get(reverse('downloads:public_downloads'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.link.name)
         self.assertContains(response, self.link.drive_link)
@@ -24,7 +24,7 @@ class DownloadLinkViewsTests(TestCase):
         user = get_user_model().objects.create_user(username='regularuser', password='secret123')
         self.client.force_login(user)
 
-        response = self.client.post(reverse('link_create'))
+        response = self.client.post(reverse('downloads:link_create'))
 
         self.assertEqual(response.status_code, 302)
         self.assertIn('/admin/login/', response.url)

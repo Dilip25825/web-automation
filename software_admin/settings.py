@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
+    'accounts',
     'licensing',
     'reminders',
     'khata',
@@ -158,9 +160,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # software_admin/settings.py ke sabse niche ye variables check karein
 
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'main_hub'  # <-- 'dashboard' ki jagah ise 'main_hub' karein
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'core:dashboard'
+LOGOUT_REDIRECT_URL = 'accounts:login'
 
 
 # software_admin/settings.py ke sabse niche ye jodhein

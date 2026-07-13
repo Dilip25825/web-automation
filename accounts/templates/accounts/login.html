@@ -1,16 +1,16 @@
-{% extends 'licensing/base.html' %}
+{% extends 'core/base.html' %}
 {% block title %}Login | Software Admin{% endblock %}
 
 {% block content %}
 <style>
     
     .login-container {
-        min-height: calc(100vh - 64px);
+        min-height: calc(100vh - 160px);
         background: #f8f9fa;
         display: flex;
         justify-content: center;
-        align-items: center;
-        padding: 20px;
+        align-items: flex-start;
+        padding: 3rem 20px 2rem;
     }
     .login-card-modern {
         background: #ffffff;
@@ -32,7 +32,7 @@
         background: linear-gradient(135deg, #4F46E5, #7C3AED);
         border-radius: 20px;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
         margin: 0 auto 1.5rem;
         font-size: 2.5rem;
@@ -107,7 +107,7 @@
     <div class="login-card-modern">
         <div class="login-icon">⚙️</div>
         <h3 class="login-title-modern">Welcome Back</h3>
-        <p class="login-subtitle-modern">Sign in to manage your software licenses</p>
+        <p class="login-subtitle-modern">Sign in to access Software Admin</p>
 
         {% if form.errors %}
             <div class="alert-modern">

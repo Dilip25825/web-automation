@@ -35,7 +35,7 @@ def link_create(request):
         messages.success(request, 'Link added successfully.')
     else:
         messages.error(request, 'Please correct the link details and try again.')
-    return redirect('public_downloads')
+    return redirect('downloads:public_downloads')
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -48,7 +48,7 @@ def link_update(request, pk):
         messages.success(request, 'Link updated successfully.')
     else:
         messages.error(request, 'Please correct the link details and try again.')
-    return redirect('public_downloads')
+    return redirect('downloads:public_downloads')
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -60,7 +60,7 @@ def category_create(request):
         messages.success(request, 'Category added successfully.')
     else:
         messages.error(request, 'Please enter a unique category name.')
-    return redirect('public_downloads')
+    return redirect('downloads:public_downloads')
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -73,4 +73,4 @@ def category_delete(request, pk):
         DownloadLink.objects.filter(category=category.name).update(category='General')
         category.delete()
         messages.success(request, 'Category deleted successfully.')
-    return redirect('public_downloads')
+    return redirect('downloads:public_downloads')

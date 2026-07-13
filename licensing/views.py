@@ -14,18 +14,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from django.db.models import Sum
 
-def main_hub(request):
-    """
-    SECURITY WALL & LANDING HUB: Login ke baad sabse pehle ye khulega.
-    Yahan koi data load nahi hoga, sirf tables ki list dikhegi.
-    """
-
-    if not request.user.is_authenticated:
-        return redirect('login')
-    return render(request, 'licensing/main_hub.html')
 
 
-@login_required(login_url='login')
+@login_required(login_url='accounts:login')
 def userinfo_dashboard(request):
     """
     DEDICATED VIEW: Sirf UserInfoData table ka data load karega.
@@ -102,7 +93,7 @@ def userinfo_dashboard(request):
     
     return render(request, 'licensing/userinfo_dashboard.html', {'clients': clients,'search_query': search_query})
 
-@login_required(login_url='login')
+@login_required(login_url='accounts:login')
 def toggle_activation(request, pk):
     """
     UserInfoData table ke liye activation/deactivation action logic.
@@ -143,12 +134,12 @@ def toggle_activation(request, pk):
     except Exception as e:
         messages.error(request, f"Status Update Failed: {str(e)}")
         # FIX: Agar error aaye toh safe exit ke liye seedha userinfo_dashboard par redirect karein
-        return redirect('userinfo_dashboard')
+        return redirect('licensing:userinfo_dashboard')
         
     # FIX: Redirection links ko 'dashboard' se badal kar 'userinfo_dashboard' kiya gaya hai
     if current_search:
-        return redirect(f"/userinfo/?search_id={current_search}")
-    return redirect('userinfo_dashboard')
+        return redirect(f"/licensing/userinfo/?search_id={current_search}")
+    return redirect('licensing:userinfo_dashboard')
 
 
 # =====================================================================
@@ -156,14 +147,14 @@ def toggle_activation(request, pk):
 # =====================================================================
 
 
-@login_required(login_url='login')
+@login_required(login_url='accounts:login')
 def pacserp_dashboard(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect('accounts:login')
         
     if not request.user.is_superuser:
         messages.error(request, "Only Admin can open ERP.")  # ⚠️ यहाँ 'e' हटाया
-        return redirect('main_hub')  # Redirect to named main hub route
+        return redirect('core:dashboard')  # Redirect to named main hub route
     search_query = request.GET.get('search_id', '').strip()
     erp_records = []
     
@@ -220,7 +211,7 @@ def toggle_erp_activation(request, pk):
 
             if ((datetime.strptime(input_expiry_date, "%Y-%m-%d").date()) - date.today()) > timedelta(days=364):
                 messages.error(request, "Date 1 Year Se Jyada Nahi ho sakti hai.")
-                return redirect('pacserp_dashboard')
+                return redirect('licensing:pacserp_dashboard')
             
             if not input_amount.isdigit() or not input_amount:
                 input_amount = 0
@@ -243,7 +234,7 @@ def toggle_erp_activation(request, pk):
                 except (ValueError, TypeError):
                     # Agar user ne galat format dala to safe exit ke liye validation error handle kiya
                     messages.error(request, "Date ka format sahi nahi hai. Kripya YYYY-MM-DD format use karein.")
-                    return redirect('pacserp_dashboard')
+                    return redirect('licensing:pacserp_dashboard')
             else:
                 # DUPLICATE CHECK / SAFE EXIT: Agar user ne form me date chhod di hai, to use None (NULL) set karein
                 record.expiry_date = None
@@ -264,12 +255,12 @@ def toggle_erp_activation(request, pk):
             
     except Exception as e:
         messages.error(request, f"ERP Status & Date Update Failed: {str(e)}")
-        return redirect('pacserp_dashboard')
+        return redirect('licensing:pacserp_dashboard')
         
     # Redirect routing logic to retain the search state
     if current_search:
-        return redirect(f"/pacserp/?search_id={current_search}")
-    return redirect('pacserp_dashboard')
+        return redirect(f"/licensing/pacserp/?search_id={current_search}")
+    return redirect('licensing:pacserp_dashboard')
 
 
 
@@ -290,7 +281,7 @@ def generate_invoice(request, pk):
         
     except Exception as e:
         messages.error(request, f"Invoice Engine Execution Failed: {str(e)}")
-        return redirect('userinfo_dashboard')
+        return redirect('licensing:userinfo_dashboard')
     
 @login_required
 def generate_erp_invoice(request, pk):
@@ -308,7 +299,7 @@ def generate_erp_invoice(request, pk):
         
     except Exception as e:
         messages.error(request, f"NCL ERP Invoice Engine Mismatch: {str(e)}")
-        return redirect('pacserp_dashboard')
+        return redirect('licensing:pacserp_dashboard')
     
 
 
@@ -345,7 +336,7 @@ def create_userinfo(request):
                 new_record.entry_count = 0
                 new_record.save()
                 messages.success(request, f"Success: PACS '{pacs_name}' Safely Save Ho Gaya.")
-                return redirect('userinfo_dashboard')
+                return redirect('licensing:userinfo_dashboard')
             else:
                 messages.error(request, "Validation Error: Kripya saare fields ko sahi se bharein.")
         except Exception as e:
@@ -408,7 +399,7 @@ def create_pacserp(request):
                 new_record.save()
                 
                 messages.success(request, f"Success: ERP Record '{pacs_name}' successfully create aur automatic ACTIVE ho gaya.")
-                return redirect('pacserp_dashboard')
+                return redirect('licensing:pacserp_dashboard')
             else:
                 messages.error(request, "Validation Error: Input parameters completely format match nahi kar rahe.")
         except Exception as e:
@@ -433,7 +424,7 @@ def delete_record_view(request, record_id):
         if not request.user.is_superuser:
             # Agar user admin nahi hai, toh request block karein aur warning dein
             messages.error(request, "Error: Aapke paas is record ko delete karne ki permission nahi hai!")
-            return redirect('pacserp_dashboard') # Apne dashboard ya list view par redirect karein
+            return redirect('licensing:pacserp_dashboard') # Apne dashboard ya list view par redirect karein
 
         # 3. Execution: Agar admin hai, toh record delete karein
         record.delete()
@@ -443,7 +434,7 @@ def delete_record_view(request, record_id):
         # On Error GoTo block jaisa behavior handle karne ke liye
         messages.error(request, f"System Error: Record delete nahi ho paya. Details: {str(e)}")
         
-    return redirect('pacserp_dashboard')
+    return redirect('licensing:pacserp_dashboard')
 
 
 @login_required
@@ -460,7 +451,7 @@ def delete_userinfo_view(request, user_id):
         # 2. Permission Check: Agar login karne wala banda admin (superuser) nahi hai
         if not request.user.is_superuser:
             messages.error(request, "Security Alert: Aapke paas kisi user ka profile delete karne ki permission nahi hai!")
-            return redirect('userinfo_dashboard')  # Dashboard par wapas bhej dein
+            return redirect('licensing:userinfo_dashboard')  # Dashboard par wapas bhej dein
 
         # 3. Execution: Agar saari conditions sahi hain, toh record delete karein
         username_for_msg = user_record.pacs_name  # Message me naam dikhane ke liye store kiya
@@ -474,7 +465,7 @@ def delete_userinfo_view(request, user_id):
         messages.error(request, f"Database Error: Deletion fail ho gaya. Details: {str(e)}")
         
     # Action complete hone ke baad dashboard page par wapas redirect karein
-    return redirect('userinfo_dashboard')
+    return redirect('licensing:userinfo_dashboard')
 
 
 @login_required
@@ -498,7 +489,7 @@ def update_userinfo_view(request, client_id):
                 
                 # Success Message push karna jo SweetAlert Toast me dikhega
                 messages.success(request, f"Success: User ID '{client_record.mobile} {client_record.pacs_name} ' ka data successfully update kar diya gaya hai.")
-                return redirect('userinfo_dashboard') # Dashboard par wapas bhej dein
+                return redirect('licensing:userinfo_dashboard') # Dashboard par wapas bhej dein
             else:
                 messages.error(request, "Validation Error: Form me di gayi jaankari sahi nahi hai. Kripya check karein.")
         
@@ -538,7 +529,7 @@ def update_pacserp_view(request, record_id):
                 
                 # Success notification push karna jo SweetAlert Toast me chalega
                 messages.success(request, f"Success: ERP Record ID #{erp_record.id} successfully update ho gaya hai.")
-                return redirect('pacserp_dashboard')  # ERP Dashboard par wapas redirect karein
+                return redirect('licensing:pacserp_dashboard')  # ERP Dashboard par wapas redirect karein
             else:
                 messages.error(request, "Validation Error: Form validation fail ho gayi hai. Kripya details check karein.")
         

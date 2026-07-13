@@ -1,4 +1,4 @@
-{% extends 'licensing/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}EPR{% endblock %}
 
@@ -18,12 +18,12 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-indigo-700"><i class="fa-solid fa-chart-area"></i> PACS ERP Table Live Control</h5>
-            <a href="{% url 'create_pacserp' %}" class="btn btn-primary text-dark fw-bold btn-sm me-2"><i class="fa-solid fa-plus"></i> Add New ERP
+            <a href="{% url 'licensing:create_pacserp' %}" class="btn btn-primary text-dark fw-bold btn-sm me-2"><i class="fa-solid fa-plus"></i> Add New ERP
                 Record</a>
         </div>
         <div class="card-body">
 
-            <form method="GET" action="{% url 'pacserp_dashboard' %}"
+            <form method="GET" action="{% url 'licensing:pacserp_dashboard' %}"
                 class="row g-2 mb-4 d-flex justify-content-center align-items-center">
                 <div class="col-md-2">
                     <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
@@ -92,7 +92,7 @@
                             </td>
                             {% if request.user.is_superuser %}
                             <td>
-                                <a href="{% url 'update_pacserp' record.id %}"
+                                <a href="{% url 'licensing:update_pacserp' record.id %}"
                                     class="btn btn-outline-primary btn-sm fw-bold text-indigo-700 px-2"
                                     title="PACS ERP record update karein">
                                     <i class="fas fa-edit me-1"></i> Update
@@ -110,7 +110,7 @@
                                         </button>
                                         {% else %}
                                         {% if request.user.is_superuser %}
-                                        <a href="#" data-url="{% url 'toggle_erp_activation' record.id %}"
+                                        <a href="#" data-url="{% url 'licensing:toggle_erp_activation' record.id %}"
                                             class="btn btn-outline-danger btn-sm"
                                             onclick="confirmDeactivate(event, this, '{{ record.id }}');">
                                             <i class="fa-solid fa-circle-exclamation"></i> Deactivate
@@ -124,7 +124,7 @@
 
                                 </div>
                             </td>
-                            <td> <a href="#" data-url="{% url 'generate_erp_invoice' record.id %}"
+                            <td> <a href="#" data-url="{% url 'licensing:generate_erp_invoice' record.id %}"
                                     onclick="openErpInvoiceWithAmount(event, this.getAttribute('data-url'))"
                                     class="btn btn-sm btn-outline-primary" title="Download ERP Invoice">
                                     <i class="fa-solid fa-file-pdf"></i> Invoice
@@ -133,7 +133,7 @@
 
                             {% if request.user.is_superuser %}
                             <td>
-                                <a href="#" data-url="{% url 'delete_record' record.id %}"
+                                <a href="#" data-url="{% url 'licensing:delete_record' record.id %}"
                                     class="btn btn-outline-danger btn-sm"
                                     onclick="confirmDelete(event, this, '{{ record.id }}');">
                                     <i class="fa-solid fa-trash"></i> Delete
@@ -251,7 +251,7 @@
                                     </div>
 
                                     <form method="POST"
-                                        action="{% url 'toggle_erp_activation' record.id %}?search_id={{ search_query }}">
+                                        action="{% url 'licensing:toggle_erp_activation' record.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
 

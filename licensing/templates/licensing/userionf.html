@@ -1,4 +1,4 @@
-{% extends 'licensing/base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}User Info Database Dashboard{% endblock %}
 
@@ -22,7 +22,7 @@
             <a href="/" class="btn btn-outline-secondary btn-sm">⬅️ Back to Central Hub</a>
         </div>
         <div class="card-body">
-            <form method="GET" action="{% url 'userinfo_dashboard' %}" class="row g-2 mb-4 d-flex justify-content-center align-items-center">
+            <form method="GET" action="{% url 'licensing:userinfo_dashboard' %}" class="row g-2 mb-4 d-flex justify-content-center align-items-center">
                 <div class="col-md-2">
                     <input type="text" name="search_id" value="{{ search_query }}" class="form-control"
                         placeholder="Search by Pacs Name, Mobile, or Operator Mobile...">
@@ -85,7 +85,7 @@
 
                             <td class="text-center">
                                 {% if client.payment_status == client.amount %}
-                                <a href="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}"
+                                <a href="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query }}"
                                     class="btn btn-outline-danger btn-sm"
                                     onclick="return confirm('Kya aap PACS ID {{ client.id }} ko Deactivate करना चाहते हैं?');">
                                     Deactivate
@@ -110,7 +110,7 @@
                                     </div>
 
                                     <form method="POST"
-                                        action="{% url 'toggle_activation' client.id %}?search_id={{ search_query }}">
+                                        action="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
                                             <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id }}</span>
