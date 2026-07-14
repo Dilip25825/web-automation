@@ -53,6 +53,15 @@ def link_update(request, pk):
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
 @require_POST
+def link_delete(request, pk):
+    link = get_object_or_404(DownloadLink, pk=pk)
+    link.delete()
+    messages.success(request, 'Link deleted successfully.')
+    return redirect('downloads:public_downloads')
+
+
+@user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
+@require_POST
 def category_create(request):
     form = CategoryForm(request.POST)
     if form.is_valid():
@@ -74,3 +83,4 @@ def category_delete(request, pk):
         category.delete()
         messages.success(request, 'Category deleted successfully.')
     return redirect('downloads:public_downloads')
+

@@ -131,18 +131,6 @@ USE_TZ = True
 # 1. URL jo browser me static files ke liye dikhega
 STATIC_URL = '/static/'
 
-# 2. Safety & Error Handling: Agar aap kisi global static folder se files load karna chahte hain
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "static"), # Project level static folder ke liye
-# ]
-# STORAGES = {
-#        "staticfiles": {
-#         #    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-#         "BACKEND": "django.core.files.storage.FileSystemStorage",
-#        },
-#    }
-
-
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -156,18 +144,10 @@ STORAGES = {
 # 3. Production ke liye (Jab aap collectstatic run karenge)
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# software_admin/settings.py
-
-# software_admin/settings.py ke sabse niche ye variables check karein
-
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
-
-# software_admin/settings.py ke sabse niche ye jodhein
-# 1. Browser close hote hi session delete karne ke liye
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # 2. Server restart hone par cookies invalid karne ke liye (Cookie Session Engine)
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
@@ -182,3 +162,5 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # 3. Browser close karte hi session data completely destroy karne ke liye
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+

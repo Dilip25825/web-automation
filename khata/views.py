@@ -14,61 +14,6 @@ from django.http import HttpResponse
 from .models import ShopProfile
 from django.core.paginator import Paginator #
 from django.views.decorators.http import require_POST
-# @login_required
-# def dashboard(request):
-#     try:
-#         # Base list
-#         customers = Customer.objects.filter(user=request.user).order_by('name')
-        
-#         search_query = request.GET.get('search', '').strip()
-#         filter_type = request.GET.get('filter', 'all')
-        
-#         if search_query:
-#             customers = customers.filter(
-#                 Q(name__icontains=search_query) | Q(phone__icontains=search_query)
-#             ).order_by('name')
-        
-#         # 1. Total Calculations (Poore customers par, pagination se pehle)
-#         total_lene_hain = 0  
-#         total_dene_hain = 0  
-        
-#         for cust in customers:
-#             trans = Transaction.objects.filter(customer=cust)
-#             net = sum(t.amount for t in trans if t.trans_type == 'GIVEN') - sum(t.amount for t in trans if t.trans_type == 'GOT')
-#             if net > 0: total_lene_hain += net
-#             elif net < 0: total_dene_hain += abs(net)
-
-#         # 2. Filter logic (Dashboard ke cards ke liye)
-#         final_list = []
-#         for cust in customers:
-#             trans = Transaction.objects.filter(customer=cust)
-#             net = sum(t.amount for t in trans if t.trans_type == 'GIVEN') - sum(t.amount for t in trans if t.trans_type == 'GOT')
-            
-#             if filter_type == 'lene' and net <= 0: continue
-#             if filter_type == 'dene' and net >= 0: continue
-            
-#             cust.balance = net
-#             cust.abs_balance = abs(net)
-#             cust.b64_id = base64.b64encode(str(cust.id).encode('utf-8')).decode('utf-8')
-#             final_list.append(cust)
-
-#         # 3. Pagination (Limit 15 per page)
-#         paginator = Paginator(final_list, 10)
-#         page_number = request.GET.get('page')
-#         page_obj = paginator.get_page(page_number)
-        
-#         context = {
-#             'customers': page_obj, 
-#             'total_lene_hain': total_lene_hain,
-#             'total_dene_hain': total_dene_hain,
-#             'current_filter': filter_type,
-#             'search_query': search_query,
-#         }
-#         return render(request, 'khata/dashboard.html', context)
-        
-#     except Exception as e:
-#         messages.error(request, f"Dashboard load karne me error: {str(e)}")
-#         return render(request, 'khata/error.html')
 
 
 @login_required
@@ -516,3 +461,4 @@ def report_page(request):
         'end_date': end_date,
     }
     return render(request, 'khata/report.html', context)
+

@@ -1,13 +1,13 @@
 <div id="task-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4">
 <div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto">
-<div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
+<div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white">
 <div>
-<h2 class="text-xl font-extrabold text-slate-900">
-<i class="fa-solid fa-square-plus mr-2 text-violet-600">
+<h2 class="text-xl font-extrabold text-white">
+<i class="fa-solid fa-square-plus mr-2 text-white">
 </i>Add New Task</h2>
-<p class="mt-1 text-sm text-slate-500">Create a new reminder.</p>
+<p class="mt-1 text-sm text-indigo-100">Create a new reminder.</p>
 </div>
-<button type="button" data-modal-close="task-modal" class="text-slate-400">
+<button type="button" data-modal-close="task-modal" class="text-white/80 transition hover:text-white">
 <i class="fa-solid fa-xmark text-lg">
 </i>
 </button>
@@ -23,14 +23,14 @@
 </div>
 <div id="edit-task-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4">
 <div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto">
-<div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
+<div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white">
 <div>
-<h2 class="text-xl font-extrabold text-slate-900">
-<i class="fa-solid fa-pen-to-square mr-2 text-violet-600">
+<h2 class="text-xl font-extrabold text-white">
+<i class="fa-solid fa-pen-to-square mr-2 text-white">
 </i>Edit Task</h2>
-<p class="mt-1 text-sm text-slate-500">Update without leaving the dashboard.</p>
+<p class="mt-1 text-sm text-indigo-100">Update without leaving the dashboard.</p>
 </div>
-<button type="button" data-modal-close="edit-task-modal" class="text-slate-400">
+<button type="button" data-modal-close="edit-task-modal" class="text-white/80 transition hover:text-white">
 <i class="fa-solid fa-xmark text-lg">
 </i>
 </button>
@@ -46,14 +46,14 @@
 </div>
 <div id="category-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4">
 <div class="app-card app-modal-panel max-h-[92vh] w-[96vw] max-w-[96rem] overflow-y-auto">
-<div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
+<div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white">
 <div>
-<h2 class="text-xl font-extrabold text-slate-900">
-<i class="fa-solid fa-tags mr-2 text-violet-600">
+<h2 class="text-xl font-extrabold text-white">
+<i class="fa-solid fa-tags mr-2 text-white">
 </i>Manage Categories</h2>
-<p class="mt-1 text-sm text-slate-500">Create, edit and organize task labels.</p>
+<p class="mt-1 text-sm text-indigo-100">Create, edit and organize task labels.</p>
 </div>
-<button type="button" data-modal-close="category-modal" class="text-slate-400">
+<button type="button" data-modal-close="category-modal" class="text-white/80 transition hover:text-white">
 <i class="fa-solid fa-xmark text-lg">
 </i>
 </button>
@@ -97,7 +97,7 @@
 </thead>
 <tbody>{% for category in categories %}<tr>
 <td class="font-bold text-slate-800">
-<i class="fa-solid {{ category.icon|default:'fa-tag' }} mr-2 text-violet-600">
+<i class="fa-solid {{ category.icon|default:'fa-tag' }} mr-2 text-white">
 </i>{{ category.name }}</td>
 <td>{% if category.color == 'rose' or category.color == 'danger' %}<span class="rounded-full bg-rose-100 px-2 py-1 text-xs font-bold text-rose-700">Rose</span>{% elif category.color == 'emerald' or category.color == 'success' %}<span class="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700">Emerald</span>{% elif category.color == 'violet' or category.color == 'warning' or category.color == 'secondary' %}<span class="rounded-full bg-violet-100 px-2 py-1 text-xs font-bold text-violet-700">Violet</span>{% elif category.color == 'blue' or category.color == 'info' %}<span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">Blue</span>{% else %}<span class="rounded-full bg-indigo-100 px-2 py-1 text-xs font-bold text-indigo-700">Indigo</span>{% endif %}</td>
 <td>{{ category.task_count }}</td>
@@ -125,11 +125,11 @@
 </div>
 <div id="edit-category-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/45 p-4">
 <div class="app-card app-modal-panel w-full max-w-lg">
-<div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-6 py-5">
-<h2 class="text-xl font-extrabold text-slate-900">
-<i class="fa-solid fa-pen-to-square mr-2 text-violet-600">
+<div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white">
+<h2 class="text-xl font-extrabold text-white">
+<i class="fa-solid fa-pen-to-square mr-2 text-white">
 </i>Edit Category</h2>
-<button type="button" data-modal-close="edit-category-modal" class="text-slate-400">
+<button type="button" data-modal-close="edit-category-modal" class="text-white/80 transition hover:text-white">
 <i class="fa-solid fa-xmark text-lg">
 </i>
 </button>

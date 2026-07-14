@@ -194,8 +194,7 @@
                                         action="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query }}">
                                         {% csrf_token %}
                                         <div class="modal-body text-wrap text-light">
-                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id
-                                                    }}</span>
+                                            <p><strong>PACS ID:</strong> <span class="text-indigo-700">{{ client.id}}</span>
                                             </p>
                                             <p><strong>Mobile:</strong> {{ client.mobile|default:"-" }}</p>
                                             <p><strong>Activation Type:</strong> {{ client.for_whys }} {{client.f_year}}

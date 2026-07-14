@@ -4,22 +4,29 @@
 <div class="mx-auto max-w-7xl space-y-5">
   <div class="grid gap-4 md:grid-cols-4">
     <a href="?filter=lene"
-      class="app-card flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
+      class="app-card group flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
       <div>
-        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Lene Hain</p>
-        <p class="mt-2 text-2xl font-extrabold text-indigo-700">₹{{ total_lene_hain|stringformat:".2f" }}</p>
-      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i
-          class="fa-solid fa-arrow-trend-up"></i></span>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-up me-1 text-indigo-500"></i>Mujhe Lene Hain</p>
+        <p class="mt-1 text-sm text-slate-600">Customers se milne wali total baki rakam</p>
+        <p class="mt-2 text-lg font-extrabold text-indigo-700 transition group-hover:text-violet-700">
+          &#8377;{{ total_lene_hain|stringformat:".2f" }}
+          <i class="fa-solid fa-arrow-right ms-1 text-sm transition group-hover:translate-x-1"></i>
+        </p>
+      </div>
+      <span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700 transition group-hover:bg-violet-100 group-hover:text-violet-700"><i class="fa-solid fa-wallet"></i></span>
     </a>
     <a href="?filter=dene"
-      class="app-card flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'dene' %}ring-2 ring-rose-200{% endif %}">
+      class="app-card group flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if current_filter == 'dene' %}ring-2 ring-rose-200{% endif %}">
       <div>
-        <p class="text-sm font-bold uppercase tracking-wide text-slate-500">Mujhe Dene Hain</p>
-        <p class="mt-2 text-2xl font-extrabold text-rose-700">₹{{ total_dene_hain|stringformat:".2f" }}</p>
-      </div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i
-          class="fa-solid fa-arrow-trend-down"></i></span>
+        <p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-down me-1 text-rose-500"></i>Mujhe Dene Hain</p>
+        <p class="mt-1 text-sm text-slate-600">Customers ko dene wali total baki rakam</p>
+        <p class="mt-2 text-lg font-extrabold text-rose-700 transition group-hover:text-rose-600">
+          &#8377;{{ total_dene_hain|stringformat:".2f" }}
+          <i class="fa-solid fa-arrow-right ms-1 text-sm transition group-hover:translate-x-1"></i>
+        </p>
+      </div>
+      <span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700 transition group-hover:bg-rose-200"><i class="fa-solid fa-hand-holding-dollar"></i></span>
     </a>
-
       <a href="{% url 'khata:report_page' %}"
       class="app-card flex items-center justify-between border-l-4 border-violet-500 p-5 transition hover:-translate-y-0.5 {% if current_filter == 'lene' %}ring-2 ring-indigo-200{% endif %}">
       <div>
@@ -145,3 +152,4 @@
   });
 </script>
 {% endblock %}
+
