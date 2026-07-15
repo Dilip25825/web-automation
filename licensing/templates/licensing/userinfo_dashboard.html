@@ -3,14 +3,39 @@
 {% block title %}User Info Database Dashboard{% endblock %}
 
 {% block content %}
+<style>
+    .userinfo-activation-modal{display:none;position:fixed;inset:0;z-index:1060;background:rgba(15,23,42,.62);padding:1rem;overflow-y:auto}.userinfo-activation-modal.is-open{display:flex;align-items:flex-start;justify-content:center;animation:appModalIn .24s ease-out both}.userinfo-activation-dialog{width:min(620px,100%);margin:1rem auto;background:#fff;border-radius:1rem;box-shadow:0 24px 70px rgba(15,23,42,.3);overflow:hidden;animation:appModalIn .24s ease-out both}.userinfo-activation-header{padding:1rem 1.35rem;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed)}.userinfo-activation-header h3{margin:0;font-size:1.2rem;font-weight:800}.userinfo-activation-header p{margin:.2rem 0 0;opacity:.9}.userinfo-activation-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;padding:1.2rem 1.35rem .8rem}.userinfo-activation-detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.65rem;padding:.65rem .75rem}.userinfo-activation-detail span{display:block;color:#64748b;font-size:.7rem;font-weight:800;text-transform:uppercase}.userinfo-activation-detail strong{display:block;color:#0f172a;margin-top:.2rem;overflow-wrap:anywhere}.userinfo-activation-fields{padding:.2rem 1.35rem 1rem}.userinfo-activation-fields label{display:block;color:#334155;font-size:.8rem;font-weight:800;margin:.7rem 0 .3rem}.userinfo-activation-fields input{width:100%!important;box-sizing:border-box;background:#fff!important;color:#172033!important;border:1px solid #cbd5e1!important;border-radius:.5rem;padding:.65rem .75rem}.userinfo-activation-footer{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #e2e8f0;background:#f8fafc}@media(max-width:560px){.userinfo-activation-details{grid-template-columns:1fr;padding-left:1rem;padding-right:1rem}.userinfo-activation-fields{padding-left:1rem;padding-right:1rem}.userinfo-activation-footer{padding-left:1rem;padding-right:1rem}}.modal.fade{display:none!important}    .activation-swal-popup { display:none!important; }
+    .activation-swal-popup .swal2-html-container { margin: 0 !important; padding: 0 !important; }
+    .activation-dialog-header { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; padding: 1.15rem 1.4rem; text-align: left; }
+    .activation-dialog-header h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+    .activation-dialog-header p { margin: .25rem 0 0; opacity: .9; font-size: .9rem; }
+    .activation-dialog-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; padding: 1.15rem 1.4rem .75rem; text-align: left; }
+    .activation-dialog-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .65rem; padding: .65rem .75rem; }
+    .activation-dialog-detail span { color: #64748b; display: block; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+    .activation-dialog-detail strong { color: #0f172a; display: block; margin-top: .2rem; overflow-wrap: anywhere; }
+    .activation-dialog-fields { padding: .25rem 1.4rem 0; text-align: left; }
+    .activation-dialog-fields label { color: #334155; display: block; font-size: .84rem; font-weight: 700; margin: .8rem 0 .3rem; }
+    .activation-dialog-fields .swal2-input { box-sizing: border-box; margin: 0; width: 100%; }
+    .farmer-form-modal { display:none; position:fixed; inset:0; z-index:1050; background:rgba(15,23,42,.62); padding:1rem; overflow-y:auto; }
+    .farmer-form-modal.is-open { display:flex; align-items:flex-start; justify-content:center; }
+    .farmer-form-dialog { animation: appModalIn .24s ease-out both; width:min(920px,100%); margin:1rem auto; background:#fff; border-radius:1rem; box-shadow:0 24px 70px rgba(15,23,42,.3); overflow:hidden; }
+    .farmer-form-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 1.35rem; color:#fff; background:linear-gradient(135deg,#2563eb,#7c3aed); }
+    .farmer-form-header h3 { margin:0; font-size:1.15rem; font-weight:800; }
+    .farmer-form-header p { margin:.2rem 0 0; opacity:.88; font-size:.82rem; }
+    .farmer-form-close { border:0; background:transparent; color:#fff; font-size:2rem; line-height:1; cursor:pointer; }
+    .farmer-form-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; padding:1.35rem; max-height:68vh; overflow-y:auto; }
+    .farmer-field label { display:block; color:#334155; font-size:.78rem; font-weight:800; margin-bottom:.3rem; text-transform:uppercase; }
+    .farmer-field input, .farmer-field select, .farmer-field textarea { width:100% !important; box-sizing:border-box; background:#fff !important; color:#172033 !important; border:1px solid #cbd5e1 !important; }
+    .farmer-form-footer { display:flex; justify-content:flex-end; gap:.6rem; padding:1rem 1.35rem; border-top:1px solid #e2e8f0; background:#f8fafc; }
+    @media (max-width:640px) { .farmer-form-body { grid-template-columns:1fr; max-height:70vh; } .farmer-form-modal { padding:.4rem; } .farmer-form-dialog { margin:.2rem auto; } }</style>
 <div class="container-fluid px-4">
 
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-indigo-700">User Info Table Live Control</h5>
-            <a href="{% url 'licensing:create_userinfo' %}" class="btn btn-success text-white fw-bold btn-sm me-2"> <i
+            <button type="button" id="open-add-farmer" class="btn btn-success text-white fw-bold btn-sm me-2"> <i
                     class="fas fa-plus"></i> Add New
-                Record</a>
+                Record</button>
 
         </div>
         <div class="card-body">
@@ -35,10 +60,65 @@
             {% if clients %}
             <h4 class="mb-0 fw-bold text-indigo-700">Total Record(s) : {{ clients.paginator.count }}</h4>
             {% endif %}
+            <div id="userinfo-bulk-actions" class="d-flex flex-wrap align-items-center gap-2 mb-3 p-3 border rounded bg-light">
+                <span id="selected-count" class="text-secondary me-2">Select one record to use actions.</span>
+                {% if request.user.is_superuser %}
+                <button type="button" class="btn btn-sm btn-outline-primary" id="bulk-update"><i class="fas fa-edit me-1"></i>Update</button>
+                {% endif %}
+                <button type="button" class="btn btn-sm border border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white" id="bulk-activate"><i class="fas fa-check me-1"></i>Activate</button>
+                {% if request.user.is_superuser %}
+                <button type="button" class="btn btn-sm btn-outline-danger" id="bulk-deactivate"><i class="fas fa-ban me-1"></i>Deactivate</button>
+                {% endif %}
+                <button type="button" class="btn btn-sm border border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white" id="bulk-invoice"><i class="fas fa-file-invoice me-1"></i>Invoice</button>
+                {% if request.user.is_superuser %}
+                <button type="button" class="btn btn-sm btn-outline-danger" id="bulk-delete"><i class="fas fa-trash-alt me-1"></i>Delete</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="bulk-copy"><i class="fas fa-copy me-1"></i>Copy</button>
+                {% endif %}
+            </div>            <div id="farmer-form-modal" class="farmer-form-modal" aria-hidden="true">
+                <div class="farmer-form-dialog">
+                    <div class="farmer-form-header">
+                        <div><h3 id="farmer-form-title"><i class="fas fa-user-plus me-2"></i>Add New Farmer</h3><p>Enter farmer/UserInfo details</p></div>
+                        <button type="button" class="farmer-form-close" aria-label="Close">&times;</button>
+                    </div>
+                    <form id="farmer-modal-form" method="post" action="{% url 'licensing:create_userinfo' %}" novalidate>
+                        {% csrf_token %}
+                        <div class="farmer-form-body">
+                            {% for field in farmer_form %}
+                            <div class="farmer-field">
+                                <label for="modal_{{ field.name }}">{{ field.label }}</label>
+                                <div id="modal_{{ field.name }}_wrapper">{{ field }}</div>
+                                <small class="text-danger modal-field-error" data-field="{{ field.name }}"></small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="farmer-form-footer">
+                            <button type="button" class="btn btn-outline-secondary farmer-form-cancel">Cancel</button>
+                            <button type="submit" id="farmer-form-submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="userinfo-activation-modal" class="userinfo-activation-modal" aria-hidden="true">
+                <div class="userinfo-activation-dialog">
+                    <div class="userinfo-activation-header"><h3><i class="fas fa-rocket me-2"></i>Activate PACS</h3><p id="userinfo-activation-name"></p></div>
+                    <div class="userinfo-activation-details">
+                        <div class="userinfo-activation-detail"><span>PACS ID</span><strong id="userinfo-activation-id">-</strong></div>
+                        <div class="userinfo-activation-detail"><span>Mobile</span><strong id="userinfo-activation-mobile">-</strong></div>
+                        <div class="userinfo-activation-detail"><span>Activation Type</span><strong id="userinfo-activation-purpose">-</strong></div>
+                        <div class="userinfo-activation-detail"><span>Financial Year</span><strong id="userinfo-activation-year">-</strong></div>
+                        <div class="userinfo-activation-detail"><span>Activated By</span><strong>{{ request.user.username }}</strong></div>
+                    </div>
+                    <form id="userinfo-activation-form" method="post"><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        <div class="userinfo-activation-fields"><label for="userinfo-activation-amount">Activation Amount (Rs.)</label><input id="userinfo-activation-amount" name="amount" type="number" min="0" required><label for="userinfo-activation-utr">UTR / Transaction Number</label><input id="userinfo-activation-utr" name="utr_number" type="text" placeholder="Optional transaction ID"></div>
+                        <div class="userinfo-activation-footer"><button type="button" id="userinfo-activation-cancel" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</button><button type="submit" class="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-700 hover:to-purple-700"><i class="fas fa-save me-1"></i>Save &amp; Activate</button></div>
+                    </form>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="app-table" style="font-size: 14px;">
                     <thead class="table-dark text-center border-secondary">
                         <tr>
+                            <th>Select</th>
                             <th>ID</th>
                             <th>Login ID</th>
                             <th>Pacs Name</th>
@@ -57,21 +137,24 @@
                             <!-- {% endif %} -->
                             <th>Accepted Date</th>
                             <th>Status</th>
-                            {% if request.user.is_superuser %}
-                            <th>Edit/Update</th>
-                            {% endif %}
-                            <th>Action</th>
-                            <th>Invoice</th>
-                            {% if request.user.is_superuser %}
-                            <TH>Delete</TH>
-                            <th>Copy Row</th>
-                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% if clients %}
                         {% for client in clients %}
                         <tr>
+                            <td class="text-center">
+                                <input type="checkbox" class="client-select" value="{{ client.id }}"
+                                    data-name="{{ client.pacs_name|escape }}" data-mobile="{{ client.mobile|default:'-'|escape }}" data-pacs-name="{{ client.pacs_name|default:''|escape }}" data-branch="{{ client.brach|default:''|escape }}" data-dist="{{ client.dist|default:''|escape }}" data-state="{{ client.state|default:''|escape }}" data-operator="{{ client.operator_mobile|default:''|escape }}" data-payment-status="{{ client.payment_status|default:''|escape }}" data-limit="{{ client.limit_of_entrys|default:''|escape }}" data-is-pri="{{ client.is_pri|default:''|escape }}" data-accepted-field="{{ client.accepte_by|default:''|escape }}"
+                                    data-purpose="{{ client.for_whys|default:'-'|escape }}" data-year="{{ client.f_year|default:'-'|escape }}" data-accepted-by="{{ request.user.username|escape }}"
+                                    data-active="{% if client.payment_status == client.amount %}true{% else %}false{% endif %}"
+                                    data-amount="{{ client.amount|default:'2000' }}" data-utr="{{ client.utr_number|default:''|escape }}"
+                                    data-update-url="{% url 'licensing:update_userinfo' client.id %}"
+                                    data-toggle-url="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query|urlencode }}"
+                                    data-invoice-url="{% url 'licensing:generate_invoice' client.id %}"
+                                    data-delete-url="{% url 'licensing:delete_userinfo' client.id %}"
+                                    data-copy-url="{% url 'licensing:create_userinfo' %}?copy_id={{ client.id }}">
+                            </td>
                             <td class="text-center">{{ client.id }}</td>
                             <td class="text-center">{{ client.mobile|default:"-" }}</td>
                             <td><strong>{{ client.pacs_name|default:"-" }}</strong></td>
@@ -98,78 +181,7 @@
                                     Inactive</span>
                                 {% endif %}
                             </td>
-
-
-                            {% if request.user.is_superuser %}
-                            <td>
-                                <a href="{% url 'licensing:update_userinfo' client.id %}"
-                                    class="btn btn-sm btn-outline-primary fw-bold" title="Farmer record update karein">
-                                    <i class="fas fa-edit me-1"></i>Update
-                                </a>
-                                {% else %}
-                                <!-- <span class="badge bg-dark border border-secondary text-muted px-2 py-1">📝
-                                    Update</span> -->
-                            </td>
-                            {% endif %}
-
-                            <td class="text-center">
-                                <div class="flex items-center justify-center gap-2 whitespace-nowrap">
-                                    {% if client.payment_status == client.amount %}
-                                    {% if request.user.is_superuser %}
-                                    <a href="#"
-                                        data-url="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query }}"
-                                        class="btn btn-outline-danger btn-sm fw-semibold whitespace-nowrap"
-                                        onclick="confirmToggleActivation(event, this, '{{ client.id }}', '{{ client.pacs_name }}', 'True');">
-                                        <i class="fas fa-ban me-1"></i> Deactivate
-                                    </a>
-                                    {% else %}
-                                    <span class="badge bg-dark border border-secondary text-muted px-2 py-1">⚠️
-                                        Deactivate</span>
-                                    {% endif %}
-
-                                    {% else %}
-                                    <button type="button"
-                                        class="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200 whitespace-nowrap"
-                                        data-bs-toggle="modal" data-bs-target="#userinfoModal{{ client.id }}">
-                                        <i class="fas fa-circle-check mr-2"></i> Activate
-                                    </button>
-                                    {% endif %}
-
-
-                                </div>
-                            </td>
-                            <td>
-                                <!-- <a href="{% url 'licensing:generate_invoice' client.id %}"
-                                    class="btn btn-sm btn-outline-primary fw-bold" title="Download Invoice"
-                                    target="_blank">
-                                    📄 Invoice
-                                </a> -->
-                                <a href="#" data-url="{% url 'licensing:generate_invoice' client.id %}"
-                                    onclick="openInvoiceWithAmount(event, this.getAttribute('data-url'))"
-                                    class="btn btn-sm btn-outline-primary fw-bold" title="Download Invoice">
-                                    <i class="fas fa-file-invoice-dollar"></i> Invoice
-                                </a>
-                            </td>
-
-
-                            {% if request.user.is_superuser %}
-                            <td>
-                                <a href="#" data-url="{% url 'licensing:delete_userinfo' client.id %}"
-                                    class="btn btn-outline-danger btn-sm fw-semibold whitespace-nowrap"
-                                    onclick="confirmUserDelete(event, this, '{{ client.id }}', '{{ client.pacs_name }} {{ client.mobile }}');"
-                                    title="Permanently Delete User Profile">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </a>
-                            </td>
-                            <td>
-                                <a href="{% url 'licensing:create_userinfo' %}?copy_id={{ client.id }}"
-                                    class="btn btn-sm btn-outline-primary fw-bold">
-                                    <i class="fas fa-copy"></i> Copy
-                                </a>
-                            </td>
-                            {% endif %}
-
-                            {% if messages %}
+{% if messages %}
                             <div id="django-messages-container" style="display: none;">
                                 {% for message in messages %}
                                 <div class="django-msg" data-tags="{{ message.tags }}">{{ message }}</div>
@@ -439,5 +451,101 @@
             window.open(baseUrl, '_blank');
         }
     }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = Array.from(document.querySelectorAll('.client-select'));
+    const selectedCount = document.getElementById('selected-count');
+    function selectedClient() {
+        const selected = checkboxes.filter(function (checkbox) { return checkbox.checked; });
+        if (selected.length !== 1) {
+            Swal.fire({ icon: 'info', title: 'Select one record', text: 'Please select exactly one UserInfo record first.' });
+            return null;
+        }
+        return selected[0];
+    }
+    function updateSelectionCount() {
+        const count = checkboxes.filter(function (checkbox) { return checkbox.checked; }).length;
+        selectedCount.textContent = count ? count + ' record selected.' : 'Select one record to use actions.';
+    }
+    checkboxes.forEach(function (checkbox) { checkbox.addEventListener('change', updateSelectionCount); });
+    function bindRedirect(buttonId, dataAttribute) {
+        const button = document.getElementById(buttonId);
+        if (!button) return;
+        button.addEventListener('click', function () {
+            const client = selectedClient();
+            if (client) window.location.href = client.dataset[dataAttribute];
+        });
+    }
+    const farmerModal = document.getElementById('farmer-form-modal');
+    const farmerForm = document.getElementById('farmer-modal-form');
+    const farmerTitle = document.getElementById('farmer-form-title');
+    const farmerSubmit = document.getElementById('farmer-form-submit');
+    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','for_whys','f_year','is_pri','limit_of_entrys','accepte_by'];
+    function openFarmerModal(client, copyRecord) {
+        const isUpdate = !!client && !copyRecord;
+        const isCopy = !!client && !!copyRecord;
+        farmerForm.action = isUpdate ? client.dataset.updateUrl : '{% url 'licensing:create_userinfo' %}';
+        farmerTitle.innerHTML = isUpdate ? '<i class="fas fa-edit me-2"></i>Update Farmer' : (isCopy ? '<i class="fas fa-copy me-2"></i>Copy Farmer Record' : '<i class="fas fa-user-plus me-2"></i>Add New Farmer');
+        farmerSubmit.innerHTML = isUpdate ? '<i class="fas fa-save me-1"></i>Update Record' : (isCopy ? '<i class="fas fa-save me-1"></i>Save Copied Record' : '<i class="fas fa-save me-1"></i>Save Record');
+        if (client) {
+            const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
+            fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = values[name] || ''; });
+            if (isCopy) { const mobile = document.getElementById('id_mobile'); if (mobile) mobile.value = ''; }
+        } else {
+            fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; });
+        }
+        farmerModal.classList.add('is-open'); farmerModal.setAttribute('aria-hidden', 'false');
+    }    document.getElementById('open-add-farmer').addEventListener('click', function () { openFarmerModal(null); });
+    farmerModal.querySelectorAll('.farmer-form-close, .farmer-form-cancel').forEach(function (button) { button.addEventListener('click', function () { farmerModal.classList.remove('is-open'); farmerModal.setAttribute('aria-hidden', 'true'); }); });
+    farmerModal.addEventListener('click', function (event) { if (event.target === farmerModal) { farmerModal.classList.remove('is-open'); farmerModal.setAttribute('aria-hidden','true'); } });
+    const updateButton = document.getElementById('bulk-update');
+    if (updateButton) updateButton.onclick = function () { const client = selectedClient(); if (client) openFarmerModal(client); };
+    const copyButton = document.getElementById('bulk-copy'); if (copyButton) copyButton.onclick = function () { const client = selectedClient(); if (client) openFarmerModal(client, true); };
+    const invoiceButton = document.getElementById('bulk-invoice');
+    if (invoiceButton) invoiceButton.addEventListener('click', function () {
+        const client = selectedClient();
+        if (!client) return;
+        const amountInput = document.querySelector('input[name="customAmount"]');
+        window.open(client.dataset.invoiceUrl + '?customAmount=' + encodeURIComponent(amountInput ? amountInput.value : '0'), '_blank');
+    });
+    const activateButton = document.getElementById('bulk-activate');
+    const userinfoActivationModal = document.getElementById('userinfo-activation-modal');
+    const closeUserinfoActivation = function () { userinfoActivationModal.classList.remove('is-open'); userinfoActivationModal.setAttribute('aria-hidden','true'); };
+    document.getElementById('userinfo-activation-cancel').addEventListener('click', closeUserinfoActivation);
+    userinfoActivationModal.addEventListener('click', function (event) { if (event.target === userinfoActivationModal) closeUserinfoActivation(); });
+    if (activateButton) activateButton.addEventListener('click', function () {
+        const client = selectedClient(); if (!client) return;
+        if (client.dataset.active === 'true') { Swal.fire({ icon:'info', title:'Already active', text:'Selected PACS record is already active.' }); return; }
+        document.getElementById('userinfo-activation-form').action = client.dataset.toggleUrl;
+        document.getElementById('userinfo-activation-name').textContent = client.dataset.name || '-';
+        document.getElementById('userinfo-activation-id').textContent = client.value || '-';
+        document.getElementById('userinfo-activation-mobile').textContent = client.dataset.mobile || '-';
+        document.getElementById('userinfo-activation-purpose').textContent = client.dataset.purpose || '-';
+        document.getElementById('userinfo-activation-year').textContent = client.dataset.year || '-';
+        document.getElementById('userinfo-activation-amount').value = client.dataset.amount || '0';
+        document.getElementById('userinfo-activation-utr').value = client.dataset.utr || '';
+        userinfoActivationModal.classList.add('is-open'); userinfoActivationModal.setAttribute('aria-hidden','false');
+    });    const deactivateButton = document.getElementById('bulk-deactivate');
+    if (deactivateButton) deactivateButton.addEventListener('click', function () {
+        const client = selectedClient();
+        if (!client) return;
+        if (client.dataset.active !== 'true') {
+            Swal.fire({ icon: 'info', title: 'Already inactive', text: 'Selected PACS record is already inactive.' });
+            return;
+        }
+        Swal.fire({ title: 'Deactivate PACS account?', text: client.dataset.name + ' will be deactivated.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Yes, deactivate', cancelButtonText: 'Cancel' }).then(function (result) {
+            if (result.isConfirmed) window.location.href = client.dataset.toggleUrl;
+        });
+    });
+    const deleteButton = document.getElementById('bulk-delete');
+    if (deleteButton) deleteButton.addEventListener('click', function () {
+        const client = selectedClient();
+        if (!client) return;
+        Swal.fire({ title: 'Delete record?', text: client.dataset.name + ' will be permanently deleted.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Yes, delete', cancelButtonText: 'Cancel' }).then(function (result) {
+            if (result.isConfirmed) window.location.href = client.dataset.deleteUrl;
+        });
+    });
+});
 </script>
 {% endblock %}

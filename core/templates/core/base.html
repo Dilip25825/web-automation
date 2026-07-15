@@ -537,7 +537,12 @@
                 width: 100%
             }
         }
-    </style>
+        /* Shared modal system: consistent theme and smooth entry animation. */
+        @keyframes appModalIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes appModalFade { from { opacity: 0; } to { opacity: 1; } }
+        .swal2-popup.activation-swal-popup,.swal2-popup.erp-activation-swal-popup { animation: appModalIn .24s ease-out both; }
+        .farmer-form-modal.is-open,.erp-form-modal.is-open { animation: appModalFade .2s ease-out both; }
+        .farmer-form-dialog,.erp-form-dialog { animation: appModalIn .24s ease-out both; }    </style
 </head>
 
 <body class="min-h-screen font-sans antialiased">

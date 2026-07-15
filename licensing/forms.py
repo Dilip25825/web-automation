@@ -26,7 +26,7 @@ class UserInfoForm(forms.ModelForm):
             'f_year': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. 2024-2025'}),
             'is_pri' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'limit_of_entrys' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
-            'accepte_by': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. 2024-2025'}),
+            'accepte_by': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. Admin'}),
             # ❌ software_license_key aur remark ke widgets yahan se hata diye hain
         }
     

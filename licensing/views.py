@@ -24,6 +24,7 @@ def userinfo_dashboard(request):
     # ON ERROR LOGIC / SECURITY WALL: Agar session expire ho jaye to direct login par bhein
         
     search_query = request.GET.get('search_id', '').strip()
+    farmer_form = UserInfoForm()
     clients = []
     
     try:
@@ -91,7 +92,7 @@ def userinfo_dashboard(request):
         messages.error(request, f"Database Fetch Error: {str(e)}")
         clients = []
     
-    return render(request, 'licensing/userinfo_dashboard.html', {'clients': clients,'search_query': search_query})
+    return render(request, 'licensing/userinfo_dashboard.html', {'clients': clients, 'search_query': search_query, 'farmer_form': farmer_form})
 
 @login_required(login_url='accounts:login')
 def toggle_activation(request, pk):
@@ -156,6 +157,7 @@ def pacserp_dashboard(request):
         messages.error(request, "Only Admin can open ERP.")  # ⚠️ यहाँ 'e' हटाया
         return redirect('core:dashboard')  # Redirect to named main hub route
     search_query = request.GET.get('search_id', '').strip()
+    erp_form = PacsErpForm()
     erp_records = []
     
     # ON ERROR HANDLING: Database execution safe rakhne ke liye try-except block
@@ -180,15 +182,23 @@ def pacserp_dashboard(request):
                 )
         else:
             # DEFAULT STATE: Latests 10 entries clean tarike se pull karein
-            erp_records = tblPacsErp.objects.all().order_by('-id')[:10]
+            erp_records = tblPacsErp.objects.all().order_by('-id')
             
     except Exception as e:
         messages.error(request, f"NCL Database Fetch Error: {str(e)}")
         erp_records = []
         
+    paginator = Paginator(erp_records, 10)
+    page_number = request.GET.get('page', 1)
+    try:
+        erp_records = paginator.page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        erp_records = paginator.page(1)
+
     return render(request, 'licensing/pacserp_dashboard.html', {
         'erp_records': erp_records, 
-        'search_query': search_query
+        'search_query': search_query,
+        'erp_form': erp_form
     })
 
 

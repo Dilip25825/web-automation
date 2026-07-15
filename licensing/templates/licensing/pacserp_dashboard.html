@@ -3,7 +3,10 @@
 {% block title %}EPR{% endblock %}
 
 {% block content %}
-
+<style>
+@keyframes appModalIn { from { opacity:0; transform:translateY(18px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+.erp-activation-swal-popup{animation:appModalIn .24s ease-out both;width:min(580px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px)!important;box-sizing:border-box!important;border-radius:16px!important;overflow:hidden;padding:0 0 1.25rem!important}.erp-activation-swal-popup .swal2-html-container{margin:0!important;padding:0!important}.erp-activation-swal-popup .swal2-input{width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0!important}.erp-activation-swal-popup .activation-dialog-header{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:1.15rem 1.4rem;text-align:left}.erp-activation-swal-popup .activation-dialog-header h3{margin:0;font-size:1.15rem;font-weight:800}.erp-activation-swal-popup .activation-dialog-header p{margin:.25rem 0 0;opacity:.9;font-size:.9rem}.erp-activation-swal-popup .activation-dialog-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;padding:1.15rem 1.4rem .75rem;text-align:left}.erp-activation-swal-popup .activation-dialog-detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.65rem;padding:.65rem .75rem}.erp-activation-swal-popup .activation-dialog-detail span{color:#64748b;display:block;font-size:.72rem;font-weight:700;text-transform:uppercase}.erp-activation-swal-popup .activation-dialog-detail strong{color:#0f172a;display:block;margin-top:.2rem;overflow-wrap:anywhere}.erp-activation-swal-popup .activation-dialog-fields{padding:.25rem 1.4rem 0;text-align:left}.erp-activation-swal-popup .activation-dialog-fields label{color:#334155;display:block;font-size:.84rem;font-weight:700;margin:.8rem 0 .3rem}.erp-activation-swal-popup .activation-dialog-fields .swal2-input{margin:0 0 .25rem!important}.erp-form-modal{display:none;position:fixed;inset:0;z-index:1050;background:rgba(15,23,42,.62);padding:1rem;overflow-y:auto}.erp-form-modal.is-open{display:flex;align-items:flex-start;justify-content:center;animation:appModalIn .24s ease-out both}.erp-form-dialog{animation:appModalIn .24s ease-out both;width:min(820px,100%);margin:1rem auto;background:#fff;border-radius:1rem;box-shadow:0 24px 70px rgba(15,23,42,.3);overflow:hidden}.erp-form-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.35rem;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed)}.erp-form-header h3{margin:0;font-size:1.15rem;font-weight:800}.erp-form-close{border:0;background:transparent;color:#fff;font-size:2rem;cursor:pointer}.erp-form-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;padding:1.35rem;max-height:68vh;overflow-y:auto}.erp-field label{display:block;color:#334155;font-size:.78rem;font-weight:800;margin-bottom:.3rem;text-transform:uppercase}.erp-field input,.erp-field select,.erp-field textarea{width:100%!important;box-sizing:border-box;background:#fff!important;color:#172033!important;border:1px solid #cbd5e1!important}.erp-form-footer{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #e2e8f0;background:#f8fafc}@media(max-width:640px){.erp-form-body{grid-template-columns:1fr;max-height:70vh}.erp-form-modal{padding:.4rem}.erp-activation-swal-popup .activation-dialog-details{grid-template-columns:1fr;padding-left:1rem;padding-right:1rem}.erp-activation-swal-popup .activation-dialog-fields{padding-left:1rem;padding-right:1rem}}
+.modal.fade{display:none!important}.erp-activation-modal{display:none;position:fixed;inset:0;z-index:1060;background:rgba(15,23,42,.62);padding:1rem;overflow-y:auto}.erp-activation-modal.is-open{display:flex;align-items:flex-start;justify-content:center;animation:appModalIn .24s ease-out both}.erp-activation-dialog{width:min(620px,100%);margin:1rem auto;background:#fff;border-radius:1rem;box-shadow:0 24px 70px rgba(15,23,42,.3);overflow:hidden;animation:appModalIn .24s ease-out both}.erp-activation-header{padding:1rem 1.35rem;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed)}.erp-activation-header h3{margin:0;font-size:1.2rem;font-weight:800}.erp-activation-header p{margin:.2rem 0 0;opacity:.9}.erp-activation-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;padding:1.2rem 1.35rem .8rem}.erp-activation-detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.65rem;padding:.65rem .75rem}.erp-activation-detail span{display:block;color:#64748b;font-size:.7rem;font-weight:800;text-transform:uppercase}.erp-activation-detail strong{display:block;color:#0f172a;margin-top:.2rem;overflow-wrap:anywhere}.erp-activation-fields{padding:.2rem 1.35rem 1rem}.erp-activation-fields label{display:block;color:#334155;font-size:.8rem;font-weight:800;margin:.7rem 0 .3rem}.erp-activation-fields input{width:100%!important;box-sizing:border-box;background:#fff!important;color:#172033!important;border:1px solid #cbd5e1!important;border-radius:.5rem;padding:.65rem .75rem}.erp-activation-footer{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #e2e8f0;background:#f8fafc}@media(max-width:560px){.erp-activation-details{grid-template-columns:1fr;padding-left:1rem;padding-right:1rem}.erp-activation-fields{padding-left:1rem;padding-right:1rem}.erp-activation-footer{padding-left:1rem;padding-right:1rem}}</style>
 <div class="container-fluid px-4">
     <!-- {% if messages %}
     {% for message in messages %}
@@ -18,8 +21,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-indigo-700"><i class="fa-solid fa-chart-area"></i> PACS ERP Table Live Control</h5>
-            <a href="{% url 'licensing:create_pacserp' %}" class="btn btn-primary text-dark fw-bold btn-sm me-2"><i class="fa-solid fa-plus"></i> Add New ERP
-                Record</a>
+            <button type="button" id="open-add-erp" class="btn btn-primary text-dark fw-bold btn-sm me-2"><i class="fa-solid fa-plus"></i> Add New ERP Record</button>
         </div>
         <div class="card-body">
 
@@ -41,10 +43,11 @@
                 </div>
             </form>
 
-            <div class="table-responsive">
+            <div id="erp-bulk-actions" class="d-flex flex-wrap align-items-center gap-2 mb-3 p-3 border rounded bg-light"><span id="erp-selected-count" class="text-secondary me-2">Select one record to use actions.</span><button type="button" class="btn btn-sm btn-outline-primary" id="erp-update"><i class="fas fa-edit me-1"></i>Update</button><button type="button" class="btn btn-sm border border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white" id="erp-activate"><i class="fas fa-check me-1"></i>Activate</button><button type="button" class="btn btn-sm btn-outline-danger" id="erp-deactivate"><i class="fas fa-ban me-1"></i>Deactivate</button><button type="button" class="btn btn-sm border border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white" id="erp-invoice"><i class="fas fa-file-invoice me-1"></i>Invoice</button><button type="button" class="btn btn-sm btn-outline-danger" id="erp-delete"><i class="fas fa-trash-alt me-1"></i>Delete</button><button type="button" class="btn btn-sm btn-outline-primary" id="erp-copy"><i class="fas fa-copy me-1"></i>Copy</button></div>            <div id="erp-form-modal" class="erp-form-modal" aria-hidden="true"><div class="erp-form-dialog"><div class="erp-form-header"><div><h3 id="erp-form-title"><i class="fas fa-plus-circle me-2"></i>Add ERP Record</h3><p>Enter PACS ERP details</p></div><button type="button" class="erp-form-close">&times;</button></div><form id="erp-modal-form" method="post" action="{% url 'licensing:create_pacserp' %}">{% csrf_token %}<div class="erp-form-body">{% for field in erp_form %}<div class="erp-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}</div><div class="erp-form-footer"><button type="button" class="btn btn-outline-secondary erp-form-cancel">Cancel</button><button type="submit" id="erp-form-submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Record</button></div></form></div></div><div id="erp-activation-modal" class="erp-activation-modal" aria-hidden="true"><div class="erp-activation-dialog"><div class="erp-activation-header"><h3><i class="fas fa-rocket me-2"></i>Activate ERP Module</h3><p id="erp-activation-name"></p></div><div class="erp-activation-details"><div class="erp-activation-detail"><span>ERP ID</span><strong id="erp-activation-id">-</strong></div><div class="erp-activation-detail"><span>Branch / District</span><strong id="erp-activation-branch">-</strong></div><div class="erp-activation-detail"><span>Operator Mobile</span><strong id="erp-activation-operator">-</strong></div><div class="erp-activation-detail"><span>Activated By</span><strong>{{ request.user.username }}</strong></div></div><form id="erp-activation-form" method="post"><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><div class="erp-activation-fields"><label for="erp-activation-amount">Activation Amount (Rs.)</label><input id="erp-activation-amount" name="amount" type="number" min="0" required><label for="erp-activation-expiry">Expiry Date</label><input id="erp-activation-expiry" name="expiry_date" type="date" required><label for="erp-activation-utr">UTR / Transaction Number</label><input id="erp-activation-utr" name="utr_number" type="text" placeholder="Optional transaction ID"><label for="erp-activation-remark">Custom Remark / Reason</label><input id="erp-activation-remark" name="remark" type="text" placeholder="Optional registration note..."></div><div class="erp-activation-footer"><button type="button" id="erp-activation-cancel" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</button><button type="submit" class="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-700 hover:to-purple-700"><i class="fas fa-save me-1"></i>Save & Activate</button></div></form></div></div>            <div class="table-responsive">
                 <table class="app-table" style="font-size: 14px;">
                     <thead class="table-dark text-center border-secondary">
                         <tr>
+                            <th>Select</th>
                             <th>ID</th>
                             <th>Erp Id</th>
                             <th>Pacs Name</th>
@@ -55,20 +58,13 @@
                             <th>Utr Number</th>
                             <th>Remark / Log</th>
                             <th>Status</th>
-                            {% if request.user.is_superuser %}
-                            <th>Update</th>
-                            {% endif %}
-                            <th>Action</th>
-                            <th>Genrate Invoice</th>
-                            {% if request.user.is_superuser %}
-                            <th>Delete</th>
-                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% if erp_records %}
                         {% for record in erp_records %}
                         <tr>
+                            <td class="text-center"><input type="checkbox" class="erp-select" value="{{ record.id }}" data-name="{{ record.pacs_name|default:'-'|escape }}" data-erp-id="{{ record.erp_id|default:'-'|escape }}" data-branch="{{ record.brach|default:'-'|escape }}" data-dist="{{ record.dist|default:'-'|escape }}" data-operator="{{ record.operator_mobile|default:'-'|escape }}" data-amount="{{ record.amount|default:'0' }}" data-expiry="{{ record.expiry_date|date:'Y-m-d' }}" data-utr="{{ record.utr_number|default:''|escape }}" data-remark="{{ record.remark|default:''|escape }}" data-active="{% now 'Y-m-d' as today_date %}{% if record.expiry_date|date:'Y-m-d' < today_date %}false{% else %}true{% endif %}" data-update-url="{% url 'licensing:update_pacserp' record.id %}" data-toggle-url="{% url 'licensing:toggle_erp_activation' record.id %}" data-invoice-url="{% url 'licensing:generate_erp_invoice' record.id %}" data-delete-url="{% url 'licensing:delete_record' record.id %}"></td>
                             <td class="text-center">{{ record.id }}</td>
                             <td><strong class="text-light">{{record.erp_id}}</strong></td>
                             <td><strong class="text-light">{{ record.pacs_name|default:"-" }}</strong></td>
@@ -90,61 +86,7 @@
 </span>
                                     {% endif %}
                             </td>
-                            {% if request.user.is_superuser %}
-                            <td>
-                                <a href="{% url 'licensing:update_pacserp' record.id %}"
-                                    class="btn btn-outline-primary btn-sm fw-bold text-indigo-700 px-2"
-                                    title="PACS ERP record update karein">
-                                    <i class="fas fa-edit me-1"></i> Update
-                                </a>
-                                {% else %}
-                            </td>
-                            {% endif %}
-                            <td class="text-center">
-                                <div class="d-flex align-items-center justify-content-center gap-1">
-                                    {% now "Y-m-d" as today_date %}
-                                    {% if record.expiry_date|date:"Y-m-d" < today_date %} <button type="button"
-                                        class="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200 ease-in-out whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                                        data-bs-toggle="modal" data-bs-target="#erpModal{{ record.id }}">
-                                       <i class="fa-solid fa-circle-check"></i> Activate
-                                        </button>
-                                        {% else %}
-                                        {% if request.user.is_superuser %}
-                                        <a href="#" data-url="{% url 'licensing:toggle_erp_activation' record.id %}"
-                                            class="btn btn-outline-danger btn-sm"
-                                            onclick="confirmDeactivate(event, this, '{{ record.id }}');">
-                                            <i class="fa-solid fa-circle-exclamation"></i> Deactivate
-                                        </a>
-                                        {% else %}
-                                        <span
-                                            class="badge bg-dark border border-secondary text-muted px-2 py-1"><i class="fa-solid fa-circle-exclamation"></i> Deactivate</span>
-                                        {% endif %}
-                                        {% endif %}
-
-
-                                </div>
-                            </td>
-                            <td> <a href="#" data-url="{% url 'licensing:generate_erp_invoice' record.id %}"
-                                    onclick="openErpInvoiceWithAmount(event, this.getAttribute('data-url'))"
-                                    class="btn btn-sm btn-outline-primary" title="Download ERP Invoice">
-                                    <i class="fa-solid fa-file-pdf"></i> Invoice
-                                </a>
-                            </td>
-
-                            {% if request.user.is_superuser %}
-                            <td>
-                                <a href="#" data-url="{% url 'licensing:delete_record' record.id %}"
-                                    class="btn btn-outline-danger btn-sm"
-                                    onclick="confirmDelete(event, this, '{{ record.id }}');">
-                                    <i class="fa-solid fa-trash"></i> Delete
-                                </a>
-                                {% else %}
-                                <!-- Non-admin users ke liye message -->
-                                <!-- <span class="text-muted" title="Only Admin can delete">❌Delete</span> -->
-                            </td>
-                            {% endif %}
-
-                        </tr>
+</tr>
 
                         <script>
                             // 1. Delete Confirmation Function
@@ -321,7 +263,13 @@
     </div>
 </div>
 
-<script>
+            {% if erp_records.has_other_pages %}
+            <nav class="flex items-center justify-center gap-2 py-4" aria-label="ERP pagination">
+                {% if erp_records.has_previous %}<a href="?page={{ erp_records.previous_page_number }}{% if search_query %}&search_id={{ search_query|urlencode }}{% endif %}" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Previous</a>{% endif %}
+                <span class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Page {{ erp_records.number }} of {{ erp_records.paginator.num_pages }}</span>
+                {% if erp_records.has_next %}<a href="?page={{ erp_records.next_page_number }}{% if search_query %}&search_id={{ search_query|urlencode }}{% endif %}" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Next</a>{% endif %}
+            </nav>
+            {% endif %}<script>
     function openErpInvoiceWithAmount(event, baseUrl) {
         event.preventDefault();
 
@@ -331,5 +279,8 @@
 
         window.open(finalUrl, '_blank');
     }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){const rows=Array.from(document.querySelectorAll('.erp-select')),count=document.getElementById('erp-selected-count');function one(){const a=rows.filter(x=>x.checked);if(a.length!==1){Swal.fire({icon:'info',title:'Select one record',text:'Please select exactly one ERP record first.'});return null}return a[0]}rows.forEach(x=>x.addEventListener('change',()=>{const n=rows.filter(y=>y.checked).length;count.textContent=n?n+' record selected.':'Select one record to use actions.'}));const modal=document.getElementById('erp-form-modal'),form=document.getElementById('erp-modal-form'),title=document.getElementById('erp-form-title'),submit=document.getElementById('erp-form-submit'),names=['erp_id','pacs_name','brach','dist','state','operator_mobile','amount','payment_status','expiry_date','utr_number','remark'];function openForm(x){const u=!!x;form.action=u?x.dataset.updateUrl:'{% url 'licensing:create_pacserp' %}';title.innerHTML=u?'<i class="fas fa-edit me-2"></i>Update ERP Record':'<i class="fas fa-plus-circle me-2"></i>Add ERP Record';submit.innerHTML=u?'<i class="fas fa-save me-1"></i>Update Record':'<i class="fas fa-save me-1"></i>Save Record';const v=u?{erp_id:x.dataset.erpId,pacs_name:x.dataset.name,brach:x.dataset.branch,dist:x.dataset.dist,operator_mobile:x.dataset.operator,amount:x.dataset.amount,payment_status:x.dataset.amount,expiry_date:x.dataset.expiry,utr_number:x.dataset.utr,remark:x.dataset.remark}:{};names.forEach(n=>{const e=document.getElementById('id_'+n);if(e)e.value=v[n]||''});modal.classList.add('is-open');modal.setAttribute('aria-hidden','false')}document.getElementById('open-add-erp').onclick=()=>openForm(null);modal.querySelectorAll('.erp-form-close,.erp-form-cancel').forEach(b=>b.onclick=()=>{modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');});modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');}});document.getElementById('erp-update').onclick=()=>{const x=one();if(x)openForm(x)};document.getElementById('erp-copy').onclick=()=>{const x=one();if(!x)return;openForm(x);form.action='{% url 'licensing:create_pacserp' %}';title.innerHTML='<i class="fas fa-copy me-2"></i>Copy ERP Record';submit.innerHTML='<i class="fas fa-save me-1"></i>Save Copied Record';const id=document.getElementById('id_erp_id');if(id)id.value='';};document.getElementById('erp-invoice').onclick=()=>{const x=one();if(x){const a=document.getElementById('customAmount');window.open(x.dataset.invoiceUrl+'?customAmount='+encodeURIComponent(a?a.value:'0'),'_blank')}};const erpActivationModal=document.getElementById('erp-activation-modal');function closeErpActivation(){erpActivationModal.classList.remove('is-open');erpActivationModal.setAttribute('aria-hidden','true');}document.getElementById('erp-activation-cancel').onclick=closeErpActivation;erpActivationModal.addEventListener('click',e=>{if(e.target===erpActivationModal)closeErpActivation();});document.getElementById('erp-activate').onclick=()=>{const x=one();if(!x)return;if(x.dataset.active==='true'){Swal.fire({icon:'info',title:'Already active',text:'Selected ERP record is already active.'});return}document.getElementById('erp-activation-form').action=x.dataset.toggleUrl;document.getElementById('erp-activation-name').textContent=x.dataset.name;document.getElementById('erp-activation-id').textContent=x.dataset.erpId;document.getElementById('erp-activation-branch').textContent=x.dataset.branch+' / '+x.dataset.dist;document.getElementById('erp-activation-operator').textContent=x.dataset.operator;document.getElementById('erp-activation-amount').value=x.dataset.amount||'0';document.getElementById('erp-activation-expiry').value=x.dataset.expiry||'';document.getElementById('erp-activation-utr').value=x.dataset.utr||'';document.getElementById('erp-activation-remark').value=x.dataset.remark||'';erpActivationModal.classList.add('is-open');erpActivationModal.setAttribute('aria-hidden','false');};;document.getElementById('erp-deactivate').onclick=()=>{const x=one();if(x)Swal.fire({title:'Deactivate ERP?',text:x.dataset.name,icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Yes, deactivate'}).then(r=>{if(r.isConfirmed)location.href=x.dataset.toggleUrl})};document.getElementById('erp-delete').onclick=()=>{const x=one();if(x)Swal.fire({title:'Delete ERP record?',text:x.dataset.name,icon:'warning',showCancelButton:true,confirmButtonColor:'#dc3545',confirmButtonText:'Yes, delete'}).then(r=>{if(r.isConfirmed)location.href=x.dataset.deleteUrl})}});
 </script>
 {% endblock %}
