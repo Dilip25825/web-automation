@@ -28,17 +28,17 @@
     .farmer-field input, .farmer-field select, .farmer-field textarea { width:100% !important; box-sizing:border-box; background:#fff !important; color:#172033 !important; border:1px solid #cbd5e1 !important; }
     .farmer-form-footer { display:flex; justify-content:flex-end; gap:.6rem; padding:1rem 1.35rem; border-top:1px solid #e2e8f0; background:#f8fafc; }
     @media (max-width:640px) { .farmer-form-body { grid-template-columns:1fr; max-height:70vh; } .farmer-form-modal { padding:.4rem; } .farmer-form-dialog { margin:.2rem auto; } }</style>
-<div class="container-fluid px-4">
+<div class="mx-auto max-w-[96rem] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
 
-    <div class="card shadow-sm mb-4">
-        <div class="card-header text-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-indigo-700">User Info Table Live Control</h5>
+    <div class="app-card overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-5 text-white">
+            <h5 class="mb-0 fw-bold text-white">User Info Table Live Control</h5>
             <button type="button" id="open-add-farmer" class="btn btn-success text-white fw-bold btn-sm me-2"> <i
                     class="fas fa-plus"></i> Add New
                 Record</button>
 
         </div>
-        <div class="card-body">
+        <div class="p-5">
             <form method="GET" action="{% url 'licensing:userinfo_dashboard' %}"
                 class="row g-2 mb-4 d-flex justify-content-center align-items-center">
                 <div class="col-md-2">
@@ -120,6 +120,7 @@
                         <tr>
                             <th>Select</th>
                             <th>ID</th>
+                            <th>Status</th>
                             <th>Login ID</th>
                             <th>Pacs Name</th>
                             <th>For Whys</th>
@@ -136,7 +137,7 @@
                             <th>Accepted By</th>
                             <!-- {% endif %} -->
                             <th>Accepted Date</th>
-                            <th>Status</th>
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -156,6 +157,17 @@
                                     data-copy-url="{% url 'licensing:create_userinfo' %}?copy_id={{ client.id }}">
                             </td>
                             <td class="text-center">{{ client.id }}</td>
+                            
+                            <td class="text-center">
+                                {% if client.payment_status == client.amount %}
+                                <span class="status-pill status-active bg-green-100 text-green-800"><i
+                                        class="fas fa-circle-check"></i> Active</span>
+                                {% else %}
+                                <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i>
+                                    Inactive</span>
+                                {% endif %}
+                            </td>
+
                             <td class="text-center">{{ client.mobile|default:"-" }}</td>
                             <td><strong>{{ client.pacs_name|default:"-" }}</strong></td>
                             <td>{{ client.for_whys }}</td>
@@ -172,15 +184,7 @@
                             <td>{{ client.accepte_by }}</td>
                             <!-- {% endif %} -->
                             <td>{{ client.activation_date }}</td>
-                            <td class="text-center">
-                                {% if client.payment_status == client.amount %}
-                                <span class="status-pill status-active bg-green-100 text-green-800"><i
-                                        class="fas fa-circle-check"></i> Active</span>
-                                {% else %}
-                                <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i>
-                                    Inactive</span>
-                                {% endif %}
-                            </td>
+                     
 {% if messages %}
                             <div id="django-messages-container" style="display: none;">
                                 {% for message in messages %}

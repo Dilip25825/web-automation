@@ -6,6 +6,36 @@ from .forms import CategoryForm, DownloadLinkForm
 from .models import Category, DownloadLink
 
 
+def _resource_icon(*values):
+    """Choose an icon using the resource name, category and description."""
+    text = ' '.join(str(value or '') for value in values).lower()
+    mappings = [
+        (('prerequisites pack', 'automation prerequisites'), 'fa-solid fa-gears', 'bg-violet-100 text-violet-700'),
+        (('chromedriver', 'chrome driver'), 'fa-brands fa-chrome', 'bg-amber-100 text-amber-700'),
+        (('.net', 'net35', 'framework'), 'fa-solid fa-code', 'bg-violet-100 text-violet-700'),
+        (('pdf to excel',), 'fa-solid fa-file-export', 'bg-rose-100 text-rose-700'),
+        (('excel', 'xlsx', 'spreadsheet'), 'fa-solid fa-file-excel', 'bg-emerald-100 text-emerald-700'),
+        (('pmfby', 'fasal bima'), 'fa-solid fa-wheat-awn', 'bg-green-100 text-green-700'),
+        (('jpg', 'jpeg', 'image compressor'), 'fa-solid fa-file-image', 'bg-pink-100 text-pink-700'),
+        (('access database', 'database engine'), 'fa-solid fa-database', 'bg-red-100 text-red-700'),
+        (('ms office', 'microsoft office'), 'fa-brands fa-microsoft', 'bg-orange-100 text-orange-700'),
+        (('erp',), 'fa-solid fa-building-columns', 'bg-blue-100 text-blue-700'),
+        (('krp', 'fasal rin', 'loan application'), 'fa-solid fa-hand-holding-dollar', 'bg-indigo-100 text-indigo-700'),
+        (('interest',), 'fa-solid fa-percent', 'bg-cyan-100 text-cyan-700'),
+        (('uparjan', 'loanentry'), 'fa-solid fa-tractor', 'bg-lime-100 text-lime-700'),
+        (('ppacs', 'pacs'), 'fa-solid fa-landmark', 'bg-sky-100 text-sky-700'),
+        (('delete',), 'fa-solid fa-trash-can', 'bg-rose-100 text-rose-700'),
+        (('approval', 'approvel'), 'fa-solid fa-circle-check', 'bg-teal-100 text-teal-700'),
+        (('driver', 'connector'), 'fa-solid fa-plug', 'bg-yellow-100 text-yellow-700'),
+        (('zip', 'archive'), 'fa-solid fa-file-zipper', 'bg-purple-100 text-purple-700'),
+        (('utility', 'tool'), 'fa-solid fa-screwdriver-wrench', 'bg-slate-100 text-slate-700'),
+    ]
+    for keywords, icon_class, colour_class in mappings:
+        if any(keyword in text for keyword in keywords):
+            return icon_class, colour_class
+    return 'fa-solid fa-cloud-arrow-down', 'bg-indigo-100 text-indigo-700'
+
+
 def _ensure_default_category():
     Category.objects.get_or_create(name='General')
 
@@ -17,8 +47,16 @@ def _get_categories():
 
 def public_downloads(request):
     # Load active links once; category switching happens in the browser.
-    links = DownloadLink.objects.filter(is_active=True).order_by('category', 'name')
+    links = (
+        DownloadLink.objects.filter(is_active=True)
+        .prefetch_related('categories')
+        .order_by('-is_required', 'name')
+    )
     categories = _get_categories()
+    for link in links:
+        link.icon_class, link.icon_colour_class = _resource_icon(link.name, link.category, link.description)
+    for category in categories:
+        category.icon_class, category.icon_colour_class = _resource_icon(category.name)
     context = {'links': links, 'categories': categories}
     if request.user.is_authenticated and request.user.is_superuser:
         context['link_form'] = DownloadLinkForm()
@@ -65,7 +103,9 @@ def link_delete(request, pk):
 def category_create(request):
     form = CategoryForm(request.POST)
     if form.is_valid():
-        form.save()
+        category = form.save()
+        for link in DownloadLink.objects.filter(is_required=True):
+            link.categories.add(category)
         messages.success(request, 'Category added successfully.')
     else:
         messages.error(request, 'Please enter a unique category name.')

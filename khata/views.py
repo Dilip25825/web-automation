@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Customer, Transaction
 import base64
+from decimal import Decimal, InvalidOperation
 from django.db.models.functions import Coalesce
 from django.utils.dateparse import parse_date
 from django.db.models import Q,F, Sum, DecimalField, Case, When,Value
@@ -90,8 +91,11 @@ def dashboard(request):
 def add_customer(request):
     if request.method == 'POST':
         try:
-            name = request.POST.get('name')
-            phone = request.POST.get('phone')
+            name = request.POST.get('name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            if not name or not phone or not phone.isdigit() or len(phone) < 7:
+                messages.error(request, 'Customer name aur valid phone number zaroori hai.')
+                return redirect('khata:dashboard')
             
             # Duplicate Check: Check karein ki is user ne is phone number se pehle hi customer add toh nahi kiya
             if Customer.objects.filter(user=request.user, phone=phone).exists():
@@ -178,7 +182,7 @@ def customer_detail(request, customer_id):
         end_date = request.GET.get('end_date')
         
         # 2. Transactions fetch karna (Order by date)
-        transactions = Transaction.objects.filter(customer=customer).order_by('date', 'id')
+        transactions = Transaction.objects.filter(customer=customer).select_related('customer').order_by('date', 'id')
         
         # 3. Filter apply karna (Ab ye sahi jagah par hai)
         if start_date and end_date:
@@ -215,8 +219,15 @@ def customer_detail(request, customer_id):
             date_str = request.POST.get('date')
             trans_date = parse_date(date_str)
             
-            new_trans = Transaction(customer=customer, amount=amount, trans_type=trans_type, remarks=remarks, date=trans_date)
-            new_trans.save()
+            try:
+                amount_value = Decimal(amount)
+            except (InvalidOperation, TypeError):
+                messages.error(request, 'Amount valid number hona chahiye.')
+                return redirect('khata:customer_detail', customer_id=customer_id)
+            if amount_value <= 0 or trans_type not in {'GIVEN', 'GOT'} or not trans_date:
+                messages.error(request, 'Amount, type aur date valid honi chahiye.')
+                return redirect('khata:customer_detail', customer_id=customer_id)
+            Transaction.objects.create(customer=customer, amount=amount_value, trans_type=trans_type, remarks=remarks, date=trans_date)
             return redirect('khata:customer_detail', customer_id=customer_id)
 
         # 6. Interest/Auto-months calculation
@@ -263,10 +274,18 @@ def update_transaction(request, b64_trans_id):
     try:
         actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
         trans = get_object_or_404(Transaction, id=actual_trans_id, customer__user=request.user)
-        trans.amount = request.POST.get('amount')
-        trans.trans_type = request.POST.get('trans_type')
+        try:
+            amount_value = Decimal(request.POST.get('amount'))
+        except (InvalidOperation, TypeError):
+            raise ValueError('Amount valid number hona chahiye.')
+        trans_type = request.POST.get('trans_type')
+        trans_date = parse_date(request.POST.get('date'))
+        if amount_value <= 0 or trans_type not in {'GIVEN', 'GOT'} or not trans_date:
+            raise ValueError('Amount, type aur date valid honi chahiye.')
+        trans.amount = amount_value
+        trans.trans_type = trans_type
         trans.remarks = request.POST.get('remarks', '').strip()
-        trans.date = parse_date(request.POST.get('date'))
+        trans.date = trans_date
         trans.save()
         messages.success(request, "Len-den ki entry update ho gayi!")
         return redirect('khata:customer_detail', customer_id=trans.customer.id)
@@ -302,12 +321,16 @@ def add_interest(request, b64_id):
         customer = get_object_or_404(Customer, id=actual_id, user=request.user)
 
         if request.method == 'POST':
-            interest_amount = request.POST.get('interest_amount')
-            rate = request.POST.get('rate')
-            months = request.POST.get('months')
+            try:
+                interest_amount = Decimal(request.POST.get('interest_amount'))
+                rate = Decimal(request.POST.get('rate'))
+                months = Decimal(request.POST.get('months'))
+            except (InvalidOperation, TypeError):
+                raise ValueError('Interest amount, rate aur months valid hone chahiye.')
             date_str = request.POST.get('date')
-            
             trans_date = parse_date(date_str)
+            if interest_amount <= 0 or rate < 0 or months <= 0 or not trans_date:
+                raise ValueError('Interest values valid honi chahiye.')
             
             # Custom remarks banayein taaki samajh aaye ki ye entry Byaaj ki hai
             remarks = f"Byaaj (Interest): {rate}% dar se {months} mahine ka"
@@ -349,7 +372,7 @@ def download_ledger_pdf(request, b64_id):
         customer = get_object_or_404(Customer, id=actual_customer_id, user=request.user)
         
         # Transactions ko filter ke sath fetch karein
-        transactions = Transaction.objects.filter(customer=customer).order_by('date')
+        transactions = Transaction.objects.filter(customer=customer).select_related('customer').order_by('date')
         
         if start_date and end_date:
             transactions = transactions.filter(date__range=[start_date, end_date])
@@ -435,30 +458,27 @@ def shop_profile(request):
 
 @login_required
 def report_page(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    
-    # 1. Base transactions
-    transactions = Transaction.objects.filter(customer__user=request.user).order_by('-date')
-    
-    # 2. Date wise filter (pehle filter karein)
-    if start_date and end_date:
-        transactions = transactions.filter(date__range=[start_date, end_date])
-    
-    # 3. Pagination (limit 10 ya 20)
-    paginator = Paginator(transactions, 15) 
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # 4. Loop sirf page_obj par chalayein (taaki sirf dikhne wale data par kaam ho)
-    for trans in page_obj:
-        # Customer ID ko secure karke encode karein
-        trans.customer.b64_id = base64.b64encode(str(trans.customer.id).encode('utf-8')).decode('utf-8')
-    
-    context = {
-        'transactions': page_obj,
-        'start_date': start_date,
-        'end_date': end_date,
-    }
-    return render(request, 'khata/report.html', context)
-
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    search = request.GET.get('search', '').strip()
+    trans_type = request.GET.get('trans_type', '').strip().upper()
+    transactions = Transaction.objects.filter(customer__user=request.user).select_related('customer').order_by('-date', '-id')
+    if start_date: transactions = transactions.filter(date__gte=start_date)
+    if end_date: transactions = transactions.filter(date__lte=end_date)
+    if search: transactions = transactions.filter(Q(customer__name__icontains=search) | Q(customer__phone__icontains=search) | Q(remarks__icontains=search))
+    if trans_type in {'GIVEN', 'GOT'}: transactions = transactions.filter(trans_type=trans_type)
+    totals = transactions.aggregate(total_given=Coalesce(Sum('amount', filter=Q(trans_type='GIVEN')), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2)), total_received=Coalesce(Sum('amount', filter=Q(trans_type='GOT')), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2)))
+    totals['balance'] = totals['total_given'] - totals['total_received']
+    total_flow = totals['total_given'] + totals['total_received']
+    totals['given_percent'] = round((totals['total_given'] / total_flow) * 100) if total_flow else 0
+    totals['received_percent'] = round((totals['total_received'] / total_flow) * 100) if total_flow else 0
+    if request.GET.get('export') == 'csv':
+        import csv
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=khata-report.csv'
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Customer', 'Phone', 'Type', 'Amount', 'Remarks'])
+        for trans in transactions.iterator(chunk_size=500): writer.writerow([trans.date, trans.customer.name, trans.customer.phone, trans.get_trans_type_display(), trans.amount, trans.remarks or ''])
+        return response
+    page_obj = Paginator(transactions, 20).get_page(request.GET.get('page', 1))
+    return render(request, 'khata/report.html', {'transactions': page_obj, 'start_date': start_date, 'end_date': end_date, 'search': search, 'trans_type': trans_type, 'totals': totals})

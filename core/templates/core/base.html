@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="{% static 'core/images/youtube-channel-logo.jpg' %}">
     <title>{% block title %}Web Automation With Excel{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -549,7 +551,7 @@
     <nav class="sticky top-0 z-40 border-b border-indigo-100/80 bg-white/90 shadow-[0_6px_24px_rgba(79,70,229,0.08)] backdrop-blur-xl">
         <div class="mx-auto flex min-h-[4.5rem] max-w-[1920px] items-center gap-5 px-4 sm:px-6">
             <a class="flex shrink-0 items-center gap-2.5 text-lg font-extrabold text-slate-900 sm:text-xl" href="{% url 'core:home' %}">
-                <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200"><i class="fa-solid fa-gears"></i></span>
+                <span class="h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-indigo-100 bg-white shadow-md shadow-indigo-200"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
                 <span>Web Automation <span class="text-violet-700">With Excel</span></span>
             </a>
             

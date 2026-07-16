@@ -3,58 +3,75 @@
 {% block title %}Download | Web Automation{% endblock %}
 
 {% block content %}
-<section class="app-card overflow-hidden">
-    <div class="flex flex-col justify-between gap-5 border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-7 text-white sm:flex-row sm:items-center sm:px-8">
-        <div>
-            <h1 class="text-3xl font-extrabold text-white"><i class="fa-solid fa-download mr-2 text-white"></i>Downloads</h1>
-            <p class="mt-2 text-sm text-indigo-100">Software links ready for quick access.</p>
+<style>#download-category-filters{scrollbar-width:thin;scrollbar-color:#6366f1 #eef2ff;scrollbar-gutter:stable}#download-category-filters::-webkit-scrollbar{height:7px}#download-category-filters::-webkit-scrollbar-track{background:#eef2ff;border-radius:999px}#download-category-filters::-webkit-scrollbar-thumb{background:#818cf8;border-radius:999px}</style>
+<section class="mx-auto max-w-7xl space-y-6 py-4 sm:py-8">
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 px-6 py-10 text-white shadow-2xl sm:px-10 lg:px-12">
+    <div class="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl"></div>
+    <div class="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+    <div class="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+      <div>
+        <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[.18em] text-indigo-100"><i class="fa-solid fa-shield-halved"></i>Software Resource Center</span>
+        <h1 class="mt-5 text-4xl font-extrabold leading-tight sm:text-5xl">Downloads, organised and ready.</h1>
+        <p class="mt-4 max-w-2xl text-base leading-7 text-indigo-100">Useful software aur resources ko category ke hisab se quickly search, copy aur download karein.</p>
+        <div class="mt-6 flex flex-wrap gap-3 text-sm">
+          <span class="rounded-xl border border-white/15 bg-white/10 px-4 py-2"><b class="text-white">{{ links|length }}</b> Active resources</span>
+          <span class="rounded-xl border border-white/15 bg-white/10 px-4 py-2"><b class="text-white">{{ categories|length }}</b> Categories</span>
         </div>
+      </div>
+      {% if user.is_authenticated and user.is_superuser %}
+      <div class="relative flex flex-wrap gap-2 lg:max-w-xs lg:justify-end">
+        <button type="button" data-modal-open="add-category-modal" class="btn border border-white/30 bg-white/10 text-white hover:bg-white/20"><i class="fa-solid fa-folder-plus"></i>Add Category</button>
+        <button type="button" data-modal-open="add-link-modal" class="btn bg-white text-indigo-700 shadow-lg hover:bg-indigo-50"><i class="fa-solid fa-plus"></i>Add Link</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="app-card p-4 sm:p-5">
+    <div class="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-center">
+      <label class="relative block w-full">
+        <span class="sr-only">Search downloads</span>
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input id="download-search" type="search" placeholder="Software ya description search karein..." class="!rounded-xl !border-slate-200 !py-3 !pl-11 !pr-4">
+      </label>
+      <div class="flex w-full justify-start gap-2 overflow-x-scroll pb-3" id="download-category-filters">
+        <button type="button" data-category-filter="" class="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-200"><i class="fa-solid fa-layer-group mr-1"></i>All</button>
+        {% for category in categories %}<button type="button" data-category-filter="{{ category.pk }}" class="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"><i class="{{ category.icon_class }} mr-1"></i>{{ category.name }}</button>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if links %}
+  <div id="download-grid" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    {% for link in links %}
+    <article data-download-card data-categories="{% for category in link.categories.all %}{{ category.pk }} {% endfor %}" data-required="{{ link.is_required|yesno:'true,false' }}" data-search="{{ link.name|lower }} {{ link.description|lower }} {% for category in link.categories.all %}{{ category.name|lower }} {% endfor %}" class="app-card group flex min-h-[280px] flex-col overflow-hidden p-6 transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-2xl {{ link.icon_colour_class }}"><i class="{{ link.icon_class }}"></i></span>
+        <div class="flex max-w-[70%] flex-wrap justify-end gap-1">{% if link.is_required %}<span class="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-extrabold text-amber-800"><i class="fa-solid fa-thumbtack mr-1"></i>Required</span>{% endif %}{% for category in link.categories.all %}<span class="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-700">{{ category.name }}</span>{% endfor %}</div>
+      </div>
+      <h2 class="mt-5 text-xl font-extrabold text-slate-900">{{ link.name }}</h2>
+      <p class="mt-2 flex-1 text-sm leading-6 text-slate-500">{{ link.description|default:"Ready to download. Open the resource using the button below." }}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5">
+        <a href="{{ link.drive_link }}" target="_blank" rel="noopener noreferrer" class="btn flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-100 hover:from-indigo-700 hover:to-violet-700"><i class="fa-solid fa-cloud-arrow-down"></i>Download</a>
+        <button type="button" class="copy-link-btn btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" data-link="{{ link.drive_link }}" title="Copy download link"><i class="fa-solid fa-copy"></i><span class="sr-only">Copy link</span></button>
         {% if user.is_authenticated and user.is_superuser %}
-            <div class="flex flex-wrap gap-2">
-                <button type="button" data-modal-open="add-category-modal" class="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20"><i class="fa-solid fa-folder-plus"></i>Add Category</button>
-                <button type="button" data-modal-open="add-link-modal" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-extrabold text-indigo-700 shadow transition hover:-translate-y-0.5"><i class="fa-solid fa-plus"></i>Add New Link</button>
-            </div>
+        <button type="button" data-modal-open="edit-link-modal" data-edit-link data-update-url="{% url 'downloads:link_update' link.pk %}" data-name="{{ link.name }}" data-description="{{ link.description }}" data-category-ids="{% for category in link.categories.all %}{{ category.pk }} {% endfor %}" data-required="{{ link.is_required|yesno:'true,false' }}" data-drive-link="{{ link.drive_link }}" data-active="{{ link.is_active|yesno:'true,false' }}" class="btn border border-indigo-100 bg-indigo-50 text-indigo-700" title="Edit link"><i class="fa-solid fa-pen"></i></button>
+        <form method="post" action="{% url 'downloads:link_delete' link.pk %}" data-confirm-delete data-title="Delete {{ link.name }}?" data-text="This download link will be permanently deleted.">{% csrf_token %}<button type="submit" class="btn border border-rose-100 bg-rose-50 text-rose-700" title="Delete link"><i class="fa-solid fa-trash"></i></button></form>
         {% endif %}
-    </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <div id="no-download-results" class="app-card hidden px-6 py-14 text-center"><span class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-2xl text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span><h2 class="mt-4 text-xl font-extrabold text-slate-800">Koi matching resource nahi mila</h2><p class="mt-2 text-sm text-slate-500">Search text ya category filter change karke dekhein.</p></div>
+  {% else %}
+  <div class="app-card px-6 py-16 text-center"><span class="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-indigo-50 text-2xl text-indigo-600"><i class="fa-solid fa-box-open"></i></span><h2 class="mt-4 text-2xl font-extrabold text-slate-900">Downloads coming soon</h2><p class="mx-auto mt-2 max-w-md text-slate-500">Abhi koi active download link available nahi hai. Kripya baad mein dobara check karein.</p></div>
+  {% endif %}
 
-    <div class="flex flex-wrap gap-2 border-b border-line p-4" id="download-category-filters">
-        <button type="button" data-category-filter="" class="btn btn-primary"><i class="fa-solid fa-folder"></i>All</button>
-        {% for category in categories %}
-            <button type="button" data-category-filter="{{ category.name }}" class="btn btn-outline-light"><i class="fa-solid fa-folder"></i>{{ category.name }}</button>
-        {% endfor %}
-    </div>
-
-    {% if links %}
-        <div class="overflow-x-auto">
-            <table class="app-table">
-                <thead><tr><th>#</th><th>Software</th><th>Category</th><th>Description</th><th class="text-center">Actions</th></tr></thead>
-                <tbody id="download-links-table">
-                    {% for link in links %}
-                        <tr data-category="{{ link.category }}">
-                            <td class="download-row-number">{{ forloop.counter }}</td>
-                            <td class="font-semibold text-dark">{{ link.name }}</td>
-                            <td><span class="badge bg-primary">{{ link.category }}</span></td>
-                            <td class="max-w-md text-slate-800">{{ link.description|default:"No description available." }}</td>
-                            <td><div class="flex justify-center gap-2">
-                                <a href="{{ link.drive_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><i class="fa-solid fa-download"></i>Download</a>
-                                <button class="btn btn-outline-primary copy-link-btn" data-link="{{ link.drive_link }}"><i class="fa-solid fa-copy"></i>Copy</button>
-                                {% if user.is_authenticated and user.is_superuser %}
-                                    <button type="button" data-modal-open="edit-link-modal" data-edit-link data-update-url="{% url 'downloads:link_update' link.pk %}" data-name="{{ link.name }}" data-description="{{ link.description }}" data-category="{{ link.category }}" data-drive-link="{{ link.drive_link }}" data-active="{{ link.is_active|yesno:'true,false' }}" class="btn btn-outline-primary !p-2" title="Edit link"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <form method="post" action="{% url 'downloads:link_delete' link.pk %}" data-confirm-delete data-title="Delete {{ link.name }}?" data-text="This download link will be permanently deleted.">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-primary !p-2" title="Delete link" aria-label="Delete {{ link.name }} link"><i class="fa-solid fa-trash"></i></button>
-                                    </form>
-                                {% endif %}
-                            </div></td>
-                        </tr>
-                    {% endfor %}
-                    <tr id="no-category-results" class="hidden"><td colspan="5" class="p-10 text-center text-slate-400">No download links in this category.</td></tr>
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="p-10 text-center text-slate-400">No download links have been added yet.</p>
-    {% endif %}
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5"><i class="fa-solid fa-circle-check text-xl text-emerald-600"></i><h3 class="mt-3 font-extrabold text-slate-800">Curated resources</h3><p class="mt-1 text-sm leading-6 text-slate-600">Useful links ko organised categories mein rakha gaya hai.</p></div>
+    <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5"><i class="fa-solid fa-arrow-up-right-from-square text-xl text-blue-600"></i><h3 class="mt-3 font-extrabold text-slate-800">Secure new tab</h3><p class="mt-1 text-sm leading-6 text-slate-600">Download links safely ek naye browser tab mein khulte hain.</p></div>
+    <div class="rounded-2xl border border-violet-100 bg-violet-50 p-5"><i class="fa-solid fa-copy text-xl text-violet-600"></i><h3 class="mt-3 font-extrabold text-slate-800">Quick copy</h3><p class="mt-1 text-sm leading-6 text-slate-600">Kisi bhi resource ka link ek click mein copy karein.</p></div>
+  </div>
 </section>
 
 {% if user.is_authenticated and user.is_superuser %}
@@ -66,25 +83,69 @@
 
 {% block extra_js %}
 <script>
-    const categoryButtons = document.querySelectorAll('[data-category-filter]');
-    const downloadRows = document.querySelectorAll('#download-links-table tr[data-category]');
-    const noCategoryResults = document.getElementById('no-category-results');
-    const setModal = (id, show) => document.getElementById(id)?.classList.replace(show ? 'hidden' : 'flex', show ? 'flex' : 'hidden');
+document.addEventListener('DOMContentLoaded', () => {
+    const categoryButtons = [...document.querySelectorAll('[data-category-filter]')];
+    const cards = [...document.querySelectorAll('[data-download-card]')];
+    const searchInput = document.getElementById('download-search');
+    const emptyState = document.getElementById('no-download-results');
+    let activeCategory = '';
+
+    const applyFilters = () => {
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        let visibleCount = 0;
+        cards.forEach((card) => {
+            const categoryIds = (card.dataset.categories || '').trim().split(/\s+/);
+            const categoryMatch = !activeCategory || card.dataset.required === 'true' || categoryIds.includes(activeCategory);
+            const searchMatch = !query || card.dataset.search.includes(query);
+            const visible = categoryMatch && searchMatch;
+            card.classList.toggle('hidden', !visible);
+            if (visible) visibleCount += 1;
+        });
+        emptyState?.classList.toggle('hidden', visibleCount !== 0);
+    };
 
     categoryButtons.forEach((button) => button.addEventListener('click', () => {
-        const category = button.dataset.categoryFilter;
-        let visibleCount = 0;
-        downloadRows.forEach((row) => { const matches = !category || row.dataset.category === category; row.classList.toggle('hidden', !matches); if (matches) visibleCount += 1; });
-        noCategoryResults?.classList.toggle('hidden', visibleCount !== 0);
-        categoryButtons.forEach((item) => { item.classList.remove('btn-primary'); item.classList.add('btn-outline-light'); });
-        button.classList.remove('btn-outline-light'); button.classList.add('btn-primary');
+        activeCategory = button.dataset.categoryFilter;
+        categoryButtons.forEach((item) => {
+            item.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
+            item.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+        });
+        button.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+        button.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
+        applyFilters();
     }));
+    searchInput?.addEventListener('input', applyFilters);
+
+    const setModal = (id, show) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.toggle('hidden', !show);
+        modal.classList.toggle('flex', show);
+        document.body.classList.toggle('overflow-hidden', show);
+    };
     document.querySelectorAll('[data-modal-open]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalOpen, true)));
     document.querySelectorAll('[data-modal-close]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalClose, false)));
     ['add-link-modal', 'edit-link-modal', 'add-category-modal'].forEach((id) => document.getElementById(id)?.addEventListener('click', (event) => { if (event.target.id === id) setModal(id, false); }));
-    document.querySelectorAll('[data-edit-link]').forEach((button) => button.addEventListener('click', function () { document.getElementById('edit-link-form').action = this.dataset.updateUrl; document.getElementById('edit-link-name').value = this.dataset.name; document.getElementById('edit-link-description').value = this.dataset.description; document.getElementById('edit-link-category').value = this.dataset.category; document.getElementById('edit-link-drive-link').value = this.dataset.driveLink; document.getElementById('edit-link-is-active').checked = this.dataset.active === 'true'; }));
-    document.querySelectorAll('.copy-link-btn').forEach((button) => button.addEventListener('click', () => navigator.clipboard.writeText(button.dataset.link).then(() => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Link copied', showConfirmButton: false, timer: 1600, background: '#172033', color: '#e2e8f0' }))));
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.querySelectorAll('[data-modal-close]').forEach((button) => setModal(button.dataset.modalClose, false)); });
+
+    document.querySelectorAll('[data-edit-link]').forEach((button) => button.addEventListener('click', function () {
+        document.getElementById('edit-link-form').action = this.dataset.updateUrl;
+        document.getElementById('edit-link-name').value = this.dataset.name;
+        document.getElementById('edit-link-description').value = this.dataset.description;
+        const selectedCategories = (this.dataset.categoryIds || '').trim().split(/\s+/);
+        document.querySelectorAll('[data-category-checkbox="edit-link"]').forEach((checkbox) => { checkbox.checked = selectedCategories.includes(checkbox.value); });
+        document.getElementById('edit-link-drive-link').value = this.dataset.driveLink;
+        document.getElementById('edit-link-is-required').checked = this.dataset.required === 'true';
+        document.getElementById('edit-link-is-active').checked = this.dataset.active === 'true';
+    }));
+    document.querySelectorAll('.copy-link-btn').forEach((button) => button.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(button.dataset.link);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Link copied', showConfirmButton: false, timer: 1600, timerProgressBar: true });
+        } catch (error) {
+            Swal.fire({ icon: 'error', title: 'Copy failed', text: 'Please copy the link from the opened download page.' });
+        }
+    }));
+});
 </script>
 {% endblock %}
-
-
