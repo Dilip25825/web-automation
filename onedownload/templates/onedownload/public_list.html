@@ -47,7 +47,10 @@
     <article data-download-card data-categories="{% for category in link.categories.all %}{{ category.pk }} {% endfor %}" data-required="{{ link.is_required|yesno:'true,false' }}" data-search="{{ link.name|lower }} {{ link.description|lower }} {% for category in link.categories.all %}{{ category.name|lower }} {% endfor %}" class="app-card group flex min-h-[280px] flex-col overflow-hidden p-6 transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl">
       <div class="flex items-start justify-between gap-4">
         <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-2xl {{ link.icon_colour_class }}"><i class="{{ link.icon_class }}"></i></span>
-        <div class="flex max-w-[70%] flex-wrap justify-end gap-1">{% if link.is_required %}<span class="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-extrabold text-amber-800"><i class="fa-solid fa-thumbtack mr-1"></i>Required</span>{% endif %}{% for category in link.categories.all %}<span class="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-700">{{ category.name }}</span>{% endfor %}</div>
+        {% comment %} <div class="flex max-w-[70%] flex-wrap justify-end gap-1">{% if link.is_required %}<span class="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-extrabold text-amber-800"><i class="fa-solid fa-thumbtack mr-1"></i>Required</span>{% endif %}{% for category in link.categories.all %}<span class="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-700">{{ category.name }}</span>{% endfor %}</div> {% endcomment %}
+        <div class="flex max-w-[70%] flex-wrap justify-end gap-1">{% if link.is_required %}<span class="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-extrabold text-amber-800"><i class="fa-solid fa-thumbtack mr-1"></i>Required</span>{% endif %}</div>
+        
+
       </div>
       <h2 class="mt-5 text-xl font-extrabold text-slate-900">{{ link.name }}</h2>
       <p class="mt-2 flex-1 text-sm leading-6 text-slate-500">{{ link.description|default:"Ready to download. Open the resource using the button below." }}</p>
