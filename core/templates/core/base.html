@@ -593,7 +593,8 @@
                     </form>
                 </div>
             {% else %}
-                <div class="ml-auto flex items-center gap-2 text-sm font-bold">
+                <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+                <div class="ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
                     <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-download"></i> Downloads</a>
                     <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-tags"></i> Pricing</a>
                     <a href="{% url 'core:contact' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-address-card"></i> Contact</a>
@@ -613,36 +614,13 @@
         </button>
         
         <div style="margin-top: 2rem;">
-            <a class="nav-item {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'core:dashboard' %}">
-                <i class="fa-solid fa-table-columns"></i> Dashboard
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'userinfo_dashboard' %}active{% endif %}" href="{% url 'licensing:userinfo_dashboard' %}">
-                <i class="fa-solid fa-users"></i> UserInfo
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'pacserp_dashboard' %}active{% endif %}" href="{% url 'licensing:pacserp_dashboard' %}">
-                <i class="fa-solid fa-tractor"></i> ERP
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'reminders' %}active{% endif %}" href="{% url 'reminders:dashboard' %}">
-                <i class="fa-solid fa-bell"></i> Reminders
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'khata' %}active{% endif %}" href="{% url 'khata:dashboard' %}">
-                <i class="fa-solid fa-file-invoice-dollar"></i> Khata
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'downloads' %}active{% endif %}" href="{% url 'downloads:public_downloads' %}">
-                <i class="fa-solid fa-download"></i> Download
-            </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>
-            
-            <div class="divider"></div>
-            
-            <form action="{% url 'accounts:logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">
-                    <i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout
-                </button>
-            </form>
-        </div>
-    </div>
+            {% if request.user.is_authenticated %}
+            <a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a><a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> UserInfo</a><a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP</a><a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a>
+            {% endif %}
+            <a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a><a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>
+            {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
+            {% if request.user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
+        </div>   </div>
 
     <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
         {% block content %}{% endblock %}
