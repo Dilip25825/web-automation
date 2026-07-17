@@ -7,7 +7,7 @@ admin.site.index_title = 'Web Automation with Excel Administration'
 
 
 def health_check(request):
-    return HttpResponse("OK")
+    return HttpResponse("<h3>Health Check OK</h3>")
 
 urlpatterns = [
     path("health/", health_check),

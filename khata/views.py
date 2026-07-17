@@ -232,8 +232,10 @@ def customer_detail(request, customer_id):
 
         # 6. Interest/Auto-months calculation
         auto_months = 0
+        last_transaction_date = timezone.now().date()
         if transactions.exists():
-            last_trans = transactions.last() 
+            last_trans = transactions.last()
+            last_transaction_date = last_trans.date 
             last_date = last_trans.date
             if hasattr(last_date, 'date'): last_date = last_date.date()
             days_passed = (timezone.now().date() - last_date).days
@@ -255,6 +257,7 @@ def customer_detail(request, customer_id):
             'net_balance': net_balance,
             'encoded_id': base64.b64encode(str(customer.id).encode('utf-8')).decode('utf-8'),
             'auto_months': auto_months,
+            'last_transaction_date': last_transaction_date,
             'whatsapp_url': whatsapp_url,
             'total_given': total_given,
             'total_got': total_got,
@@ -328,12 +331,15 @@ def add_interest(request, b64_id):
             except (InvalidOperation, TypeError):
                 raise ValueError('Interest amount, rate aur months valid hone chahiye.')
             date_str = request.POST.get('date')
+            from_date = parse_date(request.POST.get('from_date'))
             trans_date = parse_date(date_str)
-            if interest_amount <= 0 or rate < 0 or months <= 0 or not trans_date:
-                raise ValueError('Interest values valid honi chahiye.')
+            if from_date and trans_date:
+                months = Decimal(max(0, (trans_date - from_date).days)) / Decimal('30')
+            if interest_amount <= 0 or rate < 0 or months <= 0 or not from_date or not trans_date or trans_date < from_date:
+                raise ValueError('Interest amount, rate aur valid date range zaroori hai.')
             
             # Custom remarks banayein taaki samajh aaye ki ye entry Byaaj ki hai
-            remarks = f"Byaaj (Interest): {rate}% dar se {months} mahine ka"
+            remarks = f"Byaaj (Interest): {rate}% dar se {months.quantize(Decimal('0.01'))} mahine ka"
 
             # Duplicate Check: Check karein ki same date pe same Byaaj pehle toh nahi joda gaya
             if Transaction.objects.filter(customer=customer, amount=interest_amount, trans_type='GIVEN', date=trans_date, remarks=remarks).exists():
