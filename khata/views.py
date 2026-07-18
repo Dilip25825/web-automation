@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from django.db.models.functions import Coalesce
 from django.utils.dateparse import parse_date
 from django.db.models import Q,F, Sum, DecimalField, Case, When,Value
+from django.db import transaction as db_transaction
 from django.utils import timezone
 import urllib.parse
 from django.template.loader import get_template
@@ -76,6 +77,7 @@ def dashboard(request):
         
         context = {
             'customers': page_obj,
+            'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
             'total_lene_hain': total_lene_hain,
             'total_dene_hain': total_dene_hain,
             'current_filter': filter_type,
@@ -86,6 +88,49 @@ def dashboard(request):
     except Exception as e:
         messages.error(request, f"Dashboard load karne me error: {str(e)}")
         return render(request, 'khata/error.html')
+
+@login_required
+@require_POST
+def transfer_voucher(request):
+    return_customer_id = request.POST.get('return_customer')
+    try:
+        from_id = request.POST.get('from_customer')
+        to_id = request.POST.get('to_customer')
+        transfer_date = parse_date(request.POST.get('date', ''))
+        note = request.POST.get('remarks', '').strip()
+        if not from_id or not to_id or from_id == to_id:
+            raise ValueError('Do alag heads select karein.')
+        amount = Decimal(request.POST.get('amount', ''))
+        if amount <= 0 or not transfer_date:
+            raise ValueError('Positive amount aur valid date zaroori hai.')
+        heads = Customer.objects.filter(
+            user=request.user, id__in=[from_id, to_id]
+        ).in_bulk()
+        from_customer = heads[int(from_id)]
+        to_customer = heads[int(to_id)]
+        remarks = (
+            f'Transfer Voucher: {from_customer.name} se liye, '
+            f'{to_customer.name} ko diye'
+        )
+        if note:
+            remarks = f'{remarks} - {note}'
+        with db_transaction.atomic():
+            Transaction.objects.create(
+                customer=from_customer, amount=amount, trans_type='GOT',
+                date=transfer_date, remarks=remarks[:200])
+            Transaction.objects.create(
+                customer=to_customer, amount=amount, trans_type='GIVEN',
+                date=transfer_date, remarks=remarks[:200])
+        messages.success(request, 'Transfer Voucher successfully saved.')
+    except (ValueError, InvalidOperation, KeyError, TypeError) as error:
+        messages.error(request, str(error) or 'Voucher details valid nahi hain.')
+    except Exception as error:
+        messages.error(request, f'Transfer Voucher save error: {error}')
+    if return_customer_id and Customer.objects.filter(
+        id=return_customer_id, user=request.user
+    ).exists():
+        return redirect('khata:customer_detail', customer_id=return_customer_id)
+    return redirect('khata:dashboard')
 
 @login_required
 def add_customer(request):
@@ -253,6 +298,7 @@ def customer_detail(request, customer_id):
             
         context = {
             'customer': customer,
+            'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
             'transactions': transactions,
             'net_balance': net_balance,
             'encoded_id': base64.b64encode(str(customer.id).encode('utf-8')).decode('utf-8'),

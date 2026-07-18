@@ -3,6 +3,7 @@
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-6">
   <header class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white"><div class="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Khata workspace</p><h1 class="mt-1 text-3xl font-extrabold">Good day, {{ request.user.first_name|default:request.user.username }}</h1><p class="mt-1 text-sm text-indigo-100">Manage customers, balances and daily transactions from one place.</p></div><a href="{% url 'khata:report_page' %}" class="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/30 transition hover:bg-white/25"><i class="fa-solid fa-chart-line"></i>Open reports</a></div></header>
+  <div id="heroTransferAction"><button type="button" class="btn text-white ring-1 ring-white/30" style="background:#059669" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left me-1"></i> Transfer Voucher</button></div>
   <div class="grid gap-4 md:grid-cols-3">
     <a href="?filter=lene" class="app-card group flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-up me-1 text-indigo-500"></i>Mujhe Lene Hain</p><p class="mt-1 text-sm text-slate-600">Customers se milne wali total baki rakam</p><p class="mt-2 text-lg font-extrabold text-indigo-700">&#8377;{{ total_lene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i class="fa-solid fa-wallet"></i></span></a>
     <a href="?filter=dene" class="app-card group flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-down me-1 text-rose-500"></i>Mujhe Dene Hain</p><p class="mt-1 text-sm text-slate-600">Customers ko dene wali total baki rakam</p><p class="mt-2 text-lg font-extrabold text-rose-700">&#8377;{{ total_dene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i class="fa-solid fa-hand-holding-dollar"></i></span></a>
@@ -75,7 +76,34 @@
           href="?page={{ customers.next_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Next</a>{% endif %}</nav>
     </section>
   </div>
-</div><div class="modal" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+</div>
+<div class="modal" id="transferVoucherModal" tabindex="-1" aria-labelledby="transferVoucherModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 38rem;">
+    <div class="modal-content overflow-hidden border-0" style="border-radius:1.5rem;box-shadow:0 30px 80px rgba(15,23,42,.32);">
+      <form action="{% url 'khata:transfer_voucher' %}" method="post" id="transferVoucherForm">{% csrf_token %}
+        <div class="modal-header border-0 text-white" style="background:linear-gradient(135deg,#4338ca,#7c3aed);padding:1.4rem 1.6rem;">
+          <div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-white/15 text-xl ring-1 ring-white/25"><i class="fa-solid fa-money-bill-transfer"></i></span><div><p class="mb-1 text-xs font-bold uppercase tracking-widest text-indigo-100">Internal ledger entry</p><h5 class="modal-title text-xl font-extrabold" id="transferVoucherModalLabel">Transfer Voucher</h5></div></div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="background:#f8fafc;padding:1.5rem;">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]">
+              <div><label class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-slate-500" for="fromCustomer"><i class="fa-solid fa-arrow-down-to-line me-1 text-emerald-600"></i>Paise kahan se liye</label><select class="form-select" id="fromCustomer" name="from_customer" required><option value="">Source head select karein</option>{% for customer in transfer_customers %}<option value="{{ customer.id }}">{{ customer.name }} — {{ customer.phone }}</option>{% endfor %}</select></div>
+              <span class="mx-auto mt-5 grid h-10 w-10 place-items-center rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100"><i class="fa-solid fa-arrow-right"></i></span>
+              <div><label class="mb-2 block text-xs font-extrabold uppercase tracking-wider text-slate-500" for="toCustomer"><i class="fa-solid fa-arrow-up-from-line me-1 text-violet-600"></i>Paise kisko diye</label><select class="form-select" id="toCustomer" name="to_customer" required><option value="">Destination head select karein</option>{% for customer in transfer_customers %}<option value="{{ customer.id }}">{{ customer.name }} — {{ customer.phone }}</option>{% endfor %}</select></div>
+            </div>
+          </div>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2"><div class="rounded-xl border border-slate-200 bg-white p-4"><label class="form-label" for="transferAmount"><i class="fa-solid fa-indian-rupee-sign me-1 text-indigo-600"></i>Transfer amount</label><div class="relative"><span class="absolute left-3 top-2.5 font-bold text-slate-400">₹</span><input class="!pl-8 text-lg font-extrabold" id="transferAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="2,000.00" required></div></div><div class="rounded-xl border border-slate-200 bg-white p-4"><label class="form-label" for="transferDate"><i class="fa-regular fa-calendar me-1 text-indigo-600"></i>Voucher date</label><input id="transferDate" name="date" type="date" required></div></div>
+          <div class="mt-4"><label class="form-label" for="transferRemarks">Remarks <span class="font-normal text-slate-400">(optional)</span></label><input id="transferRemarks" name="remarks" maxlength="120" placeholder="Purpose or reference number"></div>
+          <div id="transferError" class="mt-4 hidden rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700"><i class="fa-solid fa-circle-exclamation me-1"></i>Dono heads alag select karein.</div>
+          <p class="mb-0 mt-4 text-xs text-slate-500"><i class="fa-solid fa-shield-halved me-1 text-emerald-600"></i>Ek hi voucher se dono accounts mein matching entries create hongi.</p>
+        </div>
+        <div class="modal-footer border-0 bg-white" style="padding:1rem 1.5rem;"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-check me-1"></i>Create Voucher</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="modal" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 30rem;">
     <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
       <form id="editCustomerForm" method="post">{% csrf_token %}
@@ -93,6 +121,14 @@
   </div>
 </div>
 <script>
+  document.querySelector('header > div').appendChild(document.getElementById('heroTransferAction'));
+  const transferDate = document.getElementById('transferDate');
+  transferDate.value = new Date().toLocaleDateString('en-CA');
+  document.getElementById('transferVoucherForm').addEventListener('submit', function (event) {
+    const sameHead = document.getElementById('fromCustomer').value === document.getElementById('toCustomer').value;
+    document.getElementById('transferError').classList.toggle('hidden', !sameHead);
+    if (sameHead) event.preventDefault();
+  });
   document.querySelectorAll('[data-edit-customer]').forEach(function (button) {
     button.addEventListener('click', function () {
       document.getElementById('editCustomerForm').action = this.dataset.updateUrl;

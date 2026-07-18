@@ -6,6 +6,7 @@ app_name = 'khata'
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('add-customer/', views.add_customer, name='add_customer'),
+    path('transfer-voucher/', views.transfer_voucher, name='transfer_voucher'),
     
     # Grahak delete karne ka URL (id ke saath)
     path('delete-customer/<int:customer_id>/', views.delete_customer, name='delete_customer'),
