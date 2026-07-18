@@ -4,158 +4,239 @@
 
 {% block content %}
 <div class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-  <section class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 text-white shadow-lg"><div class="px-6 py-6 sm:px-8"><div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start"><div><p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Customer ledger</p><h1 class="mt-1 text-3xl font-extrabold">{{ customer.name }} 👋</h1><p class="mt-1 text-sm text-indigo-100"><i class="fa-solid fa-phone mr-1"></i>{{ customer.phone }} <span class="mx-2 text-white/50">•</span> Personal account overview</p></div><div class="flex flex-wrap items-center gap-2">{% if whatsapp_url %}<a href="{{ whatsapp_url }}" target="_blank" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow hover:bg-emerald-600"><i class="fa-brands fa-whatsapp"></i>WhatsApp</a>{% else %}<button type="button" disabled title="WhatsApp reminder is available when balance is due" class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i class="fa-brands fa-whatsapp"></i>WhatsApp</button>{% endif %}{% if net_balance > 0 %}<button type="button" class="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 shadow hover:bg-indigo-50" data-bs-toggle="modal" data-bs-target="#interestModal"><i class="fa-solid fa-calculator"></i>Interest</button>{% else %}<button type="button" disabled title="Interest is available when balance is due" class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i class="fa-solid fa-calculator"></i>Interest</button>{% endif %}<a href="{% url 'khata:dashboard' %}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-bold text-white ring-1 ring-white/35 transition hover:bg-white/25"><i class="fa-solid fa-arrow-left"></i>Dashboard</a></div></div><div class="mt-6 grid max-w-4xl gap-3 sm:grid-cols-3"><div class="rounded-xl bg-white/15 p-4 ring-1 ring-white/20"><p class="text-xs font-bold uppercase tracking-wide text-indigo-100">Total Balance</p><p class="mt-1 text-2xl font-extrabold">₹{{ net_balance|stringformat:".2f" }}</p><p class="mt-1 text-xs text-indigo-100">{% if net_balance > 0 %}Aapko lene hain{% elif net_balance < 0 %}Aapko dene hain{% else %}Hisaab barabar{% endif %}</p></div><div class="rounded-xl bg-white/15 p-4 ring-1 ring-white/20"><p class="text-xs font-bold uppercase tracking-wide text-indigo-100">Total Diye</p><p class="mt-1 text-2xl font-extrabold">₹{{ total_given|stringformat:".2f" }}</p><p class="mt-1 text-xs text-indigo-100">Credit entries</p></div><div class="rounded-xl bg-white/15 p-4 ring-1 ring-white/20"><p class="text-xs font-bold uppercase tracking-wide text-indigo-100">Total Mile</p><p class="mt-1 text-2xl font-extrabold">₹{{ total_got|stringformat:".2f" }}</p><p class="mt-1 text-xs text-indigo-100">Payment received</p></div></div></div></section>  <div class="grid items-start gap-5 lg:grid-cols-3">
-    <div class="lg:col-span-1 min-w-0">
-        <div class="card shadow-sm border-0">
-            <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white rounded-t-xl">
-                <h3>Add New Transaction</h3>
+    <section
+        class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 text-white shadow-lg">
+        <div class="px-6 py-6 sm:px-8">
+            <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Customer ledger</p>
+                    <h1 class="mt-1 text-3xl font-extrabold">{{ customer.name }} 👋</h1>
+                    <p class="mt-1 text-sm text-indigo-100"><i class="fa-solid fa-phone mr-1"></i>{{ customer.phone }}
+                        <span class="mx-2 text-white/50">•</span> Personal account overview</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">{% if whatsapp_url %}<a href="{{ whatsapp_url }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow hover:bg-emerald-600"><i
+                            class="fa-brands fa-whatsapp"></i>WhatsApp</a>{% else %}<button type="button" disabled
+                        title="WhatsApp reminder is available when balance is due"
+                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i
+                            class="fa-brands fa-whatsapp"></i>WhatsApp</button>{% endif %}{% if net_balance > 0 %}<button type="button"
+                        class="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 shadow hover:bg-indigo-50"
+                        data-bs-toggle="modal" data-bs-target="#interestModal"><i
+                            class="fa-solid fa-calculator"></i>Interest</button>{% else %}<button type="button" disabled
+                        title="Interest is available when balance is due"
+                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i
+                            class="fa-solid fa-calculator"></i>Interest</button>{% endif %}<a
+                        href="{% url 'khata:dashboard' %}"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-bold text-white ring-1 ring-white/35 transition hover:bg-white/25"><i
+                            class="fa-solid fa-arrow-left"></i>Dashboard</a></div>
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Date</label>
-                        <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Amount</label>
-                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="₹ 0.00"
-                            required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Entry Type</label>
-                        <select name="trans_type" class="form-select" required>
-                            <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
-                            <option value="GOT">Mujhe Mile (Jama / Payment)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Remarks (Optional)</label>
-                        <input type="text" name="remarks" class="form-control"
-                            placeholder="Optional: Kis cheez ke liye?">
-                    </div>
-                    <button type="submit" class="btn btn-success w-100 fw-bold" style="width: 100%; display: block;"><i class="fa-solid fa-floppy-disk"></i>
-                        Save</button>
-                </form>
+            <div class="mt-6 grid w-full gap-3 sm:grid-cols-3">
+                <div class="rounded-xl p-4 ring-1 {% if net_balance > 0 %}bg-emerald-500/90 ring-emerald-300{% elif net_balance < 0 %}bg-red-500/90 ring-red-300{% else %}bg-white/15 ring-white/20{% endif %}">
+                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Balance</p>
+                    <p class="mt-1 text-2xl font-extrabold">₹{{ net_balance|stringformat:".2f" }}</p>
+                    <p class="mt-1 text-xs text-white/90">{% if net_balance > 0 %}Aapko lene hain{% elif net_balance < 0 %}Aapko dene hain{% else %}Hisaab barabar{% endif %}</p>
+                </div>
+                <div class="rounded-xl bg-red-500/90 p-4 ring-1 ring-red-300">
+                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Diye</p>
+                    <p class="mt-1 text-2xl font-extrabold">₹{{ total_given|stringformat:".2f" }}</p>
+                    <p class="mt-1 text-xs text-white/90">Credit entries</p>
+                </div>
+                <div class="rounded-xl bg-emerald-500/90 p-4 ring-1 ring-emerald-300">
+                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Mile</p>
+                    <p class="mt-1 text-2xl font-extrabold">₹{{ total_got|stringformat:".2f" }}</p>
+                    <p class="mt-1 text-xs text-white/90">Payment received</p>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
+    <div class="grid items-start gap-5 lg:grid-cols-3">
+        <div class="lg:col-span-1 min-w-0">
+            <div class="card shadow-sm border-0">
+                <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white rounded-t-xl">
+                    <h3>Add New Transaction</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
+                        </div>
 
-    <div class="lg:col-span-2 min-w-0">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 rounded-t-xl">
-                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <!-- Left Side - Title -->
-                        <span class="font-bold text-white text-lg whitespace-nowrap">Ledger History</span>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Amount</label>
+                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="₹ 0.00"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Entry Type</label>
+                            <select name="trans_type" class="form-select" required>
+                                <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
+                                <option value="GOT">Mujhe Mile (Jama / Payment)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Remarks (Optional)</label>
+                            <input type="text" name="remarks" class="form-control"
+                                placeholder="Optional: Kis cheez ke liye?">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold"
+                            style="width: 100%; display: block;"><i class="fa-solid fa-floppy-disk"></i>
+                            Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-                        <!-- Right Side - Filters & Buttons -->
-                        <div class="flex items-center gap-2">
-                            <form method="GET" class="flex items-center gap-2">
-                                <input type="date" name="start_date"
-                                    class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
-                                    style="min-width: 140px;" value="{{ start_date|default:'' }}">
+        <div class="lg:col-span-2 min-w-0">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 rounded-t-xl">
+                        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <!-- Left Side - Title -->
+                            <span class="font-bold text-white text-lg whitespace-nowrap">Ledger History</span>
 
-                                <input type="date" name="end_date"
-                                    class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
-                                    style="min-width: 140px;" value="{{ end_date|default:'' }}">
+                            <!-- Right Side - Filters & Buttons -->
+                            <div class="flex items-center gap-2">
+                                <form method="GET" class="flex items-center gap-2">
+                                    <input type="date" name="start_date"
+                                        class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
+                                        style="min-width: 140px;" value="{{ start_date|default:'' }}">
 
-                                <button type="submit"
-                                    class="bg-white hover:bg-gray-100 text-indigo-700 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
-                                    <i class="fa-solid fa-filter text-xs"></i> Filter
-                                </button>
+                                    <input type="date" name="end_date"
+                                        class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
+                                        style="min-width: 140px;" value="{{ end_date|default:'' }}">
 
-                                <a href="{% url 'khata:customer_detail' customer.id %}"
-                                    class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
-                                    <i class="fa-solid fa-rotate-left text-xs"></i> Reset
+                                    <button type="submit"
+                                        class="bg-white hover:bg-gray-100 text-indigo-700 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                        <i class="fa-solid fa-filter text-xs"></i> Filter
+                                    </button>
+
+                                    <a href="{% url 'khata:customer_detail' customer.id %}"
+                                        class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                        <i class="fa-solid fa-rotate-left text-xs"></i> Reset
+                                    </a>
+                                </form>
+
+                                <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
+                                    class="bg-white hover:bg-gray-100 text-red-600 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                    <i class="fa-regular fa-file-pdf text-xs"></i> PDF Download
                                 </a>
-                            </form>
-
-                            <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
-                                class="bg-white hover:bg-gray-100 text-red-600 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
-                                <i class="fa-regular fa-file-pdf text-xs"></i> PDF Download
-                            </a>
+                            </div>
                         </div>
                     </div>
+
                 </div>
-
             </div>
-        </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Sr</th>
-                            <th class="ps-4">Date</th>
-                            <th>Vivran</th>
-                            <th class="text-end text-danger">Maine Diye</th>
-                            <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
-                            <th>Balance</th>
-                            <th>Edit</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for trans in transactions %}
-                        <tr>
-                            <td>{{forloop.counter}}</td>
-                            <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
-                            <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sr</th>
+                                <th class="ps-4">Date</th>
+                                <th>Vivran</th>
+                                <th class="text-end text-danger">Maine Diye</th>
+                                <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
+                                <th>Balance</th>
+                                <th>Edit</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in transactions %}
+                            <tr>
+                                <td>{{forloop.counter}}</td>
+                                <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
+                                <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
 
-                            <td class="text-end fw-bold text-danger">
-                                {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                            </td>
+                                <td class="text-end fw-bold text-danger">
+                                    {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                                </td>
 
-                            <td class="text-end fw-bold text-indigo-700 pe-4">
-                                {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                            </td>
-                            <td
-                                class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
-                                ₹{% if trans.running_balance < 0 %} {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %} {{trans.running_balance }} {% endif %} </td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary px-2 py-0 me-1 text-indigo-700 hover:text-violet-700" title="Edit Transaction" data-edit-transaction data-bs-toggle="modal" data-bs-target="#editTransactionModal" data-update-url="{% url 'khata:update_transaction' trans.b64_id %}" data-date="{{ trans.date|date:'Y-m-d' }}" data-amount="{{ trans.amount }}" data-type="{{ trans.trans_type }}" data-remarks="{{ trans.remarks|default:'' }}">Edit</button>
-                            </td>
-                            <td>
-                                <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
-                                    class="delete-form" data-confirm-delete data-title="Delete transaction?">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
-                                        title="Delete Entry">X</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
-                                nahi hua hai.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                <td class="text-end fw-bold text-indigo-700 pe-4">
+                                    {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
+                                </td>
+                                <td
+                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
+                                    ₹{% if trans.running_balance < 0 %}
+                                        {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %}
+                                        {{trans.running_balance }} {% endif %} </td>
+                                <td>
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary px-2 py-0 me-1 text-indigo-700 hover:text-violet-700"
+                                        title="Edit Transaction" data-edit-transaction data-bs-toggle="modal"
+                                        data-bs-target="#editTransactionModal"
+                                        data-update-url="{% url 'khata:update_transaction' trans.b64_id %}"
+                                        data-date="{{ trans.date|date:'Y-m-d' }}" data-amount="{{ trans.amount }}"
+                                        data-type="{{ trans.trans_type }}"
+                                        data-remarks="{{ trans.remarks|default:'' }}">Edit</button>
+                                </td>
+                                <td>
+                                    <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
+                                        class="delete-form" data-confirm-delete data-title="Delete transaction?">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
+                                            title="Delete Entry">X</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
+                                    nahi hua hai.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
-</div><div class="modal" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+<div class="modal" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 34rem;">
-        <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
+        <div class="modal-content overflow-hidden border-0"
+            style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
             <form id="editTransactionForm" method="post">{% csrf_token %}
-                <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
-                    <div><p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Ledger entry</p><h5 class="modal-title text-xl font-extrabold" id="editTransactionModalLabel"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Transaction</h5></div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header border-0 text-white"
+                    style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
+                    <div>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Ledger entry</p>
+                        <h5 class="modal-title text-xl font-extrabold" id="editTransactionModalLabel"><i
+                                class="fa-solid fa-pen-to-square me-2"></i>Edit Transaction</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body" style="padding: 1.5rem;">
-                    <div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionDate">Date</label><input id="editTransactionDate" type="date" name="date" class="form-control" required></div><div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionAmount">Amount</label><input id="editTransactionAmount" type="number" step="0.01" name="amount" class="form-control" required></div></div>
-                    <div class="mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionType">Entry type</label><select id="editTransactionType" name="trans_type" class="form-select" required><option value="GIVEN">Maine Diye (Udhaar / Credit)</option><option value="GOT">Mujhe Mile (Jama / Payment)</option></select></div>
-                    <div><label class="form-label fw-semibold text-slate-700" for="editTransactionRemarks">Remarks <span class="text-muted fw-normal">(optional)</span></label><input id="editTransactionRemarks" type="text" name="remarks" class="form-control" placeholder="Entry remarks"></div>
+                    <div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700"
+                            for="editTransactionDate">Date</label><input id="editTransactionDate" type="date"
+                            name="date" class="form-control" required></div>
+                    <div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700"
+                            for="editTransactionAmount">Amount</label><input id="editTransactionAmount" type="number"
+                            step="0.01" name="amount" class="form-control" required></div>
+                <div class="mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionType">Entry
+                        type</label><select id="editTransactionType" name="trans_type" class="form-select" required>
+                        <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
+                        <option value="GOT">Mujhe Mile (Jama / Payment)</option>
+                    </select></div>
+                <div>
+                    <label class="form-label fw-semibold text-slate-700" for="editTransactionRemarks">Remarks <span
+                            class="text-muted fw-normal">(optional)</span></label>
+                            <input id="editTransactionRemarks"
+                        type="text" name="remarks" class="form-control" placeholder="Entry remarks">
                 </div>
-                <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Update transaction</button></div>
-            </form>
-        </div>
+                </div>
+        <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;"><button type="button"
+                class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit"
+                class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i> Update transaction</button></div>
+        </form>
     </div>
+</div>
 </div>
 <script>
     document.querySelectorAll('[data-edit-transaction]').forEach(function (button) {
@@ -170,20 +251,63 @@
 </script>
 <!-- Interest Calculator Pop-up Modal -->
 <div class="modal" id="interestModal" tabindex="-1" aria-labelledby="interestModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 38rem;">
-    <div class="modal-content overflow-hidden border-0" style="border-radius: 1rem; box-shadow: 0 24px 70px rgba(15,23,42,.3);">
-      <form action="{% url 'khata:add_interest' encoded_id %}" method="POST">
-        {% csrf_token %}
-        <div class="flex items-start justify-between bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-5 text-white"><div><p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-100">Ledger interest</p><h2 id="interestModalLabel" class="mt-1 text-2xl font-extrabold"><i class="fa-solid fa-calculator mr-2"></i>Interest Calculation</h2><p class="mt-1 text-sm text-indigo-100">Calculate and add interest for {{ customer.name }}.</p></div><button type="button" class="text-2xl leading-none text-white/80 hover:text-white" data-bs-dismiss="modal" aria-label="Close">&times;</button></div>
-        <div class="space-y-5 bg-white p-6">
-          <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4"><label class="text-xs font-bold uppercase tracking-wide text-indigo-600" for="principalAmt">Principal balance (editable)</label><div class="mt-2 flex items-center gap-1 text-2xl font-extrabold text-indigo-800"><span>₹</span><input type="number" step="0.01" min="0.01" id="principalAmt" name="principal_amount" value="{{ net_balance|stringformat:'.2f' }}" class="!border-0 !bg-transparent !p-0 !text-2xl !font-extrabold !text-indigo-800" required></div></div><div class="rounded-xl border border-violet-100 bg-violet-50 p-4"><p class="text-xs font-bold uppercase tracking-wide text-violet-600">Estimated interest</p><p class="mt-2 text-2xl font-extrabold text-violet-800">₹<span id="totalInterestPreview">0.00</span></p></div></div>          <div class="grid gap-4 sm:grid-cols-2"><div><label class="form-label" for="interestFromDate">From date</label><input type="date" id="interestFromDate" name="from_date" value="{{ last_transaction_date|date:'Y-m-d' }}" required></div><div><label class="form-label" for="interestDate">To / Entry date</label><input type="date" id="interestDate" name="date" value="{% now 'Y-m-d' %}" required></div><div><label class="form-label" for="interestRate">Rate per month (%)</label><input type="number" step="0.01" min="0" name="rate" id="interestRate" placeholder="e.g. 2" required value="2"></div><div><label class="form-label" for="interestMonths">Calculated months</label><input type="number" step="0.01" min="0.01" name="months" id="interestMonths" placeholder="Auto calculated" value="{{ auto_months }}" required></div></div>
-          <div><label class="form-label" for="totalInterest">Interest amount to add</label><input type="number" step="0.01" min="0.01" name="interest_amount" id="totalInterest" class="font-bold text-violet-700" required readonly></div>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 38rem;">
+        <div class="modal-content overflow-hidden border-0"
+            style="border-radius: 1rem; box-shadow: 0 24px 70px rgba(15,23,42,.3);">
+            <form action="{% url 'khata:add_interest' encoded_id %}" method="POST">
+                {% csrf_token %}
+                <div
+                    class="flex items-start justify-between bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-5 text-white">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-100">Ledger interest</p>
+                        <h2 id="interestModalLabel" class="mt-1 text-2xl font-extrabold"><i
+                                class="fa-solid fa-calculator mr-2"></i>Interest Calculation</h2>
+                        <p class="mt-1 text-sm text-indigo-100">Calculate and add interest for {{ customer.name }}.</p>
+                    </div><button type="button" class="text-2xl leading-none text-white/80 hover:text-white"
+                        data-bs-dismiss="modal" aria-label="Close">&times;</button>
+                </div>
+                <div class="space-y-5 bg-white p-6">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4"><label
+                                class="text-xs font-bold uppercase tracking-wide text-indigo-600"
+                                for="principalAmt">Principal balance (editable)</label>
+                            <div class="mt-2 flex items-center gap-1 text-2xl font-extrabold text-indigo-800">
+                                <span>₹</span><input type="number" step="0.01" min="0.01" id="principalAmt"
+                                    name="principal_amount" value="{{ net_balance|stringformat:'.2f' }}"
+                                    class="!border-0 !bg-transparent !p-0 !text-2xl !font-extrabold !text-indigo-800"
+                                    required></div>
+                        </div>
+                        <div class="rounded-xl border border-violet-100 bg-violet-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-violet-600">Estimated interest</p>
+                            <p class="mt-2 text-2xl font-extrabold text-violet-800">₹<span
+                                    id="totalInterestPreview">0.00</span></p>
+                        </div>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div><label class="form-label" for="interestFromDate">From date</label><input type="date"
+                                id="interestFromDate" name="from_date" value="{{ last_transaction_date|date:'Y-m-d' }}"
+                                required></div>
+                        <div><label class="form-label" for="interestDate">To / Entry date</label><input type="date"
+                                id="interestDate" name="date" value="{% now 'Y-m-d' %}" required></div>
+                        <div><label class="form-label" for="interestRate">Rate per month (%)</label><input type="number"
+                                step="0.01" min="0" name="rate" id="interestRate" placeholder="e.g. 2" required
+                                value="2"></div>
+                        <div><label class="form-label" for="interestMonths">Calculated months</label><input
+                                type="number" step="0.01" min="0.01" name="months" id="interestMonths"
+                                placeholder="Auto calculated" value="{{ auto_months }}" required></div>
+                    </div>
+                    <div><label class="form-label" for="totalInterest">Interest amount to add</label><input
+                            type="number" step="0.01" min="0.01" name="interest_amount" id="totalInterest"
+                            class="font-bold text-violet-700" required readonly></div>
 
+                </div>
+                <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4"><button
+                        type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i
+                            class="fa-solid fa-xmark"></i>Cancel</button><button type="submit"
+                        class="btn btn-primary"><i class="fa-solid fa-calculator"></i>Add to ledger</button></div>
+            </form>
         </div>
-        <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i>Cancel</button><button type="submit" class="btn btn-primary"><i class="fa-solid fa-calculator"></i>Add to ledger</button></div>
-      </form>
     </div>
-  </div>
 </div><!-- Live Calculation ke liye JavaScript -->
 <!-- Live Calculation ke liye JavaScript -->
 <script>
