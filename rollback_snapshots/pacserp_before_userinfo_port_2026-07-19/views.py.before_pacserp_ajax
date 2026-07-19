@@ -134,8 +134,7 @@ def pacserp_dashboard(request):
         messages.error(request, "Only Admin can open ERP.")  # ⚠️ यहाँ 'e' हटाया
         return redirect('core:dashboard')  # Redirect to named main hub route
     search_query = request.GET.get('search_id', '').strip()
-    partial_results = request.GET.get('partial') == '1'
-    erp_form = None if partial_results else PacsErpForm()
+    erp_form = PacsErpForm()
     erp_records = []
     
     # ON ERROR HANDLING: Database execution safe rakhne ke liye try-except block
@@ -166,7 +165,7 @@ def pacserp_dashboard(request):
         messages.error(request, f"NCL Database Fetch Error: {str(e)}")
         erp_records = []
         
-    paginator = Paginator(erp_records.order_by('-id') if hasattr(erp_records, 'order_by') else erp_records, 10)
+    paginator = Paginator(erp_records, 10)
     page_number = request.GET.get('page', 1)
     try:
         erp_records = paginator.page(page_number)
@@ -176,13 +175,10 @@ def pacserp_dashboard(request):
     return render(request, 'licensing/pacserp_dashboard.html', {
         'erp_records': erp_records, 
         'search_query': search_query,
-        'erp_form': erp_form,
-        'partial_results': partial_results,
+        'erp_form': erp_form
     })
 
 
-@login_required(login_url='accounts:login')
-@userinfo_ajax_action
 def toggle_erp_activation(request, pk):
     """
     NCL ERP ACTIVATION LOGIC: Modal form se expiry_date capture karke update aur save karega.
@@ -238,7 +234,7 @@ def toggle_erp_activation(request, pk):
             record.payment_status = 4000
             record.amount = 0
             record.is_active = 0
-            record.expiry_date = (record.expiry_date - timedelta(days=365)) if record.expiry_date else (date.today() - timedelta(days=1))
+            record.expiry_date = record.expiry_date - timedelta(days=365)
                 
             # Note: Deactivate par custom logic ke mutabik expiry_date ko change nahi kiya hai taaki purana record safe rahe.
             record.save()
@@ -363,7 +359,6 @@ def create_userinfo(request):
     return render(request, 'licensing/create_userinfo.html', {'form': form})
 
 @login_required
-@userinfo_ajax_action
 def create_pacserp(request):
     """
     Form view to insert new records into TblPacsErp table.
@@ -405,7 +400,6 @@ def create_pacserp(request):
 
 
 @login_required
-@userinfo_ajax_action
 def delete_record_view(request, record_id):
     """
     Is view se record delete hota hai, par sirf tabhi jab logged-in user Admin ho.
@@ -506,7 +500,6 @@ def update_userinfo_view(request, client_id):
 
 
 @login_required
-@userinfo_ajax_action
 def update_pacserp_view(request, record_id):
     """
     TblPacsErp master record ko safe update karne ka backend view.

@@ -119,15 +119,6 @@ class tblPacsErp(models.Model):
     utr_number = models.CharField(max_length=255, db_column='UtrNumber', null=True, blank=True)
     version_info = models.TextField(db_column='VersionInfo', null=True, blank=True)
 
-    @property
-    def hero_pacs_name(self):
-        """Use the PACS name segment after the first slash for compact display."""
-        name = (self.pacs_name or '').strip()
-        if '/' in name:
-            name_after_slash = name.split('/', 1)[1].strip()
-            if name_after_slash:
-                return name_after_slash
-        return name or 'Unnamed PACS'
     class Meta:
         # ON ERROR FIX: Strict table binding for NCL dashboard
         db_table = 'tblPacsErp'  # <-- Ensure karein ki yahan capital aur small letters exact database wale hon

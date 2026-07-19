@@ -108,16 +108,21 @@ def dashboard(request):
         )
         cache.set(stats_cache_key, stats, timeout=60)
 
+    partial_dashboard = request.GET.get('ajax_partial') == '1'
     context = {
         'tasks': selected_tasks,
         'active_filter': active_filter,
         'table_title': filters[active_filter]['label'],
         'table_description': filters[active_filter]['description'],
         'selected_count': selected_tasks.count(),
+        'partial_dashboard': partial_dashboard,
         **stats,
-        'form': TaskForm(),
-        'categories': TaskCategory.objects.annotate(task_count=Count('task')).order_by('name'),
     }
+    if not partial_dashboard:
+        context['form'] = TaskForm()
+        context['categories'] = TaskCategory.objects.annotate(
+            task_count=Count('task')
+        ).order_by('name')
     return render(request, 'reminders/dashboard.html', context)
 
 
