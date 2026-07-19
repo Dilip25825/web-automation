@@ -3,6 +3,14 @@
 {% block title %}Download | Web Automation{% endblock %}
 
 {% block content %}
+<div id="downloads-loading-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-hidden="true">
+  <div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl">
+    <span class="h-12 w-12 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></span>
+    <p id="downloads-loading-text" class="mt-4 font-extrabold text-slate-800">Saving changes...</p>
+    <p class="mt-1 text-xs text-slate-500">Please wait</p>
+  </div>
+</div>
+<div id="downloads-app">
 <style>#download-category-filters{scrollbar-width:thin;scrollbar-color:#6366f1 #eef2ff;scrollbar-gutter:stable}#download-category-filters::-webkit-scrollbar{height:7px}#download-category-filters::-webkit-scrollbar-track{background:#eef2ff;border-radius:999px}#download-category-filters::-webkit-scrollbar-thumb{background:#818cf8;border-radius:999px}</style>
 <section class="mx-auto max-w-7xl space-y-6 py-4 sm:py-8">
   <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 px-6 py-10 text-white shadow-2xl sm:px-10 lg:px-12">
@@ -59,7 +67,7 @@
         <button type="button" class="copy-link-btn btn border border-slate-200 bg-white text-slate-600 hover:bg-slate-50" data-link="{{ link.drive_link }}" title="Copy download link"><i class="fa-solid fa-copy"></i><span class="sr-only">Copy link</span></button>
         {% if user.is_authenticated and user.is_superuser %}
         <button type="button" data-modal-open="edit-link-modal" data-edit-link data-update-url="{% url 'downloads:link_update' link.pk %}" data-name="{{ link.name }}" data-description="{{ link.description }}" data-category-ids="{% for category in link.categories.all %}{{ category.pk }} {% endfor %}" data-required="{{ link.is_required|yesno:'true,false' }}" data-drive-link="{{ link.drive_link }}" data-active="{{ link.is_active|yesno:'true,false' }}" class="btn border border-indigo-100 bg-indigo-50 text-indigo-700" title="Edit link"><i class="fa-solid fa-pen"></i></button>
-        <form method="post" action="{% url 'downloads:link_delete' link.pk %}" data-confirm-delete data-title="Delete {{ link.name }}?" data-text="This download link will be permanently deleted.">{% csrf_token %}<button type="submit" class="btn border border-rose-100 bg-rose-50 text-rose-700" title="Delete link"><i class="fa-solid fa-trash"></i></button></form>
+        <form method="post" action="{% url 'downloads:link_delete' link.pk %}" data-download-ajax-form data-ajax-confirm-delete data-title="Delete {{ link.name }}?" data-text="This download link will be permanently deleted.">{% csrf_token %}<button type="submit" class="btn border border-rose-100 bg-rose-50 text-rose-700" title="Delete link"><i class="fa-solid fa-trash"></i></button></form>
         {% endif %}
       </div>
     </article>
@@ -78,23 +86,52 @@
 </section>
 
 {% if user.is_authenticated and user.is_superuser %}
-<div id="add-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-link mr-2 text-white"></i>Add New Link</h2><p class="mt-1 text-sm text-indigo-100">Add a software download link.</p></div><button type="button" data-modal-close="add-link-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'downloads:link_create' %}" class="space-y-4 p-6">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='new-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Create Link</button></div></form></div></div>
-<div id="edit-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-pen-to-square mr-2 text-white"></i>Edit Download Link</h2><p class="mt-1 text-sm text-indigo-100">Update link details without leaving this page.</p></div><button type="button" data-modal-close="edit-link-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form id="edit-link-form" method="post" class="space-y-4 p-6">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='edit-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="edit-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Update Link</button></div></form></div></div>
-<div id="add-category-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-folder-plus mr-2 text-white"></i>Add Category</h2><p class="mt-1 text-sm text-indigo-100">New categories become available in link forms immediately after saving.</p></div><button type="button" data-modal-close="add-category-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'downloads:category_create' %}" class="space-y-4 p-6">{% csrf_token %}<div><label class="form-label" for="category-name">Category name</label><input id="category-name" name="name" required placeholder="e.g. Utilities"></div><div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-category-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Add Category</button></div></form><div class="border-t border-slate-100 px-6 py-5"><p class="mb-3 text-sm font-bold text-slate-700">Existing categories</p><div class="flex flex-wrap gap-2">{% for category in categories %}<form method="post" action="{% url 'downloads:category_delete' category.pk %}" data-confirm-delete data-title="Delete category?" data-text="Links in this category will move to General.">{% csrf_token %}<button class="btn btn-outline-primary !px-3" {% if category.name == 'General' %}disabled{% endif %}>{{ category.name }}{% if category.name != 'General' %}<i class="fa-solid fa-xmark ml-2"></i>{% endif %}</button></form>{% endfor %}</div></div></div></div>
+<div id="add-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-link mr-2 text-white"></i>Add New Link</h2><p class="mt-1 text-sm text-indigo-100">Add a software download link.</p></div><button type="button" data-modal-close="add-link-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'downloads:link_create' %}" class="space-y-4 p-6" data-download-ajax-form data-loading-text="Adding link...">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='new-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Create Link</button></div></form></div></div>
+<div id="edit-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-pen-to-square mr-2 text-white"></i>Edit Download Link</h2><p class="mt-1 text-sm text-indigo-100">Update link details without leaving this page.</p></div><button type="button" data-modal-close="edit-link-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form id="edit-link-form" method="post" class="space-y-4 p-6" data-download-ajax-form data-loading-text="Updating link...">{% csrf_token %}{% include 'onedownload/link_fields.html' with prefix='edit-link' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="edit-link-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Update Link</button></div></form></div></div>
+<div id="add-category-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/35 p-4"><div class="app-card app-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto"><div class="flex items-center justify-between border-b border-indigo-500/30 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 py-5 text-white"><div><h2 class="text-xl font-extrabold text-white"><i class="fa-solid fa-folder-plus mr-2 text-white"></i>Add Category</h2><p class="mt-1 text-sm text-indigo-100">New categories become available in link forms immediately after saving.</p></div><button type="button" data-modal-close="add-category-modal" class="text-white/80 transition hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button></div><form method="post" action="{% url 'downloads:category_create' %}" class="space-y-4 p-6" data-download-ajax-form data-loading-text="Adding category...">{% csrf_token %}<div><label class="form-label" for="category-name">Category name</label><input id="category-name" name="name" required placeholder="e.g. Utilities"></div><div class="flex justify-end gap-2 border-t border-slate-100 pt-4"><button type="button" data-modal-close="add-category-modal" class="btn btn-outline-light">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Add Category</button></div></form><div class="border-t border-slate-100 px-6 py-5"><p class="mb-3 text-sm font-bold text-slate-700">Existing categories</p><div class="flex flex-wrap gap-2">{% for category in categories %}<form method="post" action="{% url 'downloads:category_delete' category.pk %}" data-download-ajax-form data-ajax-confirm-delete data-title="Delete category?" data-text="Links in this category will move to General.">{% csrf_token %}<button class="btn btn-outline-primary !px-3" {% if category.name == 'General' %}disabled{% endif %}>{{ category.name }}{% if category.name != 'General' %}<i class="fa-solid fa-xmark ml-2"></i>{% endif %}</button></form>{% endfor %}</div></div></div></div>
 {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const categoryButtons = [...document.querySelectorAll('[data-category-filter]')];
-    const cards = [...document.querySelectorAll('[data-download-card]')];
-    const searchInput = document.getElementById('download-search');
-    const emptyState = document.getElementById('no-download-results');
     let activeCategory = '';
 
+    const app = () => document.getElementById('downloads-app');
+    const overlay = document.getElementById('downloads-loading-overlay');
+    const loadingText = document.getElementById('downloads-loading-text');
+
+    const setLoading = (show, text = 'Saving changes...') => {
+        if (!overlay) return;
+        loadingText.textContent = text;
+        overlay.classList.toggle('hidden', !show);
+        overlay.classList.toggle('flex', show);
+        overlay.setAttribute('aria-hidden', show ? 'false' : 'true');
+    };
+
+    const setModal = (id, show) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.toggle('hidden', !show);
+        modal.classList.toggle('flex', show);
+        document.body.classList.toggle('overflow-hidden', show);
+    };
+
+    const showToast = (icon, title) => Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon,
+        title,
+        showConfirmButton: false,
+        timer: 2200,
+        timerProgressBar: true,
+    });
+
     const applyFilters = () => {
-        const query = (searchInput?.value || '').trim().toLowerCase();
+        const root = app();
+        const query = (root?.querySelector('#download-search')?.value || '').trim().toLowerCase();
+        const cards = [...(root?.querySelectorAll('[data-download-card]') || [])];
         let visibleCount = 0;
         cards.forEach((card) => {
             const categoryIds = (card.dataset.categories || '').trim().split(/\s+/);
@@ -104,51 +141,132 @@ document.addEventListener('DOMContentLoaded', () => {
             card.classList.toggle('hidden', !visible);
             if (visible) visibleCount += 1;
         });
-        emptyState?.classList.toggle('hidden', visibleCount !== 0);
+        root?.querySelector('#no-download-results')?.classList.toggle('hidden', visibleCount !== 0);
     };
 
-    categoryButtons.forEach((button) => button.addEventListener('click', () => {
-        activeCategory = button.dataset.categoryFilter;
-        categoryButtons.forEach((item) => {
-            item.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
-            item.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+    const refreshDownloads = async () => {
+        const response = await fetch(window.location.href, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            credentials: 'same-origin',
         });
-        button.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-600');
-        button.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
-        applyFilters();
-    }));
-    searchInput?.addEventListener('input', applyFilters);
-
-    const setModal = (id, show) => {
-        const modal = document.getElementById(id);
-        if (!modal) return;
-        modal.classList.toggle('hidden', !show);
-        modal.classList.toggle('flex', show);
-        document.body.classList.toggle('overflow-hidden', show);
+        if (!response.ok) throw new Error('Updated downloads could not be loaded.');
+        const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const freshApp = page.getElementById('downloads-app');
+        if (!freshApp) throw new Error('Updated downloads section was not found.');
+        app().innerHTML = freshApp.innerHTML;
+        activeCategory = '';
+        document.body.classList.remove('overflow-hidden');
     };
-    document.querySelectorAll('[data-modal-open]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalOpen, true)));
-    document.querySelectorAll('[data-modal-close]').forEach((button) => button.addEventListener('click', () => setModal(button.dataset.modalClose, false)));
-    ['add-link-modal', 'edit-link-modal', 'add-category-modal'].forEach((id) => document.getElementById(id)?.addEventListener('click', (event) => { if (event.target.id === id) setModal(id, false); }));
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.querySelectorAll('[data-modal-close]').forEach((button) => setModal(button.dataset.modalClose, false)); });
 
-    document.querySelectorAll('[data-edit-link]').forEach((button) => button.addEventListener('click', function () {
-        document.getElementById('edit-link-form').action = this.dataset.updateUrl;
-        document.getElementById('edit-link-name').value = this.dataset.name;
-        document.getElementById('edit-link-description').value = this.dataset.description;
-        const selectedCategories = (this.dataset.categoryIds || '').trim().split(/\s+/);
-        document.querySelectorAll('[data-category-checkbox="edit-link"]').forEach((checkbox) => { checkbox.checked = selectedCategories.includes(checkbox.value); });
-        document.getElementById('edit-link-drive-link').value = this.dataset.driveLink;
-        document.getElementById('edit-link-is-required').checked = this.dataset.required === 'true';
-        document.getElementById('edit-link-is-active').checked = this.dataset.active === 'true';
-    }));
-    document.querySelectorAll('.copy-link-btn').forEach((button) => button.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(button.dataset.link);
-            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Link copied', showConfirmButton: false, timer: 1600, timerProgressBar: true });
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Copy failed', text: 'Please copy the link from the opened download page.' });
+    document.addEventListener('input', (event) => {
+        if (event.target.matches('#download-search')) applyFilters();
+    });
+
+    document.addEventListener('click', async (event) => {
+        const root = app();
+        if (!root || !root.contains(event.target)) return;
+
+        const categoryButton = event.target.closest('[data-category-filter]');
+        if (categoryButton) {
+            activeCategory = categoryButton.dataset.categoryFilter;
+            root.querySelectorAll('[data-category-filter]').forEach((item) => {
+                item.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
+                item.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+            });
+            categoryButton.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-600');
+            categoryButton.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'shadow-indigo-200');
+            applyFilters();
+            return;
         }
-    }));
+
+        const openButton = event.target.closest('[data-modal-open]');
+        if (openButton) {
+            setModal(openButton.dataset.modalOpen, true);
+            if (!openButton.hasAttribute('data-edit-link')) return;
+        }
+        const closeButton = event.target.closest('[data-modal-close]');
+        if (closeButton) {
+            setModal(closeButton.dataset.modalClose, false);
+            return;
+        }
+        if (event.target.matches('#add-link-modal, #edit-link-modal, #add-category-modal')) {
+            setModal(event.target.id, false);
+            return;
+        }
+
+        const editButton = event.target.closest('[data-edit-link]');
+        if (editButton) {
+            document.getElementById('edit-link-form').action = editButton.dataset.updateUrl;
+            document.getElementById('edit-link-name').value = editButton.dataset.name;
+            document.getElementById('edit-link-description').value = editButton.dataset.description;
+            const selectedCategories = (editButton.dataset.categoryIds || '').trim().split(/\s+/);
+            document.querySelectorAll('[data-category-checkbox="edit-link"]').forEach((checkbox) => {
+                checkbox.checked = selectedCategories.includes(checkbox.value);
+            });
+            document.getElementById('edit-link-drive-link').value = editButton.dataset.driveLink;
+            document.getElementById('edit-link-is-required').checked = editButton.dataset.required === 'true';
+            document.getElementById('edit-link-is-active').checked = editButton.dataset.active === 'true';
+            return;
+        }
+
+        const copyButton = event.target.closest('.copy-link-btn');
+        if (copyButton) {
+            try {
+                await navigator.clipboard.writeText(copyButton.dataset.link);
+                showToast('success', 'Link copied');
+            } catch (error) {
+                Swal.fire({icon: 'error', title: 'Copy failed', text: 'Please copy the link from the opened download page.'});
+            }
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            ['add-link-modal', 'edit-link-modal', 'add-category-modal'].forEach((id) => setModal(id, false));
+        }
+    });
+
+    document.addEventListener('submit', async (event) => {
+        const form = event.target.closest('[data-download-ajax-form]');
+        if (!form || !app()?.contains(form)) return;
+        event.preventDefault();
+
+        if (form.hasAttribute('data-ajax-confirm-delete')) {
+            const confirmation = await Swal.fire({
+                title: form.dataset.title || 'Delete this item?',
+                text: form.dataset.text || 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: form.dataset.confirmText || 'Yes, delete',
+                confirmButtonColor: '#e11d48',
+                cancelButtonText: 'Cancel',
+            });
+            if (!confirmation.isConfirmed) return;
+        }
+
+        setLoading(true, form.dataset.loadingText || (form.hasAttribute('data-ajax-confirm-delete') ? 'Deleting...' : 'Saving changes...'));
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                credentials: 'same-origin',
+            });
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) throw new Error('Your session may have expired. Please sign in again.');
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                const details = (result.errors || []).join('\n');
+                throw new Error(details || result.message || 'The action could not be completed.');
+            }
+            await refreshDownloads();
+            showToast('success', result.message);
+        } catch (error) {
+            Swal.fire({icon: 'error', title: 'Action failed', text: error.message});
+        } finally {
+            setLoading(false);
+        }
+    });
 });
 </script>
 {% endblock %}

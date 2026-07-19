@@ -12,7 +12,7 @@
 </i>
 </button>
 </div>
-<form method="post" action="{% url 'reminders:task_create' %}" class="space-y-5 p-6">{% csrf_token %}{% include 'reminders/task_fields.html' with prefix='new-task' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
+<form method="post" action="{% url 'reminders:task_create' %}" class="space-y-5 p-6" data-reminder-ajax-form data-loading-text="Creating task...">{% csrf_token %}{% include 'reminders/task_fields.html' with prefix='new-task' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
 <button type="button" data-modal-close="task-modal" class="btn btn-outline-light">Cancel</button>
 <button class="btn btn-primary">
 <i class="fa-solid fa-floppy-disk">
@@ -35,7 +35,7 @@
 </i>
 </button>
 </div>
-<form id="edit-task-form" method="post" class="space-y-5 p-6">{% csrf_token %}{% include 'reminders/task_fields.html' with prefix='edit-task' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
+<form id="edit-task-form" method="post" class="space-y-5 p-6" data-reminder-ajax-form data-loading-text="Updating task...">{% csrf_token %}{% include 'reminders/task_fields.html' with prefix='edit-task' %}<div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
 <button type="button" data-modal-close="edit-task-modal" class="btn btn-outline-light">Cancel</button>
 <button class="btn btn-primary">
 <i class="fa-solid fa-floppy-disk">
@@ -59,7 +59,7 @@
 </button>
 </div>
 <div class="grid gap-6 p-6 lg:grid-cols-[minmax(18rem,.8fr)_minmax(0,1.6fr)]">
-<form method="post" action="{% url 'reminders:category_create' %}" class="h-fit space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/60 p-5">{% csrf_token %}<h3 class="font-extrabold text-indigo-900">Add Category</h3>
+<form method="post" action="{% url 'reminders:category_create' %}" class="h-fit space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/60 p-5" data-reminder-ajax-form data-loading-text="Creating category...">{% csrf_token %}<h3 class="font-extrabold text-indigo-900">Add Category</h3>
 <div>
 <label class="form-label">Category name</label>
 <input name="name" required>
@@ -107,7 +107,7 @@
 <i class="fa-solid fa-pen-to-square">
 </i>
 </button>
-<form method="post" action="{% url 'reminders:category_delete' category.id %}" data-confirm-delete data-title="Delete category?" data-text="A category in use cannot be deleted.">{% csrf_token %}<button class="btn btn-outline-danger !p-2">
+<form method="post" action="{% url 'reminders:category_delete' category.id %}" data-reminder-ajax-form data-ajax-confirm-delete data-loading-text="Deleting category..." data-title="Delete category?" data-text="A category in use cannot be deleted.">{% csrf_token %}<button class="btn btn-outline-danger !p-2">
 <i class="fa-solid fa-trash">
 </i>
 </button>
@@ -134,7 +134,7 @@
 </i>
 </button>
 </div>
-<form id="edit-category-form" method="post" class="space-y-4 p-6">{% csrf_token %}<div>
+<form id="edit-category-form" method="post" class="space-y-4 p-6" data-reminder-ajax-form data-loading-text="Updating category...">{% csrf_token %}<div>
 <label class="form-label">Category name</label>
 <input id="edit-category-name" name="name" required>
 </div>

@@ -1,6 +1,7 @@
 {% extends 'khata/base.html' %}
 {% block title %}Khata Dashboard{% endblock %}
 {% block content %}
+<div id="khata-app">
 <div class="mx-auto max-w-7xl space-y-6">
   <header class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white"><div class="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Khata workspace</p><h1 class="mt-1 text-3xl font-extrabold">Good day, {{ request.user.first_name|default:request.user.username }}</h1><p class="mt-1 text-sm text-indigo-100">Manage customers, balances and daily transactions from one place.</p></div><a href="{% url 'khata:report_page' %}" class="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/30 transition hover:bg-white/25"><i class="fa-solid fa-chart-line"></i>Open reports</a></div></header>
   <div id="heroTransferAction"><button type="button" class="btn text-white ring-1 ring-white/30" style="background:#059669" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left me-1"></i> Transfer Voucher</button></div>
@@ -13,7 +14,7 @@
       <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white">
         <h2 class="font-extrabold"><i class="fa-solid fa-user-plus mr-2"></i>Add Customer</h2>
       </div>
-      <form action="{% url 'khata:add_customer' %}" method="post" class="space-y-4 p-5">{% csrf_token %}<div><label
+      <form action="{% url 'khata:add_customer' %}" method="post" class="space-y-4 p-5" data-khata-ajax-form data-loading-text="Adding customer...">{% csrf_token %}<div><label
             class="form-label">Customer name</label><input name="name" required placeholder="Enter name"></div>
         <div><label class="form-label">Phone number</label><input name="phone" required
             placeholder="Mobile / phone number"></div><button class="btn btn-primary w-full"><i
@@ -30,7 +31,7 @@
           </div>{% if current_filter != 'all' or search_query %}<a href="{% url 'khata:dashboard' %}"
             class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i>Clear filters</a>{% endif %}
         </div>
-        <form method="get" action="{% url 'khata:dashboard' %}" class="mt-4 flex gap-2">{% if current_filter != 'all'%}
+        <form method="get" action="{% url 'khata:dashboard' %}" class="mt-4 flex gap-2" data-khata-nav-form>{% if current_filter != 'all'%}
           <input type="hidden" name="filter" value="{{ current_filter }}">{% endif %}<input name="search"
             value="{{ search_query }}" placeholder="Search customer or phone"><button
             class="btn btn-primary shrink-0"><i class="fa-solid fa-magnifying-glass"></i>Search</button></form>
@@ -59,7 +60,7 @@
                 <div class="flex justify-center gap-2"><button type="button" class="btn btn-outline-primary !p-2" title="Edit" data-edit-customer data-bs-toggle="modal" data-bs-target="#editCustomerModal" data-update-url="{% url 'khata:update_customer' customer.b64_id %}" data-customer-name="{{ customer.name }}" data-customer-phone="{{ customer.phone }}"><i class="fa-solid fa-pen"></i></button><a
                     href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-primary !p-2"
                     title="Transactions"><i class="fa-solid fa-book-open"></i></a>
-                  <form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-confirm-delete
+                  <form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-khata-ajax-form data-ajax-confirm-delete data-loading-text="Deleting customer..."
                     data-title="Delete customer?">{% csrf_token %}<button class="btn btn-outline-danger !p-2"
                       title="Delete"><i class="fa-solid fa-trash"></i></button></form>
                 </div>
@@ -80,7 +81,7 @@
 <div class="modal" id="transferVoucherModal" tabindex="-1" aria-labelledby="transferVoucherModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 38rem;">
     <div class="modal-content overflow-hidden border-0" style="border-radius:1.5rem;box-shadow:0 30px 80px rgba(15,23,42,.32);">
-      <form action="{% url 'khata:transfer_voucher' %}" method="post" id="transferVoucherForm">{% csrf_token %}
+      <form action="{% url 'khata:transfer_voucher' %}" method="post" id="transferVoucherForm" data-khata-ajax-form data-loading-text="Creating voucher...">{% csrf_token %}
         <div class="modal-header border-0 text-white" style="background:linear-gradient(135deg,#4338ca,#7c3aed);padding:1.4rem 1.6rem;">
           <div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-white/15 text-xl ring-1 ring-white/25"><i class="fa-solid fa-money-bill-transfer"></i></span><div><p class="mb-1 text-xs font-bold uppercase tracking-widest text-indigo-100">Internal ledger entry</p><h5 class="modal-title text-xl font-extrabold" id="transferVoucherModalLabel">Transfer Voucher</h5></div></div>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -106,7 +107,7 @@
 <div class="modal" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 30rem;">
     <div class="modal-content overflow-hidden border-0" style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
-      <form id="editCustomerForm" method="post">{% csrf_token %}
+      <form id="editCustomerForm" method="post" data-khata-ajax-form data-loading-text="Updating customer...">{% csrf_token %}
         <div class="modal-header border-0 text-white" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
           <div><p class="mb-1 text-xs font-semibold uppercase tracking-wider text-indigo-100">Customer details</p><h5 class="modal-title text-xl font-extrabold" id="editCustomerModalLabel"><i class="fa-solid fa-user-pen me-2"></i>Edit Customer</h5></div>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -137,5 +138,5 @@
     });
   });
 </script>
+</div>
 {% endblock %}
-

@@ -8,7 +8,26 @@ from datetime import timedelta
 from django.core.cache import cache
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 STATS_CACHE_VERSION_KEY = 'reminders:dashboard-stats-version'
+
+
+def _is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+
+def _form_errors(form):
+    return [message for errors in form.errors.values() for message in errors]
+
+
+def _action_response(request, success, message, errors=None):
+    if _is_ajax(request):
+        return JsonResponse(
+            {'success': success, 'message': message, 'errors': errors or []},
+            status=200 if success else 400,
+        )
+    (messages.success if success else messages.error)(request, message)
+    return redirect('reminders:dashboard')
 
 
 def _dashboard_stats_cache_key(user):
@@ -104,21 +123,21 @@ def dashboard(request):
 
 
 @login_required
+@require_POST
 def task_create(request):
-    if request.method == 'POST':
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            task = form.save(commit=False)
-            task.created_by = request.user
-            if not task.assigned_to:
-                task.assigned_to = request.user
-            task.save()
-            _invalidate_dashboard_stats_cache()
-            messages.success(request, f'✅ Task "{task.title}" created!')
-            return redirect('reminders:dashboard')
-        messages.error(request, 'Please correct the task details and try again.')
-        return redirect('reminders:dashboard')
-    return redirect('reminders:dashboard')
+    form = TaskForm(request.POST)
+    if form.is_valid():
+        task = form.save(commit=False)
+        task.created_by = request.user
+        if not task.assigned_to:
+            task.assigned_to = request.user
+        task.save()
+        _invalidate_dashboard_stats_cache()
+        return _action_response(request, True, f'Task "{task.title}" created!')
+    return _action_response(
+        request, False, 'Please correct the task details and try again.', _form_errors(form)
+    )
+
 
 @login_required
 @require_POST
@@ -128,29 +147,33 @@ def task_update(request, pk):
     if form.is_valid():
         form.save()
         _invalidate_dashboard_stats_cache()
-        messages.success(request, f'Task "{task.title}" updated!')
-    else:
-        messages.error(request, 'Please correct the task details and try again.')
-    return redirect('reminders:dashboard')
-@login_required
-def task_delete(request, pk):
-    task = get_object_or_404(Task, pk=pk)
-    if request.method == 'POST':
-        task.delete()
-        _invalidate_dashboard_stats_cache()
-        messages.warning(request, f'🗑️ Task "{task.title}" deleted.')
-        return redirect('reminders:dashboard')
-    return redirect('reminders:dashboard')
+        return _action_response(request, True, f'Task "{task.title}" updated!')
+    return _action_response(
+        request, False, 'Please correct the task details and try again.', _form_errors(form)
+    )
+
 
 @login_required
+@require_POST
+def task_delete(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    title = task.title
+    task.delete()
+    _invalidate_dashboard_stats_cache()
+    return _action_response(request, True, f'Task "{title}" deleted.')
+
+
+@login_required
+@require_POST
 def task_toggle_status(request, pk):
     task = get_object_or_404(Task, pk=pk)
     status_cycle = {'PENDING': 'IN_PROGRESS', 'IN_PROGRESS': 'COMPLETED', 'COMPLETED': 'PENDING'}
     task.status = status_cycle.get(task.status, 'PENDING')
     task.save()
     _invalidate_dashboard_stats_cache()
-    messages.info(request, f'🔄 Task "{task.title}" status changed to {task.get_status_display()}')
-    return redirect('reminders:dashboard')
+    return _action_response(
+        request, True, f'Task "{task.title}" status changed to {task.get_status_display()}.'
+    )
 
 
 # ========== CATEGORY MANAGEMENT VIEWS ==========
@@ -163,13 +186,11 @@ def category_create(request):
     color = request.POST.get('color', 'indigo').strip() or 'indigo'
 
     if not name:
-        messages.error(request, 'Category name is required.')
-    elif TaskCategory.objects.filter(name__iexact=name).exists():
-        messages.error(request, f'Category "{name}" already exists!')
-    else:
-        TaskCategory.objects.create(name=name, icon=icon, color=color)
-        messages.success(request, f'Category "{name}" created successfully!')
-    return redirect('reminders:dashboard')
+        return _action_response(request, False, 'Category name is required.')
+    if TaskCategory.objects.filter(name__iexact=name).exists():
+        return _action_response(request, False, f'Category "{name}" already exists!')
+    TaskCategory.objects.create(name=name, icon=icon, color=color)
+    return _action_response(request, True, f'Category "{name}" created successfully!')
 
 
 @login_required
@@ -181,16 +202,14 @@ def category_update(request, pk):
     color = request.POST.get('color', 'indigo').strip() or 'indigo'
 
     if not name:
-        messages.error(request, 'Category name is required.')
-    elif TaskCategory.objects.filter(name__iexact=name).exclude(pk=category.pk).exists():
-        messages.error(request, f'Category "{name}" already exists!')
-    else:
-        category.name = name
-        category.icon = icon
-        category.color = color
-        category.save(update_fields=['name', 'icon', 'color'])
-        messages.success(request, f'Category "{name}" updated successfully!')
-    return redirect('reminders:dashboard')
+        return _action_response(request, False, 'Category name is required.')
+    if TaskCategory.objects.filter(name__iexact=name).exclude(pk=category.pk).exists():
+        return _action_response(request, False, f'Category "{name}" already exists!')
+    category.name = name
+    category.icon = icon
+    category.color = color
+    category.save(update_fields=['name', 'icon', 'color'])
+    return _action_response(request, True, f'Category "{name}" updated successfully!')
 
 
 @login_required
@@ -198,9 +217,9 @@ def category_update(request, pk):
 def category_delete(request, pk):
     category = get_object_or_404(TaskCategory, pk=pk)
     if Task.objects.filter(category=category).exists():
-        messages.error(request, f'Cannot delete "{category.name}" because it is assigned to existing tasks!')
-    else:
-        category_name = category.name
-        category.delete()
-        messages.success(request, f'Category "{category_name}" deleted successfully!')
-    return redirect('reminders:dashboard')
+        return _action_response(
+            request, False, f'Cannot delete "{category.name}" because it is assigned to existing tasks!'
+        )
+    category_name = category.name
+    category.delete()
+    return _action_response(request, True, f'Category "{category_name}" deleted successfully!')

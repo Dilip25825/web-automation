@@ -12,10 +12,32 @@ from django.utils import timezone
 import urllib.parse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import ShopProfile
 from django.core.paginator import Paginator #
 from django.views.decorators.http import require_POST
+from functools import wraps
+
+
+def ajax_action(view_func):
+    """Return queued Django messages as JSON for AJAX POST requests."""
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        response = view_func(request, *args, **kwargs)
+        if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            queued = list(messages.get_messages(request))
+            failed = any(message.level >= messages.WARNING for message in queued)
+            message_text = ' '.join(str(message) for message in queued)
+            return JsonResponse(
+                {
+                    'success': not failed,
+                    'message': message_text or ('Action could not be completed.' if failed else 'Changes saved successfully.'),
+                    'errors': [str(message) for message in queued if message.level >= messages.WARNING],
+                },
+                status=400 if failed else 200,
+            )
+        return response
+    return wrapped
 
 
 @login_required
@@ -90,6 +112,7 @@ def dashboard(request):
         return render(request, 'khata/error.html')
 
 @login_required
+@ajax_action
 @require_POST
 def transfer_voucher(request):
     return_customer_id = request.POST.get('return_customer')
@@ -133,6 +156,7 @@ def transfer_voucher(request):
     return redirect('khata:dashboard')
 
 @login_required
+@ajax_action
 def add_customer(request):
     if request.method == 'POST':
         try:
@@ -162,6 +186,7 @@ def add_customer(request):
 
 
 @login_required
+@ajax_action
 @require_POST
 def update_customer(request, b64_id):
     """Update a customer from the dashboard modal."""
@@ -184,6 +209,8 @@ def update_customer(request, b64_id):
         messages.error(request, f"Grahak edit karne me error aayi: {str(e)}")
         return redirect('khata:dashboard')
 @login_required
+@ajax_action
+@require_POST
 def delete_customer(request, customer_id):
     # Error Handling ke liye try block (App crash hone se rokne ke liye)
     try:
@@ -218,6 +245,7 @@ def delete_customer(request, customer_id):
 
 
 @login_required
+@ajax_action
 def customer_detail(request, customer_id):
     try:
         customer = get_object_or_404(Customer, id=customer_id, user=request.user)
@@ -317,6 +345,7 @@ def customer_detail(request, customer_id):
         return redirect('khata:dashboard')
 
 @login_required
+@ajax_action
 @require_POST
 def update_transaction(request, b64_trans_id):
     """Update a transaction from the customer-detail modal."""
@@ -342,6 +371,8 @@ def update_transaction(request, b64_trans_id):
         messages.error(request, f"Entry edit karne me samasya: {str(e)}")
         return redirect('khata:dashboard')
 @login_required
+@ajax_action
+@require_POST
 def delete_transaction(request, b64_trans_id):
     # Try block error aane se rokne ke liye
     try:
@@ -362,6 +393,8 @@ def delete_transaction(request, b64_trans_id):
     
 
 @login_required
+@ajax_action
+@require_POST
 def add_interest(request, b64_id):
     # Error Handling ke liye try block (On Error GoTo logic)
     try:

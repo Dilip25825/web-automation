@@ -33,3 +33,19 @@ class TransferVoucherTests(TestCase):
             'amount': '2000', 'date': '2026-07-18',
         })
         self.assertEqual(Transaction.objects.count(), 0)
+
+    def test_transfer_returns_json_for_ajax(self):
+        response = self.client.post(
+            reverse('khata:transfer_voucher'),
+            {
+                'from_customer': self.from_customer.id,
+                'to_customer': self.to_customer.id,
+                'amount': '1500',
+                'date': '2026-07-18',
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertEqual(Transaction.objects.count(), 2)

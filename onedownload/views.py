@@ -1,9 +1,28 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from .forms import CategoryForm, DownloadLinkForm
 from .models import Category, DownloadLink
+
+
+def _is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+
+def _form_errors(form):
+    return [message for errors in form.errors.values() for message in errors]
+
+
+def _action_response(request, success, message, errors=None):
+    if _is_ajax(request):
+        return JsonResponse(
+            {'success': success, 'message': message, 'errors': errors or []},
+            status=200 if success else 400,
+        )
+    (messages.success if success else messages.error)(request, message)
+    return redirect('downloads:public_downloads')
 
 
 def _resource_icon(*values):
@@ -70,10 +89,9 @@ def link_create(request):
     form = DownloadLinkForm(request.POST)
     if form.is_valid():
         form.save()
-        messages.success(request, 'Link added successfully.')
+        return _action_response(request, True, 'Link added successfully.')
     else:
-        messages.error(request, 'Please correct the link details and try again.')
-    return redirect('downloads:public_downloads')
+        return _action_response(request, False, 'Please correct the link details and try again.', _form_errors(form))
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -83,10 +101,9 @@ def link_update(request, pk):
     form = DownloadLinkForm(request.POST, instance=link)
     if form.is_valid():
         form.save()
-        messages.success(request, 'Link updated successfully.')
+        return _action_response(request, True, 'Link updated successfully.')
     else:
-        messages.error(request, 'Please correct the link details and try again.')
-    return redirect('downloads:public_downloads')
+        return _action_response(request, False, 'Please correct the link details and try again.', _form_errors(form))
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -94,8 +111,7 @@ def link_update(request, pk):
 def link_delete(request, pk):
     link = get_object_or_404(DownloadLink, pk=pk)
     link.delete()
-    messages.success(request, 'Link deleted successfully.')
-    return redirect('downloads:public_downloads')
+    return _action_response(request, True, 'Link deleted successfully.')
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -106,10 +122,9 @@ def category_create(request):
         category = form.save()
         for link in DownloadLink.objects.filter(is_required=True):
             link.categories.add(category)
-        messages.success(request, 'Category added successfully.')
+        return _action_response(request, True, 'Category added successfully.')
     else:
-        messages.error(request, 'Please enter a unique category name.')
-    return redirect('downloads:public_downloads')
+        return _action_response(request, False, 'Please enter a unique category name.', _form_errors(form))
 
 
 @user_passes_test(lambda user: user.is_active and user.is_superuser, login_url='/admin/login/')
@@ -117,10 +132,9 @@ def category_create(request):
 def category_delete(request, pk):
     category = get_object_or_404(Category, pk=pk)
     if category.name.lower() == 'general':
-        messages.error(request, 'General category cannot be deleted.')
+        return _action_response(request, False, 'General category cannot be deleted.')
     else:
         DownloadLink.objects.filter(category=category.name).update(category='General')
         category.delete()
-        messages.success(request, 'Category deleted successfully.')
-    return redirect('downloads:public_downloads')
+        return _action_response(request, True, 'Category deleted successfully.')
 

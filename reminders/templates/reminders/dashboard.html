@@ -1,6 +1,10 @@
 {% extends 'core/base.html' %}
 {% block title %}Task Reminders{% endblock %}
 {% block content %}
+<div id="reminders-loading-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-hidden="true">
+  <div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl"><span class="h-12 w-12 animate-spin rounded-full border-4 border-violet-100 border-t-violet-600"></span><p id="reminders-loading-text" class="mt-4 font-extrabold text-slate-800">Saving changes...</p><p class="mt-1 text-xs text-slate-500">Please wait</p></div>
+</div>
+<div id="reminders-app">
 <div class="mx-auto max-w-7xl space-y-6">
   <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-7 text-white shadow-lg sm:px-8">
     <div class="flex flex-col justify-between gap-5 md:flex-row md:items-center">
@@ -20,7 +24,7 @@
 </div>
   </section>
   <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <a href="?filter=pending" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'pending' %}ring-2 ring-indigo-400{% endif %}">
+    <a data-reminder-filter href="?filter=pending" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'pending' %}ring-2 ring-indigo-400{% endif %}">
 <span class="grid h-12 w-12 place-items-center rounded-xl bg-indigo-100 text-xl text-indigo-700">
 <i class="fa-solid fa-list-check">
 </i>
@@ -30,7 +34,7 @@
 <p class="text-3xl font-extrabold text-slate-900">{{ pending_count }}</p>
 </div>
 </a>
-    <a href="?filter=overdue" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'overdue' %}ring-2 ring-rose-400{% endif %}">
+    <a data-reminder-filter href="?filter=overdue" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'overdue' %}ring-2 ring-rose-400{% endif %}">
 <span class="grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-xl text-rose-700">
 <i class="fa-solid fa-triangle-exclamation">
 </i>
@@ -40,7 +44,7 @@
 <p class="text-3xl font-extrabold text-rose-700">{{ overdue_count }}</p>
 </div>
 </a>
-    <a href="?filter=due_soon" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'due_soon' %}ring-2 ring-violet-400{% endif %}">
+    <a data-reminder-filter href="?filter=due_soon" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'due_soon' %}ring-2 ring-violet-400{% endif %}">
 <span class="grid h-12 w-12 place-items-center rounded-xl bg-violet-100 text-xl text-violet-700">
 <i class="fa-solid fa-calendar-day">
 </i>
@@ -50,7 +54,7 @@
 <p class="text-3xl font-extrabold text-violet-700">{{ due_soon_count }}</p>
 </div>
 </a>
-    <a href="?filter=completed" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'completed' %}ring-2 ring-blue-400{% endif %}">
+    <a data-reminder-filter href="?filter=completed" class="app-card flex items-center gap-4 p-5 transition hover:-translate-y-0.5 hover:shadow-md {% if active_filter == 'completed' %}ring-2 ring-blue-400{% endif %}">
 <span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-100 text-xl text-blue-700">
 <i class="fa-solid fa-circle-check">
 </i>
@@ -96,15 +100,12 @@
 <p class="mt-0.5 text-xs text-slate-500">{{ task.deadline|date:"h:i A" }}</p>{% if task.is_overdue %}<span class="mt-1 inline-block text-xs font-bold text-rose-700">Overdue</span>{% endif %}{% else %}<span class="text-slate-400">No deadline</span>{% endif %}</td>
 <td>
 <div class="flex justify-center gap-2">
-<a href="{% url 'reminders:task_toggle_status' task.id %}" class="btn btn-outline-primary !p-2" title="Change status">
-<i class="fa-solid fa-rotate">
-</i>
-</a>
+<form method="post" action="{% url 'reminders:task_toggle_status' task.id %}" data-reminder-ajax-form data-loading-text="Changing status...">{% csrf_token %}<button class="btn btn-outline-primary !p-2" title="Change status"><i class="fa-solid fa-rotate"></i></button></form>
 <button type="button" data-modal-open="edit-task-modal" data-edit-task data-update-url="{% url 'reminders:task_update' task.id %}" data-title="{{ task.title }}" data-description="{{ task.description }}" data-category="{{ task.category_id }}" data-priority="{{ task.priority }}" data-status="{{ task.status }}" data-deadline="{{ task.deadline|date:'Y-m-d\TH:i' }}" data-reminder-at="{{ task.reminder_at|date:'Y-m-d\TH:i' }}" data-assigned-to="{{ task.assigned_to_id }}" class="btn btn-outline-primary !p-2" title="Edit task">
 <i class="fa-solid fa-pen-to-square">
 </i>
 </button>
-<form method="post" action="{% url 'reminders:task_delete' task.id %}" data-confirm-delete data-title="Delete task?" data-text="{{ task.title|escapejs }} will be deleted permanently.">{% csrf_token %}<button class="btn btn-outline-danger !p-2" title="Delete task">
+<form method="post" action="{% url 'reminders:task_delete' task.id %}" data-reminder-ajax-form data-ajax-confirm-delete data-loading-text="Deleting task..." data-title="Delete task?" data-text="{{ task.title|escapejs }} will be deleted permanently.">{% csrf_token %}<button class="btn btn-outline-danger !p-2" title="Delete task">
 <i class="fa-solid fa-trash">
 </i>
 </button>
@@ -123,11 +124,18 @@
 </section>
 </div>
 {% include 'reminders/dashboard_modals.html' %}
+</div>
 {% endblock %}
 {% block extra_js %}<script>
-function setModal(id, show){document.getElementById(id).classList[show?'replace':'replace'](show?'hidden':'flex',show?'flex':'hidden')}
-document.querySelectorAll('[data-modal-open]').forEach(b=>b.addEventListener('click',()=>setModal(b.dataset.modalOpen,true)));document.querySelectorAll('[data-modal-close]').forEach(b=>b.addEventListener('click',()=>setModal(b.dataset.modalClose,false)));
-['task-modal','edit-task-modal','category-modal','edit-category-modal'].forEach(id=>document.getElementById(id)?.addEventListener('click',e=>{if(e.target.id===id)setModal(id,false)}));
-document.querySelectorAll('[data-edit-task]').forEach(b=>b.addEventListener('click',function(){let f=document.getElementById('edit-task-form');f.action=this.dataset.updateUrl;['title','description','category','priority','status','deadline','reminderAt','assignedTo'].forEach(k=>document.getElementById('edit-task-'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())).value=this.dataset[k]||'')}));
-document.querySelectorAll('[data-edit-category]').forEach(b=>b.addEventListener('click',function(){let f=document.getElementById('edit-category-form');f.action=this.dataset.updateUrl;document.getElementById('edit-category-name').value=this.dataset.name;document.getElementById('edit-category-icon').value=this.dataset.icon;let colors={primary:'indigo',secondary:'violet',success:'emerald',warning:'violet',danger:'rose',info:'blue',dark:'indigo'};document.getElementById('edit-category-color').value=colors[this.dataset.color]||this.dataset.color||'indigo'}));
+document.addEventListener('DOMContentLoaded', () => {
+ const app=()=>document.getElementById('reminders-app'),overlay=document.getElementById('reminders-loading-overlay'),loadingText=document.getElementById('reminders-loading-text');
+ const setLoading=(show,text='Saving changes...')=>{if(!overlay)return;loadingText.textContent=text;overlay.classList.toggle('hidden',!show);overlay.classList.toggle('flex',show);overlay.setAttribute('aria-hidden',show?'false':'true')};
+ const setModal=(id,show)=>{const modal=document.getElementById(id);if(!modal)return;modal.classList.toggle('hidden',!show);modal.classList.toggle('flex',show)};
+ const toast=(icon,title)=>Swal.fire({toast:true,position:'top-end',icon,title,showConfirmButton:false,timer:2200,timerProgressBar:true});
+ const refreshReminders=async(url=window.location.href)=>{const response=await fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});if(!response.ok)throw new Error('Updated reminders could not be loaded.');const page=new DOMParser().parseFromString(await response.text(),'text/html'),fresh=page.getElementById('reminders-app');if(!fresh)throw new Error('Updated reminders section was not found.');app().innerHTML=fresh.innerHTML};
+ document.addEventListener('click',async event=>{const root=app();if(!root||!root.contains(event.target))return;const filter=event.target.closest('[data-reminder-filter]');if(filter){event.preventDefault();setLoading(true,'Loading tasks...');try{await refreshReminders(filter.href);history.pushState({},'',filter.href)}catch(error){Swal.fire({icon:'error',title:'Loading failed',text:error.message})}finally{setLoading(false)}return}const open=event.target.closest('[data-modal-open]');if(open){setModal(open.dataset.modalOpen,true);if(!open.hasAttribute('data-edit-task')&&!open.hasAttribute('data-edit-category'))return}const close=event.target.closest('[data-modal-close]');if(close){setModal(close.dataset.modalClose,false);return}if(event.target.matches('#task-modal,#edit-task-modal,#category-modal,#edit-category-modal')){setModal(event.target.id,false);return}const task=event.target.closest('[data-edit-task]');if(task){const form=document.getElementById('edit-task-form');form.action=task.dataset.updateUrl;['title','description','category','priority','status','deadline','reminderAt','assignedTo'].forEach(key=>{const id='edit-task-'+key.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase());document.getElementById(id).value=task.dataset[key]||''});return}const category=event.target.closest('[data-edit-category]');if(category){const form=document.getElementById('edit-category-form');form.action=category.dataset.updateUrl;document.getElementById('edit-category-name').value=category.dataset.name;document.getElementById('edit-category-icon').value=category.dataset.icon;const colors={primary:'indigo',secondary:'violet',success:'emerald',warning:'violet',danger:'rose',info:'blue',dark:'indigo'};document.getElementById('edit-category-color').value=colors[category.dataset.color]||category.dataset.color||'indigo'}});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')['task-modal','edit-task-modal','category-modal','edit-category-modal'].forEach(id=>setModal(id,false))});
+ window.addEventListener('popstate',async()=>{setLoading(true,'Loading tasks...');try{await refreshReminders()}catch(error){Swal.fire({icon:'error',title:'Loading failed',text:error.message})}finally{setLoading(false)}});
+ document.addEventListener('submit',async event=>{const form=event.target.closest('[data-reminder-ajax-form]');if(!form||!app()?.contains(form))return;event.preventDefault();if(form.hasAttribute('data-ajax-confirm-delete')){const confirmation=await Swal.fire({title:form.dataset.title||'Delete this item?',text:form.dataset.text||'This action cannot be undone.',icon:'warning',showCancelButton:true,confirmButtonText:'Yes, delete',confirmButtonColor:'#e11d48',cancelButtonText:'Cancel'});if(!confirmation.isConfirmed)return}setLoading(true,form.dataset.loadingText||'Saving changes...');try{const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'}),contentType=response.headers.get('content-type')||'';if(!contentType.includes('application/json'))throw new Error('Your session may have expired. Please sign in again.');const result=await response.json();if(!response.ok||!result.success)throw new Error((result.errors||[]).join('\n')||result.message||'The action could not be completed.');await refreshReminders();toast('success',result.message)}catch(error){Swal.fire({icon:'error',title:'Action failed',text:error.message})}finally{setLoading(false)}});
+});
 </script>{% endblock %}
