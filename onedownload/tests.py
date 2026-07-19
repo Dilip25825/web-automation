@@ -31,7 +31,7 @@ class DownloadLinkViewsTests(TestCase):
 
     def test_superuser_can_create_link_with_ajax_json_response(self):
         admin = get_user_model().objects.create_superuser(
-            username='admin',
+            username='user',
             email='admin@example.com',
             password='secret123',
         )

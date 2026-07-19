@@ -251,6 +251,7 @@
                             <td class="userinfo-payment-cell">
                                 <strong class="userinfo-amount">&#8377;{{ client.amount|default:"0" }}</strong>
                                 <span class="userinfo-secondary">Received: &#8377;{{ client.payment_status|default:"0" }}</span>
+                                {% if client.utr_number %}<span class="userinfo-secondary"><i class="fas fa-receipt"></i> UTR: {{ client.utr_number }}</span>{% endif %}
                             </td>
                             <td class="text-center"><span class="userinfo-entry-count">{{ client.entry_count|default:"0" }}</span></td>
                             <td>
