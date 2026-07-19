@@ -98,29 +98,29 @@
                             <span class="font-bold text-white text-lg whitespace-nowrap">Ledger History</span>
 
                             <!-- Right Side - Filters & Buttons -->
-                            <div class="flex items-center gap-2">
-                                <form method="GET" class="flex items-center gap-2">
+                            <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:flex-nowrap lg:justify-end">
+                                <form method="GET" class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center lg:flex-nowrap">
                                     <input type="date" name="start_date"
-                                        class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
-                                        style="min-width: 140px;" value="{{ start_date|default:'' }}">
+                                        class="min-w-0 w-full bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none sm:w-36 lg:!w-32 lg:flex-none"
+                                        value="{{ start_date|default:'' }}">
 
                                     <input type="date" name="end_date"
-                                        class="bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none"
-                                        style="min-width: 140px;" value="{{ end_date|default:'' }}">
+                                        class="min-w-0 w-full bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none sm:w-36 lg:!w-32 lg:flex-none"
+                                        value="{{ end_date|default:'' }}">
 
                                     <button type="submit"
-                                        class="bg-white hover:bg-gray-100 text-indigo-700 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                        class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-gray-100 hover:shadow-md sm:w-auto">
                                         <i class="fa-solid fa-filter text-xs"></i> Filter
                                     </button>
 
                                     <a href="{% url 'khata:customer_detail' customer.id %}"
-                                        class="bg-red-500 hover:bg-red-600 text-white font-medium text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                        class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-red-600 hover:shadow-md sm:w-auto">
                                         <i class="fa-solid fa-rotate-left text-xs"></i> Reset
                                     </a>
                                 </form>
 
                                 <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
-                                    class="bg-white hover:bg-gray-100 text-red-600 font-bold text-sm px-3 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1 whitespace-nowrap">
+                                    class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-gray-100 hover:shadow-md sm:w-auto">
                                     <i class="fa-regular fa-file-pdf text-xs"></i> PDF Download
                                 </a>
                             </div>
