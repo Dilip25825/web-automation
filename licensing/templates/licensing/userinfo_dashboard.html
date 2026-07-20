@@ -40,6 +40,22 @@
     .userinfo-search-hero h3 { color: #fff; font-size: 1.35rem; font-weight: 850; line-height: 1.25; margin: .2rem 0 .4rem; overflow-wrap: anywhere; }
     .userinfo-search-meta { display: flex; flex-wrap: wrap; font-size: .78rem; gap: .45rem 1rem; opacity: .9; }
     .userinfo-first-match { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22); border-radius: 999px; font-size: .72rem; font-weight: 750; margin-left: auto; padding: .4rem .7rem; position: relative; white-space: nowrap; z-index: 1; }
+    .userinfo-detail-modal { background:rgba(15,23,42,.65); display:none; inset:0; overflow-y:auto; padding:1rem; position:fixed; z-index:4200; }
+    .userinfo-detail-modal.is-open { align-items:flex-start; display:flex; justify-content:center; }
+    .userinfo-detail-dialog { background:#fff; border-radius:1rem; box-shadow:0 24px 70px rgba(15,23,42,.3); margin:1rem auto; overflow:hidden; width:min(900px,100%); }
+    .userinfo-detail-header { align-items:center; background:linear-gradient(135deg,#0f172a,#4338ca,#2563eb); color:#fff; display:flex; justify-content:space-between; padding:1.15rem 1.35rem; }
+    .userinfo-detail-header span { color:#c7d2fe; font-size:.65rem; font-weight:850; letter-spacing:.14em; }
+    .userinfo-detail-header h3 { color:#fff; font-size:1.25rem; font-weight:850; margin:.15rem 0; }
+    .userinfo-detail-header p { color:#dbeafe; font-size:.78rem; margin:0; }
+    .userinfo-detail-close { background:transparent; border:0; color:inherit; cursor:pointer; }
+    .userinfo-detail-header .userinfo-detail-close { color:#fff; font-size:2rem; }
+    .userinfo-detail-grid { display:grid; gap:.75rem; grid-template-columns:repeat(3,minmax(0,1fr)); padding:1.25rem; }
+    .userinfo-detail-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:.7rem; min-width:0; padding:.7rem .8rem; }
+    .userinfo-detail-item span { color:#64748b; display:block; font-size:.67rem; font-weight:800; text-transform:uppercase; }
+    .userinfo-detail-item strong { color:#172033; display:block; font-size:.86rem; margin-top:.25rem; overflow-wrap:anywhere; }
+    .userinfo-detail-footer { background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; padding:.85rem 1.25rem; }
+    .userinfo-detail-footer button { background:#334155; border:0; border-radius:.55rem; color:#fff; font-size:.8rem; font-weight:750; padding:.55rem 1rem; }
+    @media(max-width:760px){.userinfo-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:1rem}}@media(max-width:480px){.userinfo-detail-grid{grid-template-columns:1fr}}
     .userinfo-row-actions-menu { background: #fff; border: 1px solid #e2e8f0; border-radius: .8rem; box-shadow: 0 18px 45px rgba(15,23,42,.2); display: none; min-width: 175px; padding: .4rem; position: fixed; z-index: 5000; }
     .userinfo-row-actions-menu.is-open { display: block; }
     .userinfo-row-actions-menu button { align-items: center; background: transparent; border: 0; border-radius: .55rem; color: #334155; display: flex; font-size: .85rem; font-weight: 700; gap: .7rem; padding: .62rem .72rem; text-align: left; transition: background .15s ease,color .15s ease; width: 100%; }
@@ -138,12 +154,37 @@
                 {% endif %}
             </div>
             <div id="userinfo-row-actions-menu" class="userinfo-row-actions-menu" role="menu" aria-hidden="true">
+                <button type="button" data-row-view role="menuitem"><i class="fas fa-eye text-sky-600"></i><span>View Details</span></button>
                 {% if request.user.is_superuser %}<button type="button" data-row-trigger="bulk-update" role="menuitem"><i class="fas fa-edit text-indigo-600"></i><span>Update</span></button>{% endif %}
                 <button type="button" id="userinfo-row-toggle-action" data-row-trigger="toggle" role="menuitem"><i class="fas fa-check-circle text-emerald-600"></i><span>Activate</span></button>
                 <button type="button" data-row-trigger="bulk-invoice" role="menuitem"><i class="fas fa-file-invoice text-blue-600"></i><span>Invoice</span></button>
                 {% if request.user.is_superuser %}<button type="button" data-row-trigger="bulk-copy" role="menuitem"><i class="fas fa-copy text-violet-600"></i><span>Copy</span></button>
                 <div class="userinfo-row-actions-separator"></div>
                 <button type="button" data-row-trigger="bulk-delete" class="userinfo-row-action-danger" role="menuitem"><i class="fas fa-trash-alt"></i><span>Delete</span></button>{% endif %}
+            </div>
+            <div id="userinfo-detail-modal" class="userinfo-detail-modal" aria-hidden="true">
+                <div class="userinfo-detail-dialog">
+                    <div class="userinfo-detail-header"><div><span>USERINFO RECORD</span><h3 id="userinfo-detail-name">PACS Details</h3><p id="userinfo-detail-record-id"></p></div><button type="button" class="userinfo-detail-close" aria-label="Close">&times;</button></div>
+                    <div class="userinfo-detail-grid">
+                        <div class="userinfo-detail-item"><span>Login ID / Mobile</span><strong data-detail-field="mobile">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Operator Mobile</span><strong data-detail-field="operator">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Branch</span><strong data-detail-field="branch">-</strong></div>
+                        <div class="userinfo-detail-item"><span>District</span><strong data-detail-field="dist">-</strong></div>
+                        <div class="userinfo-detail-item"><span>State</span><strong data-detail-field="state">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Purpose</span><strong data-detail-field="purpose">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Financial Year</span><strong data-detail-field="year">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Amount</span><strong data-detail-field="amount">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Payment Received</span><strong data-detail-field="payment">-</strong></div>
+                        <div class="userinfo-detail-item"><span>UTR Number</span><strong data-detail-field="utr">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Entry Count</span><strong data-detail-field="entryCount">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Entry Limit</span><strong data-detail-field="limit">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Is Primary</span><strong data-detail-field="isPri">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Accepted By</span><strong data-detail-field="accepted">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Activation Date</span><strong data-detail-field="activationDate">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Last Login</span><strong data-detail-field="lastLogin">-</strong></div>
+                    </div>
+                    <div class="userinfo-detail-footer"><button type="button" class="userinfo-detail-close">Close</button></div>
+                </div>
             </div>
             <div id="farmer-form-modal" class="farmer-form-modal" aria-hidden="true">
                 <div class="farmer-form-dialog">
@@ -224,7 +265,7 @@
                                     data-name="{{ client.pacs_name|escape }}" data-mobile="{{ client.mobile|default_if_none:''|escape }}" data-pacs-name="{{ client.pacs_name|default:''|escape }}" data-branch="{{ client.brach|default:''|escape }}" data-dist="{{ client.dist|default:''|escape }}" data-state="{{ client.state|default:''|escape }}" data-operator="{{ client.operator_mobile|default_if_none:''|escape }}" data-payment-status="{{ client.payment_status|default_if_none:''|escape }}" data-limit="{{ client.limit_of_entrys|default_if_none:''|escape }}" data-is-pri="{{ client.is_pri|default_if_none:''|escape }}" data-accepted-field="{{ client.accepte_by|default_if_none:''|escape }}"
                                     data-purpose="{{ client.for_whys|default_if_none:''|escape }}" data-year="{{ client.f_year|default_if_none:''|escape }}" data-accepted-by="{{ request.user.username|escape }}"
                                     data-active="{% if client.payment_status == client.amount %}true{% else %}false{% endif %}"
-                                    data-amount="{{ client.amount|default_if_none:'2000' }}" data-utr="{{ client.utr_number|default_if_none:''|escape }}"
+                                    data-amount="{{ client.amount|default_if_none:'2000' }}" data-utr="{{ client.utr_number|default_if_none:''|escape }}" data-entry-count="{{ client.entry_count|default_if_none:'0' }}" data-activation-date="{{ client.activation_date|date:'d M Y, h:i A'|default:'-' }}" data-last-login="{{ client.last_login|date:'d M Y, h:i A'|default:'-' }}"
                                     data-update-url="{% url 'licensing:update_userinfo' client.id %}"
                                     data-toggle-url="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query|urlencode }}"
                                     data-invoice-url="{% url 'licensing:generate_invoice' client.id %}"
@@ -642,6 +683,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const rowActionsMenu = document.getElementById('userinfo-row-actions-menu');
     const rowToggleAction = document.getElementById('userinfo-row-toggle-action');
     let currentActionClient = null;
+    const userinfoDetailModal = document.getElementById('userinfo-detail-modal');
+    function closeUserinfoDetails() { userinfoDetailModal.classList.remove('is-open'); userinfoDetailModal.setAttribute('aria-hidden','true'); }
+    function openUserinfoDetails(client) {
+        const values = { mobile:client.dataset.mobile, operator:client.dataset.operator, branch:client.dataset.branch, dist:client.dataset.dist, state:client.dataset.state, purpose:client.dataset.purpose, year:client.dataset.year, amount:'₹'+(client.dataset.amount||'0'), payment:'₹'+(client.dataset.paymentStatus||'0'), utr:client.dataset.utr, entryCount:client.dataset.entryCount, limit:client.dataset.limit, isPri:client.dataset.isPri, accepted:client.dataset.acceptedField, activationDate:client.dataset.activationDate, lastLogin:client.dataset.lastLogin };
+        document.getElementById('userinfo-detail-name').textContent=client.dataset.name||'Unnamed PACS';
+        document.getElementById('userinfo-detail-record-id').textContent='Record #'+client.value;
+        userinfoDetailModal.querySelectorAll('[data-detail-field]').forEach(element=>{element.textContent=values[element.dataset.detailField]||'-'});
+        userinfoDetailModal.classList.add('is-open'); userinfoDetailModal.setAttribute('aria-hidden','false');
+    }
+    userinfoDetailModal.querySelectorAll('.userinfo-detail-close').forEach(button=>button.addEventListener('click',closeUserinfoDetails));
+    userinfoDetailModal.addEventListener('click',event=>{if(event.target===userinfoDetailModal)closeUserinfoDetails()});
     function closeRowActionsMenu() {
         rowActionsMenu.classList.remove('is-open');
         rowActionsMenu.setAttribute('aria-hidden', 'true');
@@ -678,6 +730,8 @@ document.addEventListener('DOMContentLoaded', function () {
             positionRowActionsMenu(toggle);
             return;
         }
+        const viewAction = event.target.closest('#userinfo-row-actions-menu [data-row-view]');
+        if (viewAction) { event.preventDefault(); event.stopPropagation(); closeRowActionsMenu(); if (currentActionClient) openUserinfoDetails(currentActionClient); return; }
         const action = event.target.closest('#userinfo-row-actions-menu [data-row-trigger]');
         if (action) {
             event.preventDefault(); event.stopPropagation();

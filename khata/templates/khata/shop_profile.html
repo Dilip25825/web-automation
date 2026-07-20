@@ -24,7 +24,7 @@
                     <!-- Shop Name -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-secondary">
-                            <i class="fa-regular fa-store me-1"></i>Shop Name
+                            <i class="fa-solid fa-store me-1"></i>Shop Name
                         </label>
                         <input type="text" name="shop_name" class="form-control" 
                                value="{{ profile.shop_name }}" placeholder="Enter shop name" required>
@@ -33,7 +33,7 @@
                     <!-- Mobile Number -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-secondary">
-                            <i class="fa-regular fa-phone me-1"></i>Mobile Number
+                            <i class="fa-solid fa-phone me-1"></i>Mobile Number
                         </label>
                         <input type="text" name="phone" class="form-control" 
                                value="{{ profile.phone|default:'' }}" placeholder="Optional: Shop mobile number">
@@ -42,7 +42,7 @@
                     <!-- Address -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-secondary">
-                            <i class="fa-regular fa-location-dot me-1"></i>Shop Address
+                            <i class="fa-solid fa-location-dot me-1"></i>Shop Address
                         </label>
                         <textarea name="address" class="form-control" rows="3" 
                                   placeholder="Optional: Shop address">{{ profile.address|default:'' }}</textarea>
