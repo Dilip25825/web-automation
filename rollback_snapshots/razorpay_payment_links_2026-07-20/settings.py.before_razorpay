@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -164,9 +164,5 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # 3. Browser close karte hi session data completely destroy karne ke liye
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-# Razorpay credentials are server-side environment variables only.
-RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')
-RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')
-RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', '')
-RAZORPAY_API_BASE_URL = os.getenv('RAZORPAY_API_BASE_URL', 'https://api.razorpay.com/v1')
-PAYMENT_STATUS_TOKEN_MAX_AGE = int(os.getenv('PAYMENT_STATUS_TOKEN_MAX_AGE', '21600'))
+
+

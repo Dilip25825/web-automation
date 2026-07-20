@@ -80,10 +80,6 @@ class UserInfoData(models.Model):
     system_id = models.CharField(max_length=100, db_column='systemID', blank=True, null=True)
     u_pass = models.CharField(max_length=100, db_column='uPass', blank=True, null=True)
     utr_number = models.CharField(max_length=100, db_column='UtrNumber', blank=True, null=True)
-    razorpay_payment_link_id = models.CharField(max_length=50, db_column='RazorpayPaymentLinkID', unique=True, blank=True, null=True)
-    razorpay_payment_id = models.CharField(max_length=50, db_column='RazorpayPaymentID', unique=True, blank=True, null=True)
-    razorpay_reference_id = models.CharField(max_length=40, db_column='RazorpayReferenceID', unique=True, blank=True, null=True)
-    razorpay_payment_status = models.CharField(max_length=20, db_column='RazorpayPaymentStatus', blank=True, null=True)
     # licensing/models.py ke UserInfoData model ke andar ye function add karein
 
     @property
