@@ -149,8 +149,10 @@ class RazorpayPaymentTests(SimpleTestCase):
         self.assertEqual(caught.exception.code,'UNAUTHORIZED')
 
     def test_24_payment_status_equals_amount_after_webhook(self):
-        item=record(); services._apply_paid_entities(item,link(),payment())
+        item=record(utr_number=None); services._apply_paid_entities(item,link(),payment(acquirer_data={'rrn':'123456789012'}))
         self.assertEqual(item.payment_status,2000)
+        self.assertEqual(item.utr_number,'123456789012')
+        item.save.assert_called_once_with(update_fields=['utr_number', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
 
     @patch('licensing.payment_services.UserInfoData.objects')
     def test_25_expired_event_does_not_deactivate_paid_record(self, objects):
@@ -158,6 +160,15 @@ class RazorpayPaymentTests(SimpleTestCase):
         services.process_payment_link_state(link(),'expired')
         self.assertEqual(item.is_active,1); self.assertEqual(item.razorpay_payment_status,'paid'); item.save.assert_not_called()
 
+    @patch('licensing.payment_services.UserInfoData.objects')
+    def test_cancelled_link_clears_four_razorpay_fields(self, objects):
+        item=record(payment_status=0, razorpay_payment_id='pay_test'); objects.select_for_update.return_value.get.return_value=item
+        services.process_payment_link_state(link(), 'cancelled')
+        self.assertIsNone(item.razorpay_payment_link_id)
+        self.assertIsNone(item.razorpay_payment_id)
+        self.assertIsNone(item.razorpay_reference_id)
+        self.assertIsNone(item.razorpay_payment_status)
+        item.save.assert_called_once_with(update_fields=['razorpay_payment_link_id', 'razorpay_payment_id', 'razorpay_reference_id', 'razorpay_payment_status'])
     @patch('licensing.payment_views.process_payment_link_paid', return_value={'duplicate':False,'record_id':7})
     def test_webhook_endpoint_processes_valid_event(self, process):
         payload={'event':'payment_link.paid','payload':{'payment_link':{'entity':link()},'payment':{'entity':payment()}}}; body=json.dumps(payload).encode(); signature=hmac.new(b'webhook-secret',body,hashlib.sha256).hexdigest(); request=self.factory.post('/api/payments/razorpay/webhook/',data=body,content_type='application/json',HTTP_X_RAZORPAY_SIGNATURE=signature); response=views.razorpay_webhook(request)

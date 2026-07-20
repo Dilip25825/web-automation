@@ -168,13 +168,23 @@ def _apply_paid_entities(record, link, payment):
     if record.razorpay_payment_id and record.razorpay_payment_id != payment_id:
         raise PaymentError('A different payment is already recorded.', 'PAYMENT_ID_CONFLICT', 409)
     duplicate = record.razorpay_payment_id == payment_id and is_paid(record)
+    update_fields = []
+    acquirer_data = payment.get('acquirer_data') or {}
+    bank_rrn = ''
+    if isinstance(acquirer_data, dict):
+        bank_rrn = str(acquirer_data.get('rrn') or acquirer_data.get('bank_transaction_id') or '').strip()
+    if bank_rrn and not getattr(record, 'utr_number', None):
+        record.utr_number = bank_rrn
+        update_fields.append('utr_number')
     if not duplicate:
         record.razorpay_payment_id = payment_id
         record.razorpay_payment_status = 'paid'
         record.payment_status = record.amount
         record.is_active = 1
         record.activation_date = record.activation_date or timezone.now()
-        record.save(update_fields=['razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
+        update_fields.extend(['razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
+    if update_fields:
+        record.save(update_fields=update_fields)
     return duplicate
 
 
@@ -201,8 +211,15 @@ def process_payment_link_state(link, state):
         except UserInfoData.DoesNotExist:
             return False
         if not is_paid(record):
-            record.razorpay_payment_status = state
-            record.save(update_fields=['razorpay_payment_status'])
+            if state == 'cancelled':
+                record.razorpay_payment_link_id = None
+                record.razorpay_payment_id = None
+                record.razorpay_reference_id = None
+                record.razorpay_payment_status = None
+                record.save(update_fields=['razorpay_payment_link_id', 'razorpay_payment_id', 'razorpay_reference_id', 'razorpay_payment_status'])
+            else:
+                record.razorpay_payment_status = state
+                record.save(update_fields=['razorpay_payment_status'])
     return True
 
 
