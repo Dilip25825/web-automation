@@ -176,6 +176,10 @@
                         <div class="userinfo-detail-item"><span>Amount</span><strong data-detail-field="amount">-</strong></div>
                         <div class="userinfo-detail-item"><span>Payment Received</span><strong data-detail-field="payment">-</strong></div>
                         <div class="userinfo-detail-item"><span>UTR Number</span><strong data-detail-field="utr">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Razorpay Payment Link ID</span><strong data-detail-field="razorpayLinkId">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Razorpay Payment ID</span><strong data-detail-field="razorpayPaymentId">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Razorpay Reference ID</span><strong data-detail-field="razorpayReferenceId">-</strong></div>
+                        <div class="userinfo-detail-item"><span>Razorpay Payment Status</span><strong data-detail-field="razorpayStatus">-</strong></div>
                         <div class="userinfo-detail-item"><span>Entry Count</span><strong data-detail-field="entryCount">-</strong></div>
                         <div class="userinfo-detail-item"><span>Entry Limit</span><strong data-detail-field="limit">-</strong></div>
                         <div class="userinfo-detail-item"><span>Is Primary</span><strong data-detail-field="isPri">-</strong></div>
@@ -265,7 +269,7 @@
                                     data-name="{{ client.pacs_name|escape }}" data-mobile="{{ client.mobile|default_if_none:''|escape }}" data-pacs-name="{{ client.pacs_name|default:''|escape }}" data-branch="{{ client.brach|default:''|escape }}" data-dist="{{ client.dist|default:''|escape }}" data-state="{{ client.state|default:''|escape }}" data-operator="{{ client.operator_mobile|default_if_none:''|escape }}" data-payment-status="{{ client.payment_status|default_if_none:''|escape }}" data-limit="{{ client.limit_of_entrys|default_if_none:''|escape }}" data-is-pri="{{ client.is_pri|default_if_none:''|escape }}" data-accepted-field="{{ client.accepte_by|default_if_none:''|escape }}"
                                     data-purpose="{{ client.for_whys|default_if_none:''|escape }}" data-year="{{ client.f_year|default_if_none:''|escape }}" data-accepted-by="{{ request.user.username|escape }}"
                                     data-active="{% if client.payment_status == client.amount %}true{% else %}false{% endif %}"
-                                    data-amount="{{ client.amount|default_if_none:'2000' }}" data-utr="{{ client.utr_number|default_if_none:''|escape }}" data-entry-count="{{ client.entry_count|default_if_none:'0' }}" data-activation-date="{{ client.activation_date|date:'d M Y, h:i A'|default:'-' }}" data-last-login="{{ client.last_login|date:'d M Y, h:i A'|default:'-' }}"
+                                    data-amount="{{ client.amount|default_if_none:'2000' }}" data-utr="{{ client.utr_number|default_if_none:''|escape }}" data-razorpay-link-id="{{ client.razorpay_payment_link_id|default_if_none:''|escape }}" data-razorpay-payment-id="{{ client.razorpay_payment_id|default_if_none:''|escape }}" data-razorpay-reference-id="{{ client.razorpay_reference_id|default_if_none:''|escape }}" data-razorpay-status="{{ client.razorpay_payment_status|default_if_none:''|escape }}" data-entry-count="{{ client.entry_count|default_if_none:'0' }}" data-activation-date="{{ client.activation_date|date:'d M Y, h:i A'|default:'-' }}" data-last-login="{{ client.last_login|date:'d M Y, h:i A'|default:'-' }}"
                                     data-update-url="{% url 'licensing:update_userinfo' client.id %}"
                                     data-toggle-url="{% url 'licensing:toggle_activation' client.id %}?search_id={{ search_query|urlencode }}"
                                     data-invoice-url="{% url 'licensing:generate_invoice' client.id %}"
@@ -614,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmerForm = document.getElementById('farmer-modal-form');
     const farmerTitle = document.getElementById('farmer-form-title');
     const farmerSubmit = document.getElementById('farmer-form-submit');
-    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','for_whys','f_year','is_pri','limit_of_entrys','accepte_by'];
+    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status','for_whys','f_year','is_pri','limit_of_entrys','accepte_by'];
     function openFarmerModal(client, copyRecord) {
         const isUpdate = !!client && !copyRecord;
         const isCopy = !!client && !!copyRecord;
@@ -622,9 +626,9 @@ document.addEventListener('DOMContentLoaded', function () {
         farmerTitle.innerHTML = isUpdate ? '<i class="fas fa-edit me-2"></i>Update Farmer' : (isCopy ? '<i class="fas fa-copy me-2"></i>Copy Farmer Record' : '<i class="fas fa-user-plus me-2"></i>Add New Farmer');
         farmerSubmit.innerHTML = isUpdate ? '<i class="fas fa-save me-1"></i>Update Record' : (isCopy ? '<i class="fas fa-save me-1"></i>Save Copied Record' : '<i class="fas fa-save me-1"></i>Save Record');
         if (client) {
-            const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
+            const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, razorpay_payment_link_id: client.dataset.razorpayLinkId, razorpay_payment_id: client.dataset.razorpayPaymentId, razorpay_reference_id: client.dataset.razorpayReferenceId, razorpay_payment_status: client.dataset.razorpayStatus, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = values[name] || ''; });
-            if (isCopy) { const mobile = document.getElementById('id_mobile'); if (mobile) mobile.value = ''; }
+            if (isCopy) { const mobile = document.getElementById('id_mobile'); if (mobile) mobile.value = ''; ['razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'].forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; }); }
         } else {
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; });
         }
@@ -686,7 +690,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const userinfoDetailModal = document.getElementById('userinfo-detail-modal');
     function closeUserinfoDetails() { userinfoDetailModal.classList.remove('is-open'); userinfoDetailModal.setAttribute('aria-hidden','true'); }
     function openUserinfoDetails(client) {
-        const values = { mobile:client.dataset.mobile, operator:client.dataset.operator, branch:client.dataset.branch, dist:client.dataset.dist, state:client.dataset.state, purpose:client.dataset.purpose, year:client.dataset.year, amount:'₹'+(client.dataset.amount||'0'), payment:'₹'+(client.dataset.paymentStatus||'0'), utr:client.dataset.utr, entryCount:client.dataset.entryCount, limit:client.dataset.limit, isPri:client.dataset.isPri, accepted:client.dataset.acceptedField, activationDate:client.dataset.activationDate, lastLogin:client.dataset.lastLogin };
+        const values = { mobile:client.dataset.mobile, operator:client.dataset.operator, branch:client.dataset.branch, dist:client.dataset.dist, state:client.dataset.state, purpose:client.dataset.purpose, year:client.dataset.year, amount:'₹'+(client.dataset.amount||'0'), payment:'₹'+(client.dataset.paymentStatus||'0'), utr:client.dataset.utr, razorpayLinkId:client.dataset.razorpayLinkId, razorpayPaymentId:client.dataset.razorpayPaymentId, razorpayReferenceId:client.dataset.razorpayReferenceId, razorpayStatus:client.dataset.razorpayStatus, entryCount:client.dataset.entryCount, limit:client.dataset.limit, isPri:client.dataset.isPri, accepted:client.dataset.acceptedField, activationDate:client.dataset.activationDate, lastLogin:client.dataset.lastLogin };
         document.getElementById('userinfo-detail-name').textContent=client.dataset.name||'Unnamed PACS';
         document.getElementById('userinfo-detail-record-id').textContent='Record #'+client.value;
         userinfoDetailModal.querySelectorAll('[data-detail-field]').forEach(element=>{element.textContent=values[element.dataset.detailField]||'-'});

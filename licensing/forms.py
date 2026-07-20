@@ -11,8 +11,14 @@ class UserInfoForm(forms.ModelForm):
     class Meta:
         model = UserInfoData
         # FIXED FIELDS LIST: Sirf wahi fields rakhe hain jo database table me actual mojud hain
-        fields = ['mobile','pacs_name', 'brach', 'dist','state', 'operator_mobile', 'payment_status', 'amount', 'utr_number', 'for_whys', 'f_year','is_pri','limit_of_entrys','accepte_by']
+        fields = ['mobile','pacs_name', 'brach', 'dist','state', 'operator_mobile', 'payment_status', 'amount', 'utr_number', 'razorpay_payment_link_id', 'razorpay_payment_id', 'razorpay_reference_id', 'razorpay_payment_status', 'for_whys', 'f_year','is_pri','limit_of_entrys','accepte_by']
         
+        labels = {
+            'razorpay_payment_link_id': 'Razorpay Payment Link ID',
+            'razorpay_payment_id': 'Razorpay Payment ID',
+            'razorpay_reference_id': 'Razorpay Reference ID',
+            'razorpay_payment_status': 'Razorpay Payment Status',
+        }
         widgets = {
             'mobile': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'pacs_name': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
@@ -23,6 +29,10 @@ class UserInfoForm(forms.ModelForm):
             'payment_status' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'amount' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'utr_number': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_payment_link_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_payment_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_reference_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_payment_status': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'f_year': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. 2024-2025'}),
             'is_pri' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'limit_of_entrys' : forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
@@ -67,6 +77,7 @@ class PacsErpForm(forms.ModelForm):
         model = tblPacsErp
         # PacsErpForm bilkul sahi hai, isey waisa hi rehne dein
         fields = ['erp_id', 'pacs_name', 'brach', 'dist', 'state', 'operator_mobile', 'amount','payment_status', 'expiry_date','utr_number', 'remark']
+
         widgets = {
             'erp_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'pacs_name': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
@@ -78,5 +89,6 @@ class PacsErpForm(forms.ModelForm):
             'payment_status': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'expiry_date': forms.DateInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'type': 'date'}),
             'utr_number': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+
             'remark': forms.Textarea(attrs={'class': 'form-control bg-dark text-light border-secondary', 'rows': 3}),
         }
