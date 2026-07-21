@@ -1,156 +1,132 @@
 Attribute VB_Name = "CouponRedemption"
 Option Explicit
 
-Private Const COUPON_API_BASE_URL As String = "https://web-automation-maar.onrender.com"
+' ConnectionToMysqlDataBase must open the existing global ADODB connection named con.
+' If your global connection variable has another name, replace con in this module.
+Private Const AD_PARAM_INPUT As Long = 1
+Private Const AD_INTEGER As Long = 3
+Private Const AD_CURRENCY As Long = 6
+Private Const AD_VAR_CHAR As Long = 200
 
-' Ribbon XML example:
+' Ribbon XML:
 ' <button id="btnApplyCoupon" label="Apply Coupon" imageMso="HappyFace"
 '         size="large" onAction="ApplyCustomerCoupon"/>
 Public Sub ApplyCustomerCoupon(ByVal control As IRibbonControl)
     Dim couponCode As String
-    Dim userID As String
-    Dim serviceName As String
-    Dim financialYear As String
-    Dim csrfToken As String
-    Dim csrfCookie As String
-    Dim requestBody As String
-    Dim responseText As String
-    Dim discountAmount As String
-    Dim oldAmount As String
-    Dim newAmount As String
+    Dim userInfoID As String
+    Dim couponID As Long
+    Dim discountAmount As Currency
+    Dim oldAmount As Currency
+    Dim newAmount As Currency
+    Dim paymentStatus As Currency
+    Dim cmd As Object
+    Dim affectedRows As Variant
+    Dim sqlText As String
+    Dim errorMessage As String
 
     On Error GoTo ErrorHandler
 
-    couponCode = Trim$(InputBox( _
+    couponCode = UCase$(Trim$(InputBox( _
         "Paste your coupon code:" & vbCrLf & _
-        "Example: SAVE750-TFS1X-EFYTD", _
-        "Apply Coupon"))
+        "Example: CPN-ABCDE-FGHIJ-KLMNO-PQRST-UVWXYZ", _
+        "Apply Coupon")))
     If couponCode = "" Then Exit Sub
-    couponCode = UCase$(couponCode)
 
-    userID = Trim$(CStr(ThisWorkbook.Worksheets("User").Range("B4").Value))
-    serviceName = "PMFBY"
-    financialYear = Trim$(CStr(ThisWorkbook.Worksheets("Seeting").Range("B4").Value))
-
-    If userID = "" Or Not IsNumeric(userID) Then
-        MsgBox "A valid User ID was not found in User!B4.", vbExclamation, "Coupon"
-        Exit Sub
-    End If
-    If financialYear = "" Then
-        MsgBox "Financial year was not found in Seeting!B4.", vbExclamation, "Coupon"
+    ' User!B4 contains userinfo.ID, not Mobile.
+    userInfoID = Trim$(CStr(ThisWorkbook.Worksheets("User").Range("B4").Value))
+    If userInfoID = "" Or Not IsNumeric(userInfoID) Then
+        MsgBox "A valid UserInfo ID was not found in User!B4.", vbExclamation, "Coupon"
         Exit Sub
     End If
 
     Application.StatusBar = "Validating coupon..."
-    GetCouponCSRF csrfToken, csrfCookie
+    ' Do not reopen an already-open global connection.
+    If con Is Nothing Then
+        ConnectionToMysqlDataBase
+    ElseIf con.State <> 1 Then
+        ConnectionToMysqlDataBase
+    End If
+    If con Is Nothing Then Err.Raise vbObjectError + 2200, , "MySQL connection was not created."
+    If con.State <> 1 Then Err.Raise vbObjectError + 2201, , "MySQL connection is closed."
 
-    requestBody = "{""coupon_code"":""" & JsonEscape(couponCode) & """," & _
-                  """user_id"":""" & JsonEscape(userID) & """," & _
-                  """service"":""" & JsonEscape(serviceName) & """," & _
-                  """financial_year"":""" & JsonEscape(financialYear) & """}"
+    ' Release any recordset left open by the shared connection routine.
+    On Error Resume Next
+    If Not rst Is Nothing Then
+        If rst.State = 1 Then rst.Close
+        Set rst = Nothing
+    End If
+    On Error GoTo ErrorHandler
 
-    responseText = RedeemCouponRequest(requestBody, csrfToken, csrfCookie)
-    discountAmount = JsonNumber(responseText, "discount_amount")
-    oldAmount = JsonNumber(responseText, "old_amount")
-    newAmount = JsonNumber(responseText, "new_amount")
+    ' A single query/recordset avoids MySQL cursor conflicts in the transaction.
+    ' User!B4 is matched only against userinfo.ID.
+    sqlText = "SELECT u.Amount, u.PaymentStatus, c.ID AS CouponID, c.DiscountAmount, " & _
+        "EXISTS(SELECT 1 FROM coupons_coupon x WHERE x.UsedBy = CAST(u.ID AS CHAR) LIMIT 1) AS AlreadyUsed " & _
+        "FROM userinfo u JOIN coupons_coupon c ON c.CouponCode = '" & SqlEscape(couponCode) & "' " & _
+        "AND c.Status = 1 AND c.UsedBy IS NULL WHERE u.ID = " & CStr(CLng(userInfoID)) & " LIMIT 1"
+    Set rst = con.Execute(sqlText)
+    If rst.EOF Then
+        Err.Raise vbObjectError + 2203, , "UserInfo ID or active unused coupon was not found."
+    End If
+    If CBool(rst.Fields("AlreadyUsed").Value) Then
+        Err.Raise vbObjectError + 2202, , "This user has already used a coupon."
+    End If
+    couponID = CLng(rst.Fields("CouponID").Value)
+    discountAmount = CCur(rst.Fields("DiscountAmount").Value)
+    If IsNull(rst.Fields("Amount").Value) Then
+        oldAmount = 0
+    Else
+        oldAmount = CCur(rst.Fields("Amount").Value)
+    End If
+    If IsNull(rst.Fields("PaymentStatus").Value) Then
+        paymentStatus = 0
+    Else
+        paymentStatus = CCur(rst.Fields("PaymentStatus").Value)
+    End If
+    rst.Close
+    Set rst = Nothing
+
+    If paymentStatus > 0 Then Err.Raise vbObjectError + 2205, , "Coupon must be applied before payment starts."
+    If discountAmount <= 0 Then Err.Raise vbObjectError + 2206, , "Coupon discount amount is invalid."
+    If discountAmount > oldAmount Then Err.Raise vbObjectError + 2207, , "Coupon discount is greater than the payable amount."
+    newAmount = oldAmount - discountAmount
+
+    ' Update UserInfo and coupon together in one atomic MySQL statement.
+    sqlText = "UPDATE userinfo u " & _
+        "JOIN coupons_coupon c ON c.ID = " & CStr(couponID) & _
+        " AND c.Status = 1 AND c.UsedBy IS NULL " & _
+        "LEFT JOIN coupons_coupon used_coupon ON used_coupon.UsedBy = CAST(u.ID AS CHAR) " & _
+        "SET u.Amount = u.Amount - c.DiscountAmount, " & _
+        "c.UsedBy = CAST(u.ID AS CHAR), c.Status = 0 " & _
+        "WHERE u.ID = " & CStr(CLng(userInfoID)) & _
+        " AND used_coupon.ID IS NULL " & _
+        "AND (u.PaymentStatus IS NULL OR u.PaymentStatus <= 0) " & _
+        "AND c.DiscountAmount > 0 AND c.DiscountAmount <= u.Amount"
+    affectedRows = Empty
+    con.Execute sqlText, affectedRows
+    If CLng(affectedRows) < 1 Then
+        Err.Raise vbObjectError + 2208, , "Coupon could not be applied because the data changed or it was already used."
+    End If
 
     Application.StatusBar = False
+
     MsgBox "Coupon applied successfully." & vbCrLf & vbCrLf & _
+           "UserInfo ID: " & userInfoID & vbCrLf & _
            "Coupon: " & couponCode & vbCrLf & _
-           "Discount: Rs. " & discountAmount & vbCrLf & _
-           "Old amount: Rs. " & oldAmount & vbCrLf & _
-           "New amount: Rs. " & newAmount, vbInformation, "Coupon Applied"
+           "Discount: Rs. " & Format$(discountAmount, "0.00") & vbCrLf & _
+           "Old amount: Rs. " & Format$(oldAmount, "0.00") & vbCrLf & _
+           "New amount: Rs. " & Format$(newAmount, "0.00"), _
+           vbInformation, "Coupon Applied"
     Exit Sub
 
 ErrorHandler:
-    Application.StatusBar = False
-    MsgBox "Coupon could not be applied:" & vbCrLf & Err.Description, vbCritical, "Coupon Error"
-End Sub
-
-Private Sub GetCouponCSRF(ByRef csrfToken As String, ByRef csrfCookie As String)
-    Dim http As Object
-    Dim setCookie As String
-    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
-    http.Open "GET", COUPON_API_BASE_URL & "/api/coupons/csrf/", False
-    http.SetRequestHeader "Accept", "application/json"
-    http.Send
-    If http.Status <> 200 Then
-        Err.Raise vbObjectError + 2100, "GetCouponCSRF", _
-                  "CSRF API error: HTTP " & http.Status & vbCrLf & http.ResponseText
-    End If
-    csrfToken = JsonString(http.ResponseText, "csrf_token")
+    errorMessage = Err.Description
     On Error Resume Next
-    setCookie = http.GetResponseHeader("Set-Cookie")
+    If Not rst Is Nothing Then If rst.State = 1 Then rst.Close
+    Application.StatusBar = False
     On Error GoTo 0
-    csrfCookie = FirstCookie(setCookie)
-    If csrfToken = "" Or csrfCookie = "" Then
-        Err.Raise vbObjectError + 2101, "GetCouponCSRF", "CSRF token or cookie was not received."
-    End If
+    MsgBox "Coupon could not be applied:" & vbCrLf & errorMessage, vbCritical, "Coupon Error"
 End Sub
 
-Private Function RedeemCouponRequest(ByVal requestBody As String, ByVal csrfToken As String, ByVal csrfCookie As String) As String
-    Dim http As Object
-    Dim apiError As String
-    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
-    http.Open "POST", COUPON_API_BASE_URL & "/api/coupons/redeem/", False
-    http.SetRequestHeader "Content-Type", "application/json"
-    http.SetRequestHeader "Accept", "application/json"
-    http.SetRequestHeader "X-CSRFToken", csrfToken
-    http.SetRequestHeader "Cookie", csrfCookie
-    http.SetRequestHeader "Referer", COUPON_API_BASE_URL & "/"
-    http.Send requestBody
-    If http.Status < 200 Or http.Status >= 300 Then
-        apiError = JsonString(http.ResponseText, "error")
-        If apiError = "" Then apiError = http.ResponseText
-        Err.Raise vbObjectError + 2110, "RedeemCouponRequest", apiError & " (HTTP " & http.Status & ")"
-    End If
-    RedeemCouponRequest = http.ResponseText
-End Function
-
-Private Function FirstCookie(ByVal setCookie As String) As String
-    Dim firstLine As String
-    Dim semicolonPosition As Long
-    firstLine = Split(setCookie, vbCrLf)(0)
-    semicolonPosition = InStr(1, firstLine, ";")
-    If semicolonPosition > 0 Then
-        FirstCookie = Left$(firstLine, semicolonPosition - 1)
-    Else
-        FirstCookie = firstLine
-    End If
-End Function
-
-Private Function JsonString(ByVal jsonText As String, ByVal propertyName As String) As String
-    Dim regex As Object
-    Dim matches As Object
-    Set regex = CreateObject("VBScript.RegExp")
-    regex.Pattern = """" & propertyName & """\s*:\s*""((?:\\.|[^""])*)"""
-    regex.Global = False
-    regex.IgnoreCase = True
-    Set matches = regex.Execute(jsonText)
-    If matches.Count > 0 Then
-        JsonString = matches(0).SubMatches(0)
-        JsonString = Replace(JsonString, "\/", "/")
-        JsonString = Replace(JsonString, "\""", """")
-        JsonString = Replace(JsonString, "\\", "\")
-    End If
-End Function
-
-Private Function JsonNumber(ByVal jsonText As String, ByVal propertyName As String) As String
-    Dim regex As Object
-    Dim matches As Object
-    Set regex = CreateObject("VBScript.RegExp")
-    regex.Pattern = """" & propertyName & """\s*:\s*(-?\d+(?:\.\d+)?)"
-    regex.Global = False
-    regex.IgnoreCase = True
-    Set matches = regex.Execute(jsonText)
-    If matches.Count > 0 Then JsonNumber = matches(0).SubMatches(0)
-End Function
-
-Private Function JsonEscape(ByVal value As String) As String
-    value = Replace(value, "\", "\\")
-    value = Replace(value, """", "\""")
-    value = Replace(value, vbCrLf, "\n")
-    value = Replace(value, vbCr, "\n")
-    value = Replace(value, vbLf, "\n")
-    JsonEscape = value
+Private Function SqlEscape(ByVal value As String) As String
+    SqlEscape = Replace(value, "'", "''")
 End Function
