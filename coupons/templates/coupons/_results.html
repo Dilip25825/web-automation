@@ -1,0 +1,36 @@
+<div class="coupon-table-wrap">
+    <table class="coupon-table">
+        <thead><tr><th>ID</th><th>Coupon Code</th><th>Discount</th><th>Status</th><th>Used By</th><th>Remark</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for coupon in coupons %}
+            <tr>
+                <td>#{{ coupon.id }}</td>
+                <td><button type="button" class="coupon-code-copy" data-copy-code="{{ coupon.coupon_code|escape }}" title="Copy coupon code"><code>{{ coupon.coupon_code }}</code><i class="fa-regular fa-copy"></i></button></td>
+                <td><strong class="coupon-amount">₹{{ coupon.discount_amount }}</strong></td>
+                <td>{% if coupon.status %}<span class="coupon-status active"><i class="fa-solid fa-circle-check"></i> Active</span>{% else %}<span class="coupon-status inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>{% endif %}</td>
+                <td>{{ coupon.used_by|default:"-" }}</td>
+                <td>{{ coupon.remark|default:"-"|truncatechars:60 }}</td>
+                <td class="coupon-actions">
+                    <button type="button" class="coupon-edit" data-id="{{ coupon.id }}" data-code="{{ coupon.coupon_code|escape }}" data-amount="{{ coupon.discount_amount }}" data-status="{{ coupon.status|yesno:'true,false' }}" data-used-by="{{ coupon.used_by|default_if_none:''|escape }}" data-remark="{{ coupon.remark|default_if_none:''|escape }}" data-update-url="{% url 'coupons:update' coupon.id %}"><i class="fa-solid fa-pen"></i> Edit</button>
+                    <button type="button" class="coupon-delete" data-code="{{ coupon.coupon_code|escape }}" data-delete-url="{% url 'coupons:delete' coupon.id %}"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="coupon-empty"><i class="fa-solid fa-ticket"></i><strong>No coupons found</strong><span>Create a coupon or try another search.</span></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if coupons.paginator.num_pages > 1 %}
+<nav class="coupon-pagination" aria-label="Coupon pages">
+    {% if coupons.has_previous %}<a href="?q={{ query|urlencode }}&status={{ status_filter|urlencode }}&page={{ coupons.previous_page_number }}"><i class="fa-solid fa-chevron-left"></i> Previous</a>{% endif %}
+    {% for page_number in page_range %}
+        {% if page_number == coupons.paginator.ELLIPSIS %}<span class="coupon-page-ellipsis">{{ page_number }}</span>
+        {% elif page_number == coupons.number %}<span class="coupon-page-current" aria-current="page">{{ page_number }}</span>
+        {% else %}<a href="?q={{ query|urlencode }}&status={{ status_filter|urlencode }}&page={{ page_number }}">{{ page_number }}</a>{% endif %}
+    {% endfor %}
+    {% if coupons.has_next %}<a href="?q={{ query|urlencode }}&status={{ status_filter|urlencode }}&page={{ coupons.next_page_number }}">Next <i class="fa-solid fa-chevron-right"></i></a>{% endif %}
+    <span class="coupon-page-summary">Page {{ coupons.number }} of {{ coupons.paginator.num_pages }} · {{ coupons.paginator.count }} records</span>
+</nav>
+{% endif %}
+

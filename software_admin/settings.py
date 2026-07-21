@@ -23,7 +23,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
-
+# ERP Activation”
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'reminders',
     'khata',
     'onedownload',
+
+    'coupons',
 ]
 
 MIDDLEWARE = [
@@ -156,10 +158,10 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 # 3. Cookie ko secure aur temporary rakhne ke liye
 SESSION_COOKIE_HTTPONLY = True
 # 1. Session ko 10 minutes (10 * 60 seconds = 600) par expire set kiya
-# SESSION_COOKIE_AGE = 600  
+# SESSION_COOKIE_AGE = 600
 
 # 2. True karne se har click/request par 10 min ka timer fir se fresh shuru ho jayega
-SESSION_SAVE_EVERY_REQUEST = True  
+SESSION_SAVE_EVERY_REQUEST = True
 
 # 3. Browser close karte hi session data completely destroy karne ke liye
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

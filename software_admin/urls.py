@@ -18,5 +18,7 @@ urlpatterns = [
     path('reminders/', include('reminders.urls')),
     path('khata/', include('khata.urls')),
     path('downloads/', include('onedownload.urls')),
+    path('coupons/', include('coupons.urls')),
+    path('api/coupons/', include('coupons.api_urls')),
     path('', include('core.urls')),
 ]

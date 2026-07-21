@@ -9,7 +9,7 @@
     <title>{% block title %}Web Automation With Excel{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
@@ -433,7 +433,7 @@
             z-index: 45;
             background: rgba(0,0,0,0.3);
         }
-        
+
         .mobile-menu-overlay.active {
             display: block;
         }
@@ -453,11 +453,11 @@
             box-shadow: -4px 0 30px rgba(0,0,0,0.1);
             overflow-y: auto;
         }
-        
+
         .mobile-menu-panel.open {
             right: 0;
         }
-        
+
         .mobile-menu-panel .close-btn {
             position: absolute;
             top: 1rem;
@@ -468,7 +468,7 @@
             color: #475569;
             cursor: pointer;
         }
-        
+
         .mobile-menu-panel .nav-item {
             display: block;
             padding: 0.75rem 1rem;
@@ -478,7 +478,7 @@
             text-decoration: none;
             transition: all 0.15s ease;
         }
-        
+
         .mobile-menu-panel .nav-item.active {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
@@ -489,17 +489,17 @@
             background: #f1f5ff;
             color: #4338ca;
         }
-        
+
         .mobile-menu-panel .nav-item i {
             width: 1.5rem;
             margin-right: 0.75rem;
         }
-        
+
         .mobile-menu-panel .divider {
             border-top: 1px solid #e2e8f0;
             margin: 0.75rem 0;
         }
-        
+
         .mobile-menu-panel .logout-btn {
             display: block;
             width: 100%;
@@ -513,11 +513,11 @@
             cursor: pointer;
             transition: all 0.15s ease;
         }
-        
+
         .mobile-menu-panel .logout-btn:hover {
             background: #fee2e2;
         }
-        
+
         .mobile-menu-panel .logout-btn i {
             width: 1.5rem;
             margin-right: 0.75rem;
@@ -554,13 +554,13 @@
                 <span class="h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-indigo-100 bg-white shadow-md shadow-indigo-200"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
                 <span>Web Automation <span class="text-violet-700">With Excel</span></span>
             </a>
-            
+
             {% if request.user.is_authenticated %}
                 <!-- Mobile Menu Toggle Button -->
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden">
                     <i class="fa-solid fa-bars"></i>
                 </button>
-                
+
                 <!-- Desktop Menu (Hidden on mobile) -->
                 <div class="hidden w-full items-center justify-between lg:flex">
                     <div class="flex items-center gap-1 text-sm font-bold text-slate-600">
@@ -582,6 +582,7 @@
                         <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'downloads:public_downloads' %}">
                             <i class="fa-solid fa-download"></i> Download
                         </a>
+                        {% if request.user.is_superuser %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'coupons' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}
                         <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'contact' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>
                     </div>
 
@@ -606,16 +607,16 @@
 
     <!-- Mobile Menu Overlay -->
     <div id="mobileOverlay" class="mobile-menu-overlay"></div>
-    
+
     <!-- Mobile Menu Panel -->
     <div id="mobilePanel" class="mobile-menu-panel">
         <button id="closeMobileMenu" class="close-btn">
             <i class="fa-solid fa-xmark"></i>
         </button>
-        
+
         <div style="margin-top: 2rem;">
             {% if request.user.is_authenticated %}
-            <a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a><a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> UserInfo</a><a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP</a><a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a>
+            <a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a><a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> UserInfo</a><a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP</a><a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a>{% if request.user.is_superuser %}<a class="nav-item" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}
             {% endif %}
             <a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a><a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
@@ -625,11 +626,11 @@
     <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
         {% block content %}{% endblock %}
     </main>
-    
+
     <footer class="mt-8 border-t border-indigo-100 bg-white px-4 py-4 text-center text-xs text-slate-500">
         &copy; {% now "Y" %} Web Automation with Excel &middot; <a class="font-bold text-violet-700 hover:underline" href="{% url 'core:contact' %}">Contact Us</a>
     </footer>
-    
+
     <script>
     // ============================================
     // 1. MODAL TOGGLE
@@ -662,7 +663,7 @@
         const panel = document.getElementById('mobilePanel');
         const overlay = document.getElementById('mobileOverlay');
         const body = document.body;
-        
+
         function openMenu() {
             panel.classList.add('open');
             overlay.classList.add('active');
@@ -670,7 +671,7 @@
             const icon = toggleBtn.querySelector('i');
             if (icon) icon.className = 'fa-solid fa-xmark';
         }
-        
+
         function closeMenu() {
             panel.classList.remove('open');
             overlay.classList.remove('active');
@@ -678,7 +679,7 @@
             const icon = toggleBtn.querySelector('i');
             if (icon) icon.className = 'fa-solid fa-bars';
         }
-        
+
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -689,15 +690,15 @@
                 }
             });
         }
-        
+
         if (closeBtn) {
             closeBtn.addEventListener('click', closeMenu);
         }
-        
+
         if (overlay) {
             overlay.addEventListener('click', closeMenu);
         }
-        
+
         // Close menu on escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && panel.classList.contains('open')) {
