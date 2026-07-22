@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'reminders',
     'khata',
     'onedownload',
-
     'coupons',
 ]
 
