@@ -177,6 +177,8 @@ def _apply_paid_entities(record, link, payment):
         record.utr_number = bank_rrn
         update_fields.append('utr_number')
     if not duplicate:
+        record.accepte_by = 'Razorpay'
+        update_fields.append('accepte_by')
         record.razorpay_payment_id = payment_id
         record.razorpay_payment_status = 'paid'
         record.payment_status = record.amount

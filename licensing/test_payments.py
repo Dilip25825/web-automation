@@ -152,7 +152,7 @@ class RazorpayPaymentTests(SimpleTestCase):
         item=record(utr_number=None); services._apply_paid_entities(item,link(),payment(acquirer_data={'rrn':'123456789012'}))
         self.assertEqual(item.payment_status,2000)
         self.assertEqual(item.utr_number,'123456789012')
-        item.save.assert_called_once_with(update_fields=['utr_number', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
+        item.save.assert_called_once_with(update_fields=['utr_number', 'accepte_by', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
 
     @patch('licensing.payment_services.UserInfoData.objects')
     def test_25_expired_event_does_not_deactivate_paid_record(self, objects):
