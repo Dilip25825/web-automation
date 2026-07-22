@@ -108,3 +108,8 @@ def contact(request):
 @login_required
 def dashboard(request):
     return render(request, 'core/dashboard.html')
+
+
+@login_required
+def documentation(request):
+    return render(request, 'core/documentation.html')

@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% block title %}उपयोग गाइड | Web Automation with Excel{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-5xl py-6">
+  <div class="rounded-3xl bg-gradient-to-r from-indigo-700 via-violet-600 to-blue-600 px-6 py-10 text-white shadow-xl sm:px-10">
+    <p class="text-sm font-extrabold uppercase tracking-[0.2em] text-indigo-100">सरल उपयोग गाइड</p>
+    <h1 class="mt-3 text-3xl font-extrabold sm:text-4xl">Coupon कैसे इस्तेमाल करें?</h1>
+    <p class="mt-3 max-w-3xl leading-7 text-indigo-50">Coupon प्राप्त करने, client को भेजने और Excel में apply करने की आसान प्रक्रिया।</p>
+  </div>
+
+  <article class="app-card mt-6 p-6 sm:p-8">
+    <h2 class="text-2xl font-extrabold text-slate-900"><i class="fa-solid fa-ticket mr-2 text-cyan-600"></i>Portal से coupon copy करें</h2>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl bg-cyan-50 p-5"><span class="grid h-10 w-10 place-items-center rounded-full bg-cyan-600 font-extrabold text-white">1</span><h3 class="mt-4 font-extrabold text-slate-900">Coupons खोलें</h3><p class="mt-2 text-sm leading-6 text-slate-600">Login करने के बाद navbar या Main Hub से Coupons पर जाएं।</p></div>
+      <div class="rounded-2xl bg-emerald-50 p-5"><span class="grid h-10 w-10 place-items-center rounded-full bg-emerald-600 font-extrabold text-white">2</span><h3 class="mt-4 font-extrabold text-slate-900">Available चुनें</h3><p class="mt-2 text-sm leading-6 text-slate-600">Available filter में client की जरूरत के अनुसार discount वाला coupon देखें।</p></div>
+      <div class="rounded-2xl bg-violet-50 p-5"><span class="grid h-10 w-10 place-items-center rounded-full bg-violet-600 font-extrabold text-white">3</span><h3 class="mt-4 font-extrabold text-slate-900">Copy icon दबाएं</h3><p class="mt-2 text-sm leading-6 text-slate-600">Coupon code के पास Copy icon दबाएं। Coupon copy होकर अपने-आप Reserved हो जाएगा।</p></div>
+      <div class="rounded-2xl bg-amber-50 p-5"><span class="grid h-10 w-10 place-items-center rounded-full bg-amber-600 font-extrabold text-white">4</span><h3 class="mt-4 font-extrabold text-slate-900">Client को भेजें</h3><p class="mt-2 text-sm leading-6 text-slate-600">Copied code WhatsApp, message या अन्य सुरक्षित माध्यम से client को भेज दें।</p></div>
+    </div>
+    <p class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>ध्यान दें:</strong> एक coupon copy होने के बाद Reserved दिखता है। नया coupon देना हो तो हमेशा Available list से चुनें।</p>
+  </article>
+
+  <article class="app-card mt-6 p-6 sm:p-8">
+    <h2 class="text-2xl font-extrabold text-slate-900"><i class="fa-solid fa-face-smile mr-2 text-amber-500"></i>Client Excel में coupon कैसे लगाए?</h2>
+    <ol class="mt-6 space-y-4">
+      <li class="flex gap-4 rounded-2xl border border-slate-100 p-4"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 font-extrabold text-white">1</span><div><strong class="text-slate-900">Excel software खोलें</strong><p class="mt-1 text-sm leading-6 text-slate-600">Client अपनी registered Excel file/software खोले और User details load होने दे।</p></div></li>
+      <li class="flex gap-4 rounded-2xl border border-slate-100 p-4"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 font-extrabold text-white">2</span><div><strong class="text-slate-900">Ribbon में Happy Face icon दबाएं</strong><p class="mt-1 text-sm leading-6 text-slate-600">ऊपर ribbon में Coupon/Happy Face वाला button दिखाई देगा। उस पर click करें।</p></div></li>
+      <li class="flex gap-4 rounded-2xl border border-slate-100 p-4"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 font-extrabold text-white">3</span><div><strong class="text-slate-900">Coupon code paste करें</strong><p class="mt-1 text-sm leading-6 text-slate-600">Input box खुलेगा। मिला हुआ पूरा coupon code paste करें और OK दबाएं। आगे-पीछे extra space न रखें।</p></div></li>
+      <li class="flex gap-4 rounded-2xl border border-slate-100 p-4"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 font-extrabold text-white">4</span><div><strong class="text-slate-900">Success message देखें</strong><p class="mt-1 text-sm leading-6 text-slate-600">Coupon सही होने पर Coupon Applied का message और पुराना amount, discount तथा नया amount दिखाई देगा।</p></div></li>
+      <li class="flex gap-4 rounded-2xl border border-slate-100 p-4"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-600 font-extrabold text-white">5</span><div><strong class="text-slate-900">नया amount verify करें</strong><p class="mt-1 text-sm leading-6 text-slate-600">Payment से पहले payable amount कम हुआ है या नहीं, जरूर check करें। एक user coupon केवल एक बार इस्तेमाल कर सकता है।</p></div></li>
+    </ol>
+  </article>
+
+  <article class="app-card mt-6 p-6 sm:p-8">
+    <h2 class="text-2xl font-extrabold text-slate-900"><i class="fa-solid fa-circle-exclamation mr-2 text-rose-600"></i>Error आए तो क्या करें?</h2>
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Coupon नहीं मिला</strong><p class="mt-1 text-sm leading-6 text-slate-600">Code दोबारा copy/paste करें और कोई character छूटा है या नहीं देखें।</p></div>
+      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Coupon inactive या used है</strong><p class="mt-1 text-sm leading-6 text-slate-600">पुराना coupon दोबारा apply नहीं होगा। Coupon देने वाले user से संपर्क करें।</p></div>
+      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">User पहले coupon ले चुका है</strong><p class="mt-1 text-sm leading-6 text-slate-600">एक UserInfo record पर दूसरा coupon apply नहीं किया जा सकता।</p></div>
+      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Amount से ज्यादा discount</strong><p class="mt-1 text-sm leading-6 text-slate-600">छोटे discount वाला coupon लें या payable amount verify करें।</p></div>
+    </div>
+  </article>
+
+  {% if request.user.is_superuser %}
+  <article class="mt-6 rounded-3xl border-2 border-violet-200 bg-violet-50 p-6 sm:p-8">
+    <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">केवल Superuser के लिए</p>
+    <h2 class="mt-2 text-2xl font-extrabold text-violet-950"><i class="fa-solid fa-user-shield mr-2"></i>Admin याद रखने योग्य बातें</h2>
+    <ul class="mt-5 list-disc space-y-3 pl-5 text-sm leading-6 text-violet-950">
+      <li><strong>Add Coupon</strong> से single और <strong>Bulk Generate</strong> से एक साथ कई coupons बनाएं।</li>
+      <li>Coupon देते समय Available filter खोलकर Copy icon का ही उपयोग करें। इससे coupon Reserved और copier का record सुरक्षित रहता है।</li>
+      <li>Active में Available और Reserved दोनों आते हैं; Available में केवल अभी तक न दिए गए coupons आते हैं।</li>
+      <li>Reserved coupon client को दिया गया है लेकिन apply नहीं हुआ। Used/Inactive coupon apply हो चुका है या manually inactive है।</li>
+      <li>Edit में coupon की पूरी जानकारी देखी जा सकती है। Delete केवल सही coupon verify करने के बाद करें।</li>
+      <li>Regular users केवल View और Copy कर सकते हैं; Add, Bulk Generate, Edit और Delete backend से भी blocked हैं।</li>
+      <li>कोई bulk delete/truncate करने से पहले database backup जरूर लें।</li>
+    </ul>
+  </article>
+  {% endif %}
+
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
+    <div><strong class="text-indigo-900">काम शुरू करें</strong><p class="text-sm text-indigo-700">Main Hub या Coupon Control Center पर जाएं।</p></div>
+    <div class="flex gap-2"><a class="rounded-xl bg-white px-4 py-2 text-sm font-bold text-indigo-700 shadow" href="{% url 'core:dashboard' %}">Main Hub</a><a class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white" href="{% url 'coupons:dashboard' %}">Coupons खोलें</a></div>
+  </div>
+</section>
+{% endblock %}
