@@ -16,6 +16,7 @@ urlpatterns = [
     path('delete-transaction/<str:b64_trans_id>/', views.delete_transaction, name='delete_transaction'),
     path('add-interest/<str:b64_id>/', views.add_interest, name='add_interest'),
     path('download-pdf/<str:b64_id>/', views.download_ledger_pdf, name='download_ledger_pdf'),
+    path('attachment/<str:b64_trans_id>/', views.view_transaction_attachment, name='view_transaction_attachment'),
     path('update-customer/<str:b64_id>/', views.update_customer, name='update_customer'),
     path('update-transaction/<str:b64_trans_id>/', views.update_transaction, name='update_transaction'),
     path('settings/', views.shop_profile, name='shop_profile'),

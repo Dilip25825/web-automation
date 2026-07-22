@@ -11,6 +11,8 @@ cssselect2==0.9.0
 Django==5.1.6
 et_xmlfile==2.0.0
 gunicorn==26.0.0
+google-api-python-client==2.198.0
+google-auth==2.56.2
 html5lib==1.1
 idna==3.11
 lxml==6.1.1

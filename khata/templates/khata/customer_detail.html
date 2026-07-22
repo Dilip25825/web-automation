@@ -1,201 +1,75 @@
 {% extends 'khata/base.html' %}
-
-{% block title %}{{ customer.name }} {% endblock %}
-
+{% block title %}{{ customer.name }}{% endblock %}
 {% block content %}
 <div id="khata-app">
 <div class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
-    <section
-        class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 text-white shadow-lg">
-        <div class="px-6 py-6 sm:px-8">
-            <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-                <div>
-                    <p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Customer ledger</p>
-                    <h1 class="mt-1 text-3xl font-extrabold">{{ customer.name }} 👋</h1>
-                    <p class="mt-1 text-sm text-indigo-100"><i class="fa-solid fa-phone mr-1"></i>{{ customer.phone }}
-                        <span class="mx-2 text-white/50">•</span> Personal account overview</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2"><button type="button" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow ring-1 ring-white/25 hover:bg-emerald-600" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left"></i>Transfer Voucher</button>{% if whatsapp_url %}<a href="{{ whatsapp_url }}"
-                        target="_blank"
-                        class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow hover:bg-emerald-600"><i
-                            class="fa-brands fa-whatsapp"></i>WhatsApp</a>{% else %}<button type="button" disabled
-                        title="WhatsApp reminder is available when balance is due"
-                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i
-                            class="fa-brands fa-whatsapp"></i>WhatsApp</button>{% endif %}{% if net_balance > 0 %}<button type="button"
-                        class="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-bold text-indigo-700 shadow hover:bg-indigo-50"
-                        data-bs-toggle="modal" data-bs-target="#interestModal"><i
-                            class="fa-solid fa-calculator"></i>Interest</button>{% else %}<button type="button" disabled
-                        title="Interest is available when balance is due"
-                        class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-white/30 px-3 py-2 text-sm font-bold text-white/70"><i
-                            class="fa-solid fa-calculator"></i>Interest</button>{% endif %}<a
-                        href="{% url 'khata:dashboard' %}"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm font-bold text-white ring-1 ring-white/35 transition hover:bg-white/25"><i
-                            class="fa-solid fa-arrow-left"></i>Dashboard</a></div>
-            </div>
-            <div class="mt-6 grid w-full gap-3 sm:grid-cols-3">
-                <div class="rounded-xl p-4 ring-1 {% if net_balance > 0 %}bg-emerald-500/90 ring-emerald-300{% elif net_balance < 0 %}bg-red-500/90 ring-red-300{% else %}bg-white/15 ring-white/20{% endif %}">
-                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Balance</p>
-                    <p class="mt-1 text-2xl font-extrabold">₹{{ net_balance|stringformat:".2f" }}</p>
-                    <p class="mt-1 text-xs text-white/90">{% if net_balance > 0 %}Aapko lene hain{% elif net_balance < 0 %}Aapko dene hain{% else %}Hisaab barabar{% endif %}</p>
-                </div>
-                <div class="rounded-xl bg-red-500/90 p-4 ring-1 ring-red-300">
-                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Diye</p>
-                    <p class="mt-1 text-2xl font-extrabold">₹{{ total_given|stringformat:".2f" }}</p>
-                    <p class="mt-1 text-xs text-white/90">Credit entries</p>
-                </div>
-                <div class="rounded-xl bg-emerald-500/90 p-4 ring-1 ring-emerald-300">
-                    <p class="text-xs font-bold uppercase tracking-wide text-white/90">Total Mile</p>
-                    <p class="mt-1 text-2xl font-extrabold">₹{{ total_got|stringformat:".2f" }}</p>
-                    <p class="mt-1 text-xs text-white/90">Payment received</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <div class="grid items-start gap-5 lg:grid-cols-3">
-        <div class="lg:col-span-1 min-w-0">
-            <div class="card shadow-sm border-0">
-                <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white rounded-t-xl">
-                    <h3>Add New Transaction</h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST" data-khata-ajax-form data-loading-text="Adding transaction...">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Date</label>
-                            <input type="date" name="date" class="form-control" value="{% now 'Y-m-d' %}" required>
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Amount</label>
-                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="₹ 0.00"
-                                required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Entry Type</label>
-                            <select name="trans_type" class="form-select" required>
-                                <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
-                                <option value="GOT">Mujhe Mile (Jama / Payment)</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Remarks (Optional)</label>
-                            <input type="text" name="remarks" class="form-control"
-                                placeholder="Optional: Kis cheez ke liye?">
-                        </div>
-                        <button type="submit" class="btn btn-success w-100 fw-bold"
-                            style="width: 100%; display: block;"><i class="fa-solid fa-floppy-disk"></i>
-                            Save</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="lg:col-span-2 min-w-0">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 rounded-t-xl">
-                        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                            <!-- Left Side - Title -->
-                            <span class="font-bold text-white text-lg whitespace-nowrap">Ledger History</span>
-
-                            <!-- Right Side - Filters & Buttons -->
-                            <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:flex-nowrap lg:justify-end">
-                                <form method="GET" class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center lg:flex-nowrap" data-khata-nav-form>
-                                    <input type="date" name="start_date"
-                                        class="min-w-0 w-full bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none sm:w-36 lg:!w-32 lg:flex-none"
-                                        value="{{ start_date|default:'' }}">
-
-                                    <input type="date" name="end_date"
-                                        class="min-w-0 w-full bg-white/90 border-0 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-white/50 focus:outline-none sm:w-36 lg:!w-32 lg:flex-none"
-                                        value="{{ end_date|default:'' }}">
-
-                                    <button type="submit"
-                                        class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-gray-100 hover:shadow-md sm:w-auto">
-                                        <i class="fa-solid fa-filter text-xs"></i> Filter
-                                    </button>
-
-                                    <a href="{% url 'khata:customer_detail' customer.id %}"
-                                        class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-red-600 hover:shadow-md sm:w-auto">
-                                        <i class="fa-solid fa-rotate-left text-xs"></i> Reset
-                                    </a>
-                                </form>
-
-                                <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}"
-                                    class="flex w-full items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-sm font-bold text-red-600 shadow-sm transition hover:bg-gray-100 hover:shadow-md sm:w-auto">
-                                    <i class="fa-regular fa-file-pdf text-xs"></i> PDF Download
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Sr</th>
-                                <th class="ps-4">Date</th>
-                                <th>Vivran</th>
-                                <th class="text-end text-danger">Maine Diye</th>
-                                <th class="text-end text-indigo-700 pe-4">Mujhe Mile</th>
-                                <th>Balance</th>
-                                <th>Edit</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for trans in transactions %}
-                            <tr>
-                                <td>{{forloop.counter}}</td>
-                                <td class="ps-4 text-muted small">{{ trans.date|date:"d M Y" }}</td>
-                                <td class="fw-semibold text-secondary">{{ trans.remarks|default:"—" }}</td>
-
-                                <td class="text-end fw-bold text-danger">
-                                    {% if trans.trans_type == 'GIVEN' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                                </td>
-
-                                <td class="text-end fw-bold text-indigo-700 pe-4">
-                                    {% if trans.trans_type == 'GOT' %}₹{{ trans.amount }}{% else %}—{% endif %}
-                                </td>
-                                <td
-                                    class="text-end fw-bold {% if trans.running_balance >= 0 %}text-danger{% else %}text-indigo-700{% endif %}">
-                                    ₹{% if trans.running_balance < 0 %}
-                                        {{trans.running_balance|stringformat:"d"|slice:"1:" }} {% else %}
-                                        {{trans.running_balance }} {% endif %} </td>
-                                <td>
-                                    <button type="button"
-                                        class="btn btn-sm btn-outline-primary px-2 py-0 me-1 text-indigo-700 hover:text-violet-700"
-                                        title="Edit Transaction" data-edit-transaction data-bs-toggle="modal"
-                                        data-bs-target="#editTransactionModal"
-                                        data-update-url="{% url 'khata:update_transaction' trans.b64_id %}"
-                                        data-date="{{ trans.date|date:'Y-m-d' }}" data-amount="{{ trans.amount }}"
-                                        data-type="{{ trans.trans_type }}"
-                                        data-remarks="{{ trans.remarks|default:'' }}">Edit</button>
-                                </td>
-                                <td>
-                                    <form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="POST"
-                                        class="delete-form" data-khata-ajax-form data-ajax-confirm-delete data-loading-text="Deleting transaction..." data-title="Delete transaction?">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-0"
-                                            title="Delete Entry">X</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-5">Is grahak ka abhi tak koi len-den
-                                    nahi hua hai.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<header class="app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
+  <div class="flex flex-col justify-between gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-center">
+    <div>
+      <a href="{% url 'khata:dashboard' %}" class="mb-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-indigo-200 hover:text-white"><i class="fa-solid fa-arrow-left"></i>Customer ledger</a>
+      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">{{ customer.name }}</h1>
+      <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-indigo-100"><span><i class="fa-solid fa-phone mr-1"></i>{{ customer.phone }}</span><span class="text-white/30">•</span><span>Personal account overview</span></p>
     </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-emerald-400" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left mr-2"></i>Transfer</button>
+      {% if whatsapp_url %}<a href="{{ whatsapp_url }}" target="_blank" rel="noopener" class="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold ring-1 ring-white/25 hover:bg-white/20"><i class="fa-brands fa-whatsapp mr-2"></i>WhatsApp</a>{% endif %}
+      {% if net_balance > 0 %}<button type="button" class="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-indigo-800 shadow hover:bg-indigo-50" data-bs-toggle="modal" data-bs-target="#interestModal"><i class="fa-solid fa-percent mr-2"></i>Interest</button>{% endif %}
+      <a href="{% url 'khata:dashboard' %}" class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/25 hover:bg-white/20" title="Back to dashboard"><i class="fa-solid fa-house"></i></a>
+    </div>
+  </div>
+</header>
+
+<section class="grid gap-4 sm:grid-cols-3">
+  <div class="app-card flex items-center justify-between border-l-4 {% if net_balance > 0 %}border-emerald-500{% elif net_balance < 0 %}border-rose-500{% else %}border-slate-400{% endif %} p-5">
+    <div><p class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Current Balance</p><p class="mt-2 text-2xl font-extrabold {% if net_balance > 0 %}text-emerald-700{% elif net_balance < 0 %}text-rose-700{% else %}text-slate-700{% endif %}">&#8377;{{ net_balance|stringformat:".2f" }}</p><p class="mt-1 text-xs text-slate-500">{% if net_balance > 0 %}Aapko lene hain{% elif net_balance < 0 %}Aapko dene hain{% else %}Account settled{% endif %}</p></div>
+    <span class="grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-slate-700"><i class="fa-solid fa-scale-balanced"></i></span>
+  </div>
+  <div class="app-card flex items-center justify-between border-l-4 border-rose-500 p-5"><div><p class="text-xs font-extrabold uppercase tracking-wider text-rose-700">Total Diye</p><p class="mt-2 text-2xl font-extrabold text-rose-700">&#8377;{{ total_given|stringformat:".2f" }}</p><p class="mt-1 text-xs text-slate-500">Credit entries</p></div><span class="grid h-12 w-12 place-items-center rounded-xl bg-rose-50 text-rose-700"><i class="fa-solid fa-arrow-up"></i></span></div>
+  <div class="app-card flex items-center justify-between border-l-4 border-emerald-500 p-5"><div><p class="text-xs font-extrabold uppercase tracking-wider text-emerald-700">Total Mile</p><p class="mt-2 text-2xl font-extrabold text-emerald-700">&#8377;{{ total_got|stringformat:".2f" }}</p><p class="mt-1 text-xs text-slate-500">Payments received</p></div><span class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><i class="fa-solid fa-arrow-down"></i></span></div>
+</section>
+
+<div class="grid items-start gap-5 lg:grid-cols-[22rem_minmax(0,1fr)]">
+  <aside class="app-card overflow-hidden">
+    <div class="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-5 py-4"><p class="text-xs font-bold uppercase tracking-widest text-indigo-600">Quick entry</p><h2 class="mt-1 text-lg font-extrabold text-slate-900">Add Transaction</h2></div>
+    <form method="post" enctype="multipart/form-data" class="space-y-4 p-5" data-khata-ajax-form data-loading-text="Adding transaction...">{% csrf_token %}
+      <div><label class="form-label" for="transactionDate">Date</label><input id="transactionDate" type="date" name="date" value="{% now 'Y-m-d' %}" required></div>
+      <div><label class="form-label" for="transactionAmount">Amount</label><div class="relative"><span class="absolute left-3 top-2.5 font-bold text-slate-400">&#8377;</span><input id="transactionAmount" type="number" min="0.01" step="0.01" name="amount" class="!pl-8 text-lg font-extrabold" placeholder="0.00" required></div></div>
+      <div><label class="form-label" for="transactionType">Entry Type</label><select id="transactionType" name="trans_type" required><option value="GIVEN">Maine Diye (Credit)</option><option value="GOT">Mujhe Mile (Payment)</option></select></div>
+      <div><label class="form-label" for="transactionRemarks">Remarks <span class="font-normal text-slate-400">(optional)</span></label><input id="transactionRemarks" name="remarks" maxlength="200" placeholder="Purpose or reference"></div>
+      <div><label class="form-label" for="newTransactionAttachment">Attachment <span class="font-normal text-slate-400">(optional)</span></label><input id="newTransactionAttachment" type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"><p class="mt-1 text-xs text-slate-400">PDF, JPG, PNG or WebP · Max 5 MB</p></div>
+      <button class="btn btn-primary w-full"><i class="fa-solid fa-plus mr-2"></i>Add Transaction</button>
+    </form>
+  </aside>
+
+  <section class="app-card min-w-0 overflow-hidden">
+    <div class="border-b border-slate-200 px-5 py-5">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div><p class="text-xs font-bold uppercase tracking-widest text-indigo-600">Account activity</p><h2 class="mt-1 text-xl font-extrabold text-slate-900">Ledger History</h2><p class="mt-1 text-sm text-slate-500">{{ transactions|length }} entries in selected period</p></div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <form method="get" class="grid grid-cols-2 gap-2 sm:flex" data-khata-nav-form>
+            <input type="date" name="start_date" value="{{ start_date|default:'' }}" class="min-w-0 sm:w-36">
+            <input type="date" name="end_date" value="{{ end_date|default:'' }}" class="min-w-0 sm:w-36">
+            <button class="btn btn-primary"><i class="fa-solid fa-filter"></i><span>Filter</span></button>
+            {% if start_date or end_date %}<a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+          </form>
+          <a href="{% url 'khata:download_ledger_pdf' encoded_id %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}" class="btn btn-outline-danger whitespace-nowrap"><i class="fa-regular fa-file-pdf"></i>PDF</a>
+        </div>
+      </div>
+    </div>
+    <div class="overflow-x-auto"><table class="app-table">
+      <thead><tr><th>Date & Details</th><th class="text-right">Diye</th><th class="text-right">Mile</th><th class="text-right">Balance</th><th>File</th><th class="text-right">Actions</th></tr></thead>
+      <tbody>{% for trans in transactions %}<tr>
+        <td><p class="font-bold text-slate-800">{{ trans.remarks|default:"No description" }}</p><p class="mt-1 text-xs text-slate-500"><i class="fa-regular fa-calendar mr-1"></i>{{ trans.date|date:"d M Y" }}</p></td>
+        <td class="text-right font-extrabold text-rose-700">{% if trans.trans_type == 'GIVEN' %}&#8377;{{ trans.amount }}{% else %}<span class="text-slate-300">—</span>{% endif %}</td>
+        <td class="text-right font-extrabold text-emerald-700">{% if trans.trans_type == 'GOT' %}&#8377;{{ trans.amount }}{% else %}<span class="text-slate-300">—</span>{% endif %}</td>
+        <td class="text-right"><span class="font-extrabold {% if trans.running_balance > 0 %}text-emerald-700{% elif trans.running_balance < 0 %}text-rose-700{% else %}text-slate-500{% endif %}">&#8377;{{ trans.running_balance }}</span></td>
+        <td>{% if trans.attachment_drive_id %}<a href="{% url 'khata:view_transaction_attachment' trans.b64_id %}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-paperclip"></i>View</a>{% else %}<span class="text-slate-300">—</span>{% endif %}</td>
+        <td><div class="flex justify-end gap-2"><button type="button" class="btn btn-outline-primary !p-2.5" title="Edit transaction" data-edit-transaction data-bs-toggle="modal" data-bs-target="#editTransactionModal" data-update-url="{% url 'khata:update_transaction' trans.b64_id %}" data-date="{{ trans.date|date:'Y-m-d' }}" data-amount="{{ trans.amount }}" data-type="{{ trans.trans_type }}" data-remarks="{{ trans.remarks|default:'' }}" data-attachment-name="{{ trans.attachment_name|default:''|escape }}" data-attachment-url="{% if trans.attachment_drive_id %}{% url 'khata:view_transaction_attachment' trans.b64_id %}{% endif %}"><i class="fa-solid fa-pen"></i></button><form action="{% url 'khata:delete_transaction' trans.b64_id %}" method="post" data-khata-ajax-form data-ajax-confirm-delete data-loading-text="Deleting transaction..." data-title="Delete transaction?">{% csrf_token %}<button class="btn btn-outline-danger !p-2.5"><i class="fa-solid fa-trash"></i></button></form></div></td>
+      </tr>{% empty %}<tr><td colspan="6" class="py-16 text-center"><i class="fa-solid fa-receipt text-3xl text-slate-300"></i><p class="mt-3 font-bold text-slate-700">No transactions found</p><p class="text-sm text-slate-500">Nayi entry add karein ya date filter clear karein.</p></td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+</div>
 </div>
 <div class="modal" id="transferVoucherModal" tabindex="-1" aria-labelledby="transferVoucherModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width:38rem;">
@@ -220,10 +94,10 @@
 </div>
 <div class="modal" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel"
     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 34rem;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 44rem;">
         <div class="modal-content overflow-hidden border-0"
             style="border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 23, 42, .28);">
-            <form id="editTransactionForm" method="post" data-khata-ajax-form data-loading-text="Updating transaction...">{% csrf_token %}
+            <form id="editTransactionForm" method="post" enctype="multipart/form-data" data-khata-ajax-form data-loading-text="Updating transaction...">{% csrf_token %}
                 <div class="modal-header border-0 text-white"
                     style="background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 1.25rem 1.5rem;">
                     <div>
@@ -234,24 +108,46 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700"
-                            for="editTransactionDate">Date</label><input id="editTransactionDate" type="date"
-                            name="date" class="form-control" required></div>
-                    <div class="col-md-6 mb-4"><label class="form-label fw-semibold text-slate-700"
-                            for="editTransactionAmount">Amount</label><input id="editTransactionAmount" type="number"
-                            step="0.01" name="amount" class="form-control" required></div>
-                <div class="mb-4"><label class="form-label fw-semibold text-slate-700" for="editTransactionType">Entry
-                        type</label><select id="editTransactionType" name="trans_type" class="form-select" required>
-                        <option value="GIVEN">Maine Diye (Udhaar / Credit)</option>
-                        <option value="GOT">Mujhe Mile (Jama / Payment)</option>
-                    </select></div>
-                <div>
-                    <label class="form-label fw-semibold text-slate-700" for="editTransactionRemarks">Remarks <span
-                            class="text-muted fw-normal">(optional)</span></label>
-                            <input id="editTransactionRemarks"
-                        type="text" name="remarks" class="form-control" placeholder="Entry remarks">
-                </div>
+                <div class="modal-body">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="form-label" for="editTransactionDate">Date</label>
+                            <input id="editTransactionDate" type="date" name="date" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="editTransactionAmount">Amount</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 font-bold text-slate-400">&#8377;</span>
+                                <input id="editTransactionAmount" type="number" min="0.01" step="0.01" name="amount" class="!pl-8 font-bold" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label" for="editTransactionType">Entry Type</label>
+                            <select id="editTransactionType" name="trans_type" required>
+                                <option value="GIVEN">Maine Diye (Credit)</option>
+                                <option value="GOT">Mujhe Mile (Payment)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="editTransactionAttachment">Replace Attachment</label>
+                            <input id="editTransactionAttachment" type="file" name="attachment"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+                            <p class="mt-1 text-xs text-slate-400">PDF, JPG, PNG or WebP · Max 5 MB</p>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="form-label" for="editTransactionRemarks">Remarks <span class="font-normal text-slate-400">(optional)</span></label>
+                            <input id="editTransactionRemarks" type="text" name="remarks" maxlength="200" placeholder="Purpose or reference">
+                        </div>
+                        <div id="currentAttachmentBox" class="hidden rounded-xl border border-indigo-100 bg-indigo-50 p-3 sm:col-span-2">
+                            <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                                <a id="currentAttachmentLink" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-2 font-bold text-indigo-700"><i class="fa-solid fa-paperclip"></i><span>View current attachment</span></a>
+                                <label class="flex items-center gap-2 text-sm font-bold text-rose-600">
+                                    <input id="removeTransactionAttachment" type="checkbox" name="remove_attachment" value="1">
+                                    Remove existing attachment
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
         <div class="modal-footer border-0" style="background: #f8fafc; padding: 1rem 1.5rem;"><button type="button"
                 class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit"
@@ -274,6 +170,14 @@
             document.getElementById('editTransactionAmount').value = this.dataset.amount;
             document.getElementById('editTransactionType').value = this.dataset.type;
             document.getElementById('editTransactionRemarks').value = this.dataset.remarks;
+            const attachmentBox = document.getElementById('currentAttachmentBox');
+            const attachmentLink = document.getElementById('currentAttachmentLink');
+            const removeAttachment = document.getElementById('removeTransactionAttachment');
+            document.getElementById('editTransactionAttachment').value = '';
+            removeAttachment.checked = false;
+            attachmentBox.classList.toggle('hidden', !this.dataset.attachmentUrl);
+            attachmentLink.href = this.dataset.attachmentUrl || '#';
+            attachmentLink.textContent = this.dataset.attachmentName || 'View current attachment';
         });
     });
 </script>
@@ -285,7 +189,7 @@
             <form action="{% url 'khata:add_interest' encoded_id %}" method="POST" data-khata-ajax-form data-loading-text="Adding interest...">
                 {% csrf_token %}
                 <div
-                    class="flex items-start justify-between bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-5 text-white">
+                    class="modal-header flex items-start justify-between">
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-100">Ledger interest</p>
                         <h2 id="interestModalLabel" class="mt-1 text-2xl font-extrabold"><i

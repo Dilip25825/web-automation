@@ -2,82 +2,58 @@
 {% block title %}Khata Dashboard{% endblock %}
 {% block content %}
 <div id="khata-app">
-<div class="mx-auto max-w-7xl space-y-6">
-  <header class="app-card overflow-hidden bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white"><div class="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-semibold uppercase tracking-[.18em] text-indigo-100">Khata workspace</p><h1 class="mt-1 text-3xl font-extrabold">Good day, {{ request.user.first_name|default:request.user.username }}</h1><p class="mt-1 text-sm text-indigo-100">Manage customers, balances and daily transactions from one place.</p></div><a href="{% url 'khata:report_page' %}" class="inline-flex items-center gap-2 rounded-lg bg-white/15 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/30 transition hover:bg-white/25"><i class="fa-solid fa-chart-line"></i>Open reports</a></div></header>
-  <div id="heroTransferAction"><button type="button" class="btn text-white ring-1 ring-white/30" style="background:#059669" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left me-1"></i> Transfer Voucher</button></div>
-  <div class="grid gap-4 md:grid-cols-3">
-    <a href="?filter=lene" class="app-card group flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-up me-1 text-indigo-500"></i>Mujhe Lene Hain</p><p class="mt-1 text-sm text-slate-600">Customers se milne wali total baki rakam</p><p class="mt-2 text-lg font-extrabold text-indigo-700">&#8377;{{ total_lene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i class="fa-solid fa-wallet"></i></span></a>
-    <a href="?filter=dene" class="app-card group flex items-center justify-between border-l-4 border-rose-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-arrow-trend-down me-1 text-rose-500"></i>Mujhe Dene Hain</p><p class="mt-1 text-sm text-slate-600">Customers ko dene wali total baki rakam</p><p class="mt-2 text-lg font-extrabold text-rose-700">&#8377;{{ total_dene_hain|stringformat:".2f" }}</p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-rose-100 text-xl text-rose-700"><i class="fa-solid fa-hand-holding-dollar"></i></span></a>
-    <a href="{% url 'khata:shop_profile' %}" class="app-card group flex items-center justify-between border-l-4 border-indigo-500 p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div><p class="text-sm font-bold uppercase tracking-wide text-slate-500"><i class="fa-solid fa-gear me-1 text-indigo-500"></i>Settings</p><p class="mt-1 text-sm text-slate-600">Manage your account and preferences</p><p class="mt-2 text-lg font-extrabold text-indigo-700">Open Settings <i class="fa-solid fa-arrow-right ms-1 text-sm"></i></p></div><span class="grid h-11 w-11 place-items-center rounded-full bg-indigo-100 text-xl text-indigo-700"><i class="fa-solid fa-sliders"></i></span></a>
-  </div>  <div class="grid items-start gap-5 lg:grid-cols-3">
-    <section class="app-card overflow-hidden">
-      <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 text-white">
-        <h2 class="font-extrabold"><i class="fa-solid fa-user-plus mr-2"></i>Add Customer</h2>
-      </div>
-      <form action="{% url 'khata:add_customer' %}" method="post" class="space-y-4 p-5" data-khata-ajax-form data-loading-text="Adding customer...">{% csrf_token %}<div><label
-            class="form-label">Customer name</label><input name="name" required placeholder="Enter name"></div>
-        <div><label class="form-label">Phone number</label><input name="phone" required
-            placeholder="Mobile / phone number"></div><button class="btn btn-primary w-full"><i
-            class="fa-solid fa-floppy-disk"></i>Save customer</button>
-      </form>
-    </section>
-    <section class="app-card overflow-hidden lg:col-span-2">
-      <div class="border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-violet-50 p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="font-extrabold text-slate-900"><i class="fa-solid fa-users mr-2 text-violet-600"></i>My Customers
-            </h2>
-            <p class="mt-1 text-sm text-slate-500">Customer ledger overview</p>
-          </div>{% if current_filter != 'all' or search_query %}<a href="{% url 'khata:dashboard' %}"
-            class="btn btn-outline-danger"><i class="fa-solid fa-xmark"></i>Clear filters</a>{% endif %}
-        </div>
-        <form method="get" action="{% url 'khata:dashboard' %}" class="mt-4 flex gap-2" data-khata-nav-form>{% if current_filter != 'all'%}
-          <input type="hidden" name="filter" value="{{ current_filter }}">{% endif %}<input name="search"
-            value="{{ search_query }}" placeholder="Search customer or phone"><button
-            class="btn btn-primary shrink-0"><i class="fa-solid fa-magnifying-glass"></i>Search</button></form>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="app-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Customer</th>
-              <th>Phone</th>
-              <th>Balance</th>
-              <th class="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>{% for customer in customers %}<tr>
-              <td>{{ forloop.counter }}</td>
-              <td><a href="{% url 'khata:customer_detail' customer.id %}"
-                  class="font-bold text-indigo-700 hover:text-violet-700">{{ customer.name }}</a></td>
-              <td><span class="text-slate-600">{{ customer.phone }}</span></td>
-              <td class="font-bold">{% if customer.balance > 0 %}<span class="text-indigo-700">
-                ₹{{ customer.balance|stringformat:".2f" }} <small>(Lene)</small></span>{% elif customer.balance < 0 %}<span class="text-rose-700">₹{{ customer.abs_balance|stringformat:".2f" }}
-                  <small>(Dene)</small></span>{% else %}<span class="text-slate-500">₹0.00
-                    <small>(Clear)</small></span>{% endif %}</td>
-              <td>
-                <div class="flex justify-center gap-2"><button type="button" class="btn btn-outline-primary !p-2" title="Edit" data-edit-customer data-bs-toggle="modal" data-bs-target="#editCustomerModal" data-update-url="{% url 'khata:update_customer' customer.b64_id %}" data-customer-name="{{ customer.name }}" data-customer-phone="{{ customer.phone }}"><i class="fa-solid fa-pen"></i></button><a
-                    href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-outline-primary !p-2"
-                    title="Transactions"><i class="fa-solid fa-book-open"></i></a>
-                  <form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-khata-ajax-form data-ajax-confirm-delete data-loading-text="Deleting customer..."
-                    data-title="Delete customer?">{% csrf_token %}<button class="btn btn-outline-danger !p-2"
-                      title="Delete"><i class="fa-solid fa-trash"></i></button></form>
-                </div>
-              </td>
-            </tr>{% empty %}<tr>
-              <td colspan="5" class="py-12 text-center text-slate-500">No customers found.</td>
-            </tr>{% endfor %}</tbody>
-        </table>
-      </div>
-      <nav class="flex flex-wrap justify-center gap-2 p-5 text-sm">{% if customers.has_previous %}<a class="page-link"
-          href="?page={{ customers.previous_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Previous</a>
-          {% endif %}<span class="page-link">Page {{ customers.number }} of {{ customers.paginator.num_pages }}</span>
-          {% if customers.has_next %}<a class="page-link"
-          href="?page={{ customers.next_page_number }}&search={{ search_query }}&filter={{ current_filter }}">Next</a>{% endif %}</nav>
-    </section>
+<div class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+<header class="app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
+  <div class="flex flex-col justify-between gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-center">
+    <div><p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-200"><i class="fa-solid fa-book mr-2"></i>Customer ledger</p>
+      <h1 class="mt-2 text-3xl font-extrabold sm:text-4xl">Namaste, {{ request.user.first_name|default:request.user.username }}</h1>
+      <p class="mt-2 text-sm text-indigo-100">Balances aur daily transactions ko ek jagah manage karein.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button class="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold shadow hover:bg-emerald-400" data-bs-toggle="modal" data-bs-target="#addCustomerModal"><i class="fa-solid fa-plus mr-2"></i>Add Customer</button>
+      <button class="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold ring-1 ring-white/25 hover:bg-white/20" data-bs-toggle="modal" data-bs-target="#transferVoucherModal"><i class="fa-solid fa-right-left mr-2"></i>Transfer</button>
+      <a href="{% url 'khata:report_page' %}" class="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-indigo-800 shadow hover:bg-indigo-50"><i class="fa-solid fa-chart-line mr-2"></i>Reports</a>
+      <button type="button" class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/25 hover:bg-white/20" title="Settings" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="fa-solid fa-gear"></i></button>
+    </div>
   </div>
+</header>
+
+<section class="grid gap-4 sm:grid-cols-3">
+  <div class="app-card flex items-center justify-between p-5"><div><p class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Customers</p><p class="mt-2 text-3xl font-extrabold text-slate-900">{{ transfer_customers|length }}</p><p class="mt-1 text-xs text-slate-500">Total ledger accounts</p></div><span class="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-white"><i class="fa-solid fa-users"></i></span></div>
+  <a href="?filter=lene" class="app-card flex items-center justify-between p-5 transition hover:-translate-y-0.5 hover:shadow-lg"><div><p class="text-xs font-extrabold uppercase tracking-wider text-emerald-700">Receivable</p><p class="mt-2 text-2xl font-extrabold text-emerald-700">&#8377;{{ total_lene_hain|stringformat:".2f" }}</p><p class="mt-1 text-xs text-slate-500">Aapko lene hain</p></div><span class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><i class="fa-solid fa-arrow-down"></i></span></a>
+  <a href="?filter=dene" class="app-card flex items-center justify-between p-5 transition hover:-translate-y-0.5 hover:shadow-lg"><div><p class="text-xs font-extrabold uppercase tracking-wider text-rose-700">Payable</p><p class="mt-2 text-2xl font-extrabold text-rose-700">&#8377;{{ total_dene_hain|stringformat:".2f" }}</p><p class="mt-1 text-xs text-slate-500">Aapko dene hain</p></div><span class="grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-rose-700"><i class="fa-solid fa-arrow-up"></i></span></a>
+</section>
+
+<section class="app-card overflow-hidden">
+  <div class="border-b border-slate-200 px-5 py-5 sm:px-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div><h2 class="text-xl font-extrabold text-slate-900">Customer Accounts</h2><p class="mt-1 text-sm text-slate-500">{{ customers.paginator.count }} records found</p></div>
+      <div class="flex flex-col gap-3 lg:flex-row">
+        <div class="inline-flex rounded-xl bg-slate-100 p-1 text-sm font-bold">
+          <a href="?filter=all{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="rounded-lg px-3 py-2 {% if current_filter == 'all' %}bg-white text-indigo-700 shadow-sm{% else %}text-slate-500{% endif %}">All</a>
+          <a href="?filter=lene{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="rounded-lg px-3 py-2 {% if current_filter == 'lene' %}bg-white text-emerald-700 shadow-sm{% else %}text-slate-500{% endif %}">Lene hain</a>
+          <a href="?filter=dene{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" class="rounded-lg px-3 py-2 {% if current_filter == 'dene' %}bg-white text-rose-700 shadow-sm{% else %}text-slate-500{% endif %}">Dene hain</a>
+        </div>
+        <form method="get" class="flex gap-2" data-khata-nav-form><input type="hidden" name="filter" value="{{ current_filter }}"><div class="relative min-w-0 flex-1 sm:w-72"><i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400"></i><input name="search" value="{{ search_query }}" class="w-full !pl-9" placeholder="Search name or phone"></div><button class="btn btn-primary">Search</button>{% if search_query %}<a href="?filter={{ current_filter }}" class="btn btn-outline-secondary"><i class="fa-solid fa-xmark"></i></a>{% endif %}</form>
+      </div>
+    </div>
+  </div>
+  <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Customer</th><th>Balance</th><th>Status</th><th class="text-right">Actions</th></tr></thead>
+    <tbody>{% for customer in customers %}<tr>
+      <td><a href="{% url 'khata:customer_detail' customer.id %}" class="group flex items-center gap-3"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 font-extrabold uppercase text-indigo-700">{{ customer.name|slice:":1" }}</span><span><span class="block font-extrabold text-slate-900 group-hover:text-indigo-700">{{ customer.name }}</span><span class="block text-sm text-slate-500"><i class="fa-solid fa-phone mr-1 text-xs"></i>{{ customer.phone }}</span></span></a></td>
+      <td>{% if customer.balance > 0 %}<span class="text-lg font-extrabold text-emerald-700">&#8377;{{ customer.balance|stringformat:".2f" }}</span>{% elif customer.balance < 0 %}<span class="text-lg font-extrabold text-rose-700">&#8377;{{ customer.abs_balance|stringformat:".2f" }}</span>{% else %}<span class="text-lg font-extrabold text-slate-500">&#8377;0.00</span>{% endif %}</td>
+      <td>{% if customer.balance > 0 %}<span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">Receivable</span>{% elif customer.balance < 0 %}<span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200">Payable</span>{% else %}<span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Settled</span>{% endif %}</td>
+      <td><div class="flex justify-end gap-2"><a href="{% url 'khata:customer_detail' customer.id %}" class="btn btn-primary !px-3 !py-2"><i class="fa-solid fa-book-open"></i><span class="hidden sm:inline">Ledger</span></a><button class="btn btn-outline-primary !p-2.5" title="Edit" data-edit-customer data-bs-toggle="modal" data-bs-target="#editCustomerModal" data-update-url="{% url 'khata:update_customer' customer.b64_id %}" data-customer-name="{{ customer.name }}" data-customer-phone="{{ customer.phone }}"><i class="fa-solid fa-pen"></i></button><form action="{% url 'khata:delete_customer' customer.id %}" method="post" data-khata-ajax-form data-ajax-confirm-delete data-loading-text="Deleting customer..." data-title="Delete customer?">{% csrf_token %}<button class="btn btn-outline-danger !p-2.5"><i class="fa-solid fa-trash"></i></button></form></div></td>
+    </tr>{% empty %}<tr><td colspan="4" class="py-16 text-center"><i class="fa-solid fa-user-group text-3xl text-slate-300"></i><p class="mt-3 font-bold text-slate-700">No customers found</p><p class="text-sm text-slate-500">Search clear karein ya naya customer add karein.</p></td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if customers.paginator.num_pages > 1 %}<nav class="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm"><span class="text-slate-500">Page {{ customers.number }} of {{ customers.paginator.num_pages }}</span><div class="flex gap-2">{% if customers.has_previous %}<a class="page-link" href="?page={{ customers.previous_page_number }}&search={{ search_query|urlencode }}&filter={{ current_filter }}">Previous</a>{% endif %}{% if customers.has_next %}<a class="page-link" href="?page={{ customers.next_page_number }}&search={{ search_query|urlencode }}&filter={{ current_filter }}">Next</a>{% endif %}</div></nav>{% endif %}
+</section>
 </div>
+
+<div class="modal" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true"><div class="modal-dialog modal-dialog-centered" style="max-width:30rem;"><div class="modal-content overflow-hidden border-0" style="border-radius:1.25rem;box-shadow:0 24px 60px rgba(15,23,42,.28);"><form action="{% url 'khata:add_customer' %}" method="post" data-khata-ajax-form data-loading-text="Adding customer...">{% csrf_token %}
+<div class="modal-header border-0 bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white"><div><p class="mb-1 text-xs font-bold uppercase tracking-widest text-indigo-100">New ledger account</p><h5 class="modal-title text-xl font-extrabold" id="addCustomerModalLabel"><i class="fa-solid fa-user-plus me-2"></i>Add Customer</h5></div><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body space-y-4 p-6"><div><label class="form-label" for="newCustomerName">Customer name</label><input id="newCustomerName" name="name" required maxlength="100" placeholder="Enter customer name"></div><div><label class="form-label" for="newCustomerPhone">Phone number</label><input id="newCustomerPhone" name="phone" required inputmode="numeric" placeholder="Enter mobile number"></div></div>
+<div class="modal-footer border-0 bg-slate-50 px-6 py-4"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add Customer</button></div></form></div></div></div>
 <div class="modal" id="transferVoucherModal" tabindex="-1" aria-labelledby="transferVoucherModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 38rem;">
     <div class="modal-content overflow-hidden border-0" style="border-radius:1.5rem;box-shadow:0 30px 80px rgba(15,23,42,.32);">
@@ -121,8 +97,27 @@
     </div>
   </div>
 </div>
+<div class="modal" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:34rem;">
+    <div class="modal-content">
+      <form action="{% url 'khata:shop_profile' %}" method="post" data-khata-ajax-form data-loading-text="Saving settings...">{% csrf_token %}
+        <div class="modal-header">
+          <div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-xl bg-white/10 ring-1 ring-white/20"><i class="fa-solid fa-store"></i></span><div><p class="mb-1 text-xs font-bold uppercase tracking-widest text-indigo-200">Khata profile</p><h5 class="modal-title text-xl font-extrabold" id="settingsModalLabel">Shop Settings</h5></div></div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body space-y-4">
+          <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-700"><i class="fa-solid fa-circle-info mr-2"></i>Ye details aapke Khata profile aur reports ke liye use hongi.</div>
+          <div><label class="form-label" for="settingsShopName">Shop Name</label><input id="settingsShopName" name="shop_name" maxlength="150" value="{{ profile.shop_name }}" placeholder="Enter shop name" required></div>
+          <div><label class="form-label" for="settingsPhone">Mobile Number <span class="font-normal text-slate-400">(optional)</span></label><input id="settingsPhone" name="phone" maxlength="15" value="{{ profile.phone|default:'' }}" inputmode="tel" placeholder="Shop mobile number"></div>
+          <div><label class="form-label" for="settingsAddress">Shop Address <span class="font-normal text-slate-400">(optional)</span></label><textarea id="settingsAddress" name="address" rows="3" placeholder="Shop address">{{ profile.address|default:'' }}</textarea></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-floppy-disk mr-2"></i>Save Settings</button></div>
+      </form>
+    </div>
+  </div>
+</div>
 <script>
-  document.querySelector('header > div').appendChild(document.getElementById('heroTransferAction'));
+
   const transferDate = document.getElementById('transferDate');
   transferDate.value = new Date().toLocaleDateString('en-CA');
   document.getElementById('transferVoucherForm').addEventListener('submit', function (event) {

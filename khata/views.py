@@ -12,7 +12,9 @@ from django.utils import timezone
 import urllib.parse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.core.exceptions import ValidationError
+from .drive_storage import delete_attachment, download_attachment, upload_attachment, validate_attachment
 from .models import ShopProfile
 from django.core.paginator import Paginator #
 from django.views.decorators.http import require_POST
@@ -97,7 +99,10 @@ def dashboard(request):
             cust.balance = cust.net_balance 
             cust.abs_balance = abs(cust.net_balance)
         
+        profile, _ = ShopProfile.objects.get_or_create(user=request.user)
+
         context = {
+            'profile': profile,
             'customers': page_obj,
             'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
             'total_lene_hain': total_lene_hain,
@@ -234,6 +239,8 @@ def delete_customer(request, customer_id):
             return redirect('khata:dashboard')
             
         # Agar balance ekdum 0 hai, tabhi delete ki ijazat milegi
+        for ledger_entry in transactions.exclude(attachment_drive_id__isnull=True):
+            delete_attachment(ledger_entry.attachment_drive_id)
         customer.delete()
         messages.success(request, "Grahak ka khata safaltapoorvak hata diya gaya hai.")
         return redirect('khata:dashboard')
@@ -300,7 +307,39 @@ def customer_detail(request, customer_id):
             if amount_value <= 0 or trans_type not in {'GIVEN', 'GOT'} or not trans_date:
                 messages.error(request, 'Amount, type aur date valid honi chahiye.')
                 return redirect('khata:customer_detail', customer_id=customer_id)
-            Transaction.objects.create(customer=customer, amount=amount_value, trans_type=trans_type, remarks=remarks, date=trans_date)
+            attachment = request.FILES.get('attachment')
+            new_transaction = None
+            try:
+                validate_attachment(attachment)
+                new_transaction = Transaction.objects.create(
+                    customer=customer, amount=amount_value, trans_type=trans_type,
+                    remarks=remarks, date=trans_date)
+                if attachment:
+                    metadata = upload_attachment(attachment, new_transaction)
+                    for field, value in metadata.items():
+                        setattr(new_transaction, field, value)
+                    new_transaction.attachment_uploaded_at = timezone.now()
+                    new_transaction.save(update_fields=[
+                        'attachment_drive_id', 'attachment_name',
+                        'attachment_mime_type', 'attachment_size',
+                        'attachment_uploaded_at',
+                    ])
+                messages.success(request, 'Len-den ki entry save ho gayi!')
+            except ValidationError as error:
+                if new_transaction:
+                    new_transaction.delete()
+                messages.error(request, ' '.join(error.messages))
+                return redirect('khata:customer_detail', customer_id=customer_id)
+            except Exception:
+                if new_transaction:
+                    if new_transaction.attachment_drive_id:
+                        try:
+                            delete_attachment(new_transaction.attachment_drive_id)
+                        except Exception:
+                            pass
+                    new_transaction.delete()
+                messages.error(request, 'Attachment upload nahi hua. Kripya dobara try karein.')
+                return redirect('khata:customer_detail', customer_id=customer_id)
             return redirect('khata:customer_detail', customer_id=customer_id)
 
         # 6. Interest/Auto-months calculation
@@ -360,11 +399,38 @@ def update_transaction(request, b64_trans_id):
         trans_date = parse_date(request.POST.get('date'))
         if amount_value <= 0 or trans_type not in {'GIVEN', 'GOT'} or not trans_date:
             raise ValueError('Amount, type aur date valid honi chahiye.')
-        trans.amount = amount_value
-        trans.trans_type = trans_type
-        trans.remarks = request.POST.get('remarks', '').strip()
-        trans.date = trans_date
-        trans.save()
+        attachment = request.FILES.get('attachment')
+        remove_attachment = request.POST.get('remove_attachment') == '1'
+        validate_attachment(attachment)
+        old_drive_id = trans.attachment_drive_id
+        new_drive_id = None
+        try:
+            if attachment:
+                metadata = upload_attachment(attachment, trans)
+                new_drive_id = metadata['attachment_drive_id']
+                for field, value in metadata.items():
+                    setattr(trans, field, value)
+                trans.attachment_uploaded_at = timezone.now()
+            elif remove_attachment:
+                trans.attachment_drive_id = None
+                trans.attachment_name = None
+                trans.attachment_mime_type = None
+                trans.attachment_size = None
+                trans.attachment_uploaded_at = None
+            trans.amount = amount_value
+            trans.trans_type = trans_type
+            trans.remarks = request.POST.get('remarks', '').strip()
+            trans.date = trans_date
+            trans.save()
+        except Exception:
+            if new_drive_id:
+                try:
+                    delete_attachment(new_drive_id)
+                except Exception:
+                    pass
+            raise
+        if old_drive_id and (attachment or remove_attachment):
+            delete_attachment(old_drive_id)
         messages.success(request, "Len-den ki entry update ho gayi!")
         return redirect('khata:customer_detail', customer_id=trans.customer.id)
     except Exception as e:
@@ -383,6 +449,8 @@ def delete_transaction(request, b64_trans_id):
         trans = get_object_or_404(Transaction, id=actual_trans_id, customer__user=request.user)
         customer_id = trans.customer.id
         
+        if trans.attachment_drive_id:
+            delete_attachment(trans.attachment_drive_id)
         trans.delete()
         messages.success(request, "Len-den ki entry delete kar di gayi hai.")
         return redirect('khata:customer_detail', customer_id=customer_id)
@@ -443,6 +511,28 @@ def add_interest(request, b64_id):
         messages.error(request, f"Byaaj jodne mein samasya aayi: {str(e)}")
         return redirect('khata:dashboard')
     
+@login_required
+def view_transaction_attachment(request, b64_trans_id):
+    try:
+        actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
+        trans = get_object_or_404(
+            Transaction, id=actual_trans_id, customer__user=request.user)
+        if not trans.attachment_drive_id:
+            messages.warning(request, 'Is entry ke saath koi attachment nahi hai.')
+            return redirect('khata:customer_detail', customer_id=trans.customer_id)
+        response = FileResponse(
+            download_attachment(trans.attachment_drive_id),
+            content_type=trans.attachment_mime_type or 'application/octet-stream',
+            as_attachment=False,
+            filename=trans.attachment_name or 'attachment',
+        )
+        response['Cache-Control'] = 'private, no-store'
+        response['X-Content-Type-Options'] = 'nosniff'
+        return response
+    except Exception:
+        messages.error(request, 'Attachment kholne mein samasya aayi. Kripya dobara try karein.')
+        return redirect('khata:dashboard')
+
 @login_required
 def download_ledger_pdf(request, b64_id):
     try:
@@ -510,36 +600,22 @@ def download_ledger_pdf(request, b64_id):
         return redirect('khata:dashboard')
 
 @login_required
+@ajax_action
+@require_POST
 def shop_profile(request):
-    # Error Handling start: Code me koi gadbad ho to app safe rahe
     try:
-        # Existence Check: User ka profile nikalna, nahi hai toh naya bana dena
-        profile, created = ShopProfile.objects.get_or_create(user=request.user)
-
-        if request.method == 'POST':
-            shop_name = request.POST.get('shop_name')
-            address = request.POST.get('address')
-            phone = request.POST.get('phone')
-
-            # Data update karke save karna
-            profile.shop_name = shop_name
-            profile.address = address
-            profile.phone = phone
-            profile.save()
-            
-            messages.success(request, "Dukaan ka profile safaltapoorvak update ho gaya!")
-            return redirect('khata:dashboard')
-
-        context = {
-            'profile': profile
-        }
-        return render(request, 'khata/shop_profile.html', context)
-
-    except Exception as e:
-        # Kuch dikkat aane par error message show karein
-        messages.error(request, f"Profile kholne mein samasya aayi: {str(e)}")
-        return redirect('khata:dashboard')
-
+        profile, _ = ShopProfile.objects.get_or_create(user=request.user)
+        shop_name = request.POST.get('shop_name', '').strip()
+        if not shop_name:
+            raise ValueError('Shop name zaroori hai.')
+        profile.shop_name = shop_name
+        profile.address = request.POST.get('address', '').strip()
+        profile.phone = request.POST.get('phone', '').strip()
+        profile.save()
+        messages.success(request, 'Shop settings update ho gayi!')
+    except Exception as error:
+        messages.error(request, f'Settings save nahi hui: {error}')
+    return redirect('khata:dashboard')
 
 @login_required
 def report_page(request):
@@ -566,4 +642,6 @@ def report_page(request):
         for trans in transactions.iterator(chunk_size=500): writer.writerow([trans.date, trans.customer.name, trans.customer.phone, trans.get_trans_type_display(), trans.amount, trans.remarks or ''])
         return response
     page_obj = Paginator(transactions, 20).get_page(request.GET.get('page', 1))
+    for report_transaction in page_obj:
+        report_transaction.b64_id = base64.b64encode(str(report_transaction.id).encode('utf-8')).decode('utf-8')
     return render(request, 'khata/report.html', {'transactions': page_obj, 'start_date': start_date, 'end_date': end_date, 'search': search, 'trans_type': trans_type, 'totals': totals})

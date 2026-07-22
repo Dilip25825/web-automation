@@ -22,6 +22,11 @@ class Transaction(models.Model):
     trans_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     date = models.DateField(default=timezone.now)
     remarks = models.CharField(max_length=200, blank=True, null=True)
+    attachment_drive_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    attachment_name = models.CharField(max_length=255, blank=True, null=True)
+    attachment_mime_type = models.CharField(max_length=100, blank=True, null=True)
+    attachment_size = models.PositiveBigIntegerField(blank=True, null=True)
+    attachment_uploaded_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         indexes = [models.Index(fields=['customer', '-date']), models.Index(fields=['date'])]
