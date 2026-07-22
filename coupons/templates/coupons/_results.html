@@ -1,22 +1,22 @@
 <div class="coupon-table-wrap">
     <table class="coupon-table">
-        <thead><tr><th>ID</th><th>Coupon Code</th><th>Discount</th><th>Status</th><th>Used By</th><th>Remark</th><th>Actions</th></tr></thead>
+        <thead><tr><th>ID</th><th>Coupon Code</th><th>Discount</th><th>State</th><th>Assigned / Used By</th><th>Copied By</th><th>Remark</th>{% if request.user.is_superuser %}<th>Actions</th>{% endif %}</tr></thead>
         <tbody>
         {% for coupon in coupons %}
             <tr>
                 <td>#{{ coupon.id }}</td>
-                <td><button type="button" class="coupon-code-copy" data-copy-code="{{ coupon.coupon_code|escape }}" title="Copy coupon code"><code>{{ coupon.coupon_code }}</code><i class="fa-regular fa-copy"></i></button></td>
+                <td><button type="button" class="coupon-code-copy" data-copy-code="{{ coupon.coupon_code|escape }}" data-reserve-url="{% url 'coupons:reserve' coupon.id %}" title="Copy and reserve coupon"><code>{{ coupon.coupon_code }}</code><i class="fa-regular fa-copy"></i></button></td>
                 <td><strong class="coupon-amount">₹{{ coupon.discount_amount }}</strong></td>
-                <td>{% if coupon.status %}<span class="coupon-status active"><i class="fa-solid fa-circle-check"></i> Active</span>{% else %}<span class="coupon-status inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>{% endif %}</td>
-                <td>{{ coupon.used_by|default:"-" }}</td>
-                <td>{{ coupon.remark|default:"-"|truncatechars:60 }}</td>
-                <td class="coupon-actions">
-                    <button type="button" class="coupon-edit" data-id="{{ coupon.id }}" data-code="{{ coupon.coupon_code|escape }}" data-amount="{{ coupon.discount_amount }}" data-status="{{ coupon.status|yesno:'true,false' }}" data-used-by="{{ coupon.used_by|default_if_none:''|escape }}" data-remark="{{ coupon.remark|default_if_none:''|escape }}" data-update-url="{% url 'coupons:update' coupon.id %}"><i class="fa-solid fa-pen"></i> Edit</button>
+                <td>{% if coupon.status and coupon.used_by %}<span class="coupon-status reserved"><i class="fa-solid fa-user-clock"></i> Reserved</span>{% elif coupon.status %}<span class="coupon-status active"><i class="fa-solid fa-circle-check"></i> Available</span>{% else %}<span class="coupon-status inactive"><i class="fa-solid fa-circle-xmark"></i> Used / Inactive</span>{% endif %}</td>
+                <td>{% if coupon.status and coupon.used_by %}<strong>Reserved</strong>{% else %}{{ coupon.used_by|default:"-" }}{% endif %}</td>
+                <td>{% if coupon.copied_by %}<strong>{{ coupon.copied_by.username }}</strong>{% if coupon.copied_at %}<br><small>{{ coupon.copied_at|date:"d M Y, h:i A" }}</small>{% endif %}{% else %}-{% endif %}</td><td>{{ coupon.remark|default:"-"|truncatechars:60 }}</td>
+                {% if request.user.is_superuser %}<td class="coupon-actions">
+                    <button type="button" class="coupon-edit" data-id="{{ coupon.id }}" data-copied-by="{% if coupon.copied_by %}{{ coupon.copied_by.username|escape }} (#{{ coupon.copied_by_id }}){% endif %}" data-copied-at="{% if coupon.copied_at %}{{ coupon.copied_at|date:'d M Y, h:i A' }}{% endif %}" data-code="{{ coupon.coupon_code|escape }}" data-amount="{{ coupon.discount_amount }}" data-status="{{ coupon.status|yesno:'true,false' }}" data-used-by="{% if coupon.status and coupon.used_by %}{% else %}{{ coupon.used_by|default_if_none:''|escape }}{% endif %}" data-remark="{{ coupon.remark|default_if_none:''|escape }}" data-update-url="{% url 'coupons:update' coupon.id %}"><i class="fa-solid fa-pen"></i> Edit</button>
                     <button type="button" class="coupon-delete" data-code="{{ coupon.coupon_code|escape }}" data-delete-url="{% url 'coupons:delete' coupon.id %}"><i class="fa-solid fa-trash"></i></button>
-                </td>
+                </td>{% endif %}
             </tr>
         {% empty %}
-            <tr><td colspan="7" class="coupon-empty"><i class="fa-solid fa-ticket"></i><strong>No coupons found</strong><span>Create a coupon or try another search.</span></td></tr>
+            <tr><td colspan="{% if request.user.is_superuser %}8{% else %}7{% endif %}" class="coupon-empty"><i class="fa-solid fa-ticket"></i><strong>No coupons found</strong><span>Create a coupon or try another search.</span></td></tr>
         {% endfor %}
         </tbody>
     </table>

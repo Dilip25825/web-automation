@@ -28,7 +28,7 @@ Public Sub ApplyCustomerCoupon(ByVal control As IRibbonControl)
 
     couponCode = UCase$(Trim$(InputBox( _
         "Paste your coupon code:" & vbCrLf & _
-        "Example: CPN-ABCDE-FGHIJ-KLMNO-PQRST-UVWXYZ", _
+        "Example: C750-ABCDE-FGHIJ-KLMNO-PQRST-UVWXYZ", _
         "Apply Coupon")))
     If couponCode = "" Then Exit Sub
 
@@ -60,12 +60,12 @@ Public Sub ApplyCustomerCoupon(ByVal control As IRibbonControl)
     ' A single query/recordset avoids MySQL cursor conflicts in the transaction.
     ' User!B4 is matched only against userinfo.ID.
     sqlText = "SELECT u.Amount, u.PaymentStatus, c.ID AS CouponID, c.DiscountAmount, " & _
-        "EXISTS(SELECT 1 FROM coupons_coupon x WHERE x.UsedBy = CAST(u.ID AS CHAR) LIMIT 1) AS AlreadyUsed " & _
+        "EXISTS(SELECT 1 FROM coupons_coupon x WHERE x.UsedBy = CAST(u.ID AS CHAR) AND x.Status = 0 LIMIT 1) AS AlreadyUsed " & _
         "FROM userinfo u JOIN coupons_coupon c ON c.CouponCode = '" & SqlEscape(couponCode) & "' " & _
-        "AND c.Status = 1 AND c.UsedBy IS NULL WHERE u.ID = " & CStr(CLng(userInfoID)) & " LIMIT 1"
+        "AND c.Status = 1 AND (c.UsedBy IS NULL OR c.UsedBy LIKE 'RESERVED:%' OR c.UsedBy = CAST(u.ID AS CHAR)) WHERE u.ID = " & CStr(CLng(userInfoID)) & " LIMIT 1"
     Set rst = con.Execute(sqlText)
     If rst.EOF Then
-        Err.Raise vbObjectError + 2203, , "UserInfo ID or active unused coupon was not found."
+        Err.Raise vbObjectError + 2203, , "Coupon was not found, is inactive, or is reserved for another UserInfo ID."
     End If
     If CBool(rst.Fields("AlreadyUsed").Value) Then
         Err.Raise vbObjectError + 2202, , "This user has already used a coupon."
@@ -93,8 +93,8 @@ Public Sub ApplyCustomerCoupon(ByVal control As IRibbonControl)
     ' Update UserInfo and coupon together in one atomic MySQL statement.
     sqlText = "UPDATE userinfo u " & _
         "JOIN coupons_coupon c ON c.ID = " & CStr(couponID) & _
-        " AND c.Status = 1 AND c.UsedBy IS NULL " & _
-        "LEFT JOIN coupons_coupon used_coupon ON used_coupon.UsedBy = CAST(u.ID AS CHAR) " & _
+        " AND c.Status = 1 AND (c.UsedBy IS NULL OR c.UsedBy LIKE 'RESERVED:%' OR c.UsedBy = CAST(u.ID AS CHAR)) " & _
+        "LEFT JOIN coupons_coupon used_coupon ON used_coupon.UsedBy = CAST(u.ID AS CHAR) AND used_coupon.Status = 0 " & _
         "SET u.Amount = u.Amount - c.DiscountAmount, " & _
         "c.UsedBy = CAST(u.ID AS CHAR), c.Status = 0 " & _
         "WHERE u.ID = " & CStr(CLng(userInfoID)) & _

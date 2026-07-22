@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import CouponForm
@@ -28,9 +29,15 @@ def superuser_required(view_func):
 def _coupon_queryset(request):
     query = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', 'active').strip().lower() or 'active'
-    coupons = Coupon.objects.all()
+    coupons = Coupon.objects.select_related('copied_by')
+    if not request.user.is_superuser:
+        coupons = coupons.filter(Q(used_by__isnull=True) | Q(copied_by=request.user))
     if status_filter == 'inactive':
         coupons = coupons.filter(status=False)
+    elif status_filter == 'reserved':
+        coupons = coupons.filter(status=True, used_by__isnull=False)
+    elif status_filter == 'available':
+        coupons = coupons.filter(status=True, used_by__isnull=True)
     else:
         status_filter = 'active'
         coupons = coupons.filter(status=True)
@@ -42,7 +49,7 @@ def _coupon_queryset(request):
     return coupons.order_by('id'), query, status_filter
 
 
-@superuser_required
+@login_required(login_url='accounts:login')
 def dashboard(request):
     coupons, query, status_filter = _coupon_queryset(request)
     paginator = Paginator(coupons, 10)
@@ -94,11 +101,38 @@ def bulk_create_coupons(request):
         ])
     return JsonResponse({'success': True, 'message': f'{len(codes)} unique coupons generated successfully.'})
 
+@login_required(login_url='accounts:login')
+@require_POST
+def reserve_coupon(request, pk):
+    with transaction.atomic():
+        coupon = get_object_or_404(Coupon.objects.select_for_update(), pk=pk)
+        if not coupon.status:
+            return JsonResponse({'success': False, 'message': 'Used or inactive coupon cannot be copied.'}, status=409)
+        if coupon.copied_by_id and coupon.copied_by_id != request.user.id and not request.user.is_superuser:
+            return JsonResponse({'success': False, 'message': 'This coupon is already reserved by another user.'}, status=409)
+        if coupon.used_by and not coupon.used_by.startswith('RESERVED:'):
+            return JsonResponse({'success': False, 'message': 'This coupon is assigned to a specific UserInfo ID.'}, status=409)
+        update_fields = []
+        if not coupon.used_by:
+            coupon.used_by = f'RESERVED:{coupon.pk}'
+            update_fields.append('used_by')
+        if coupon.copied_by_id is None:
+            coupon.copied_by = request.user
+            coupon.copied_at = timezone.now()
+            update_fields.extend(['copied_by', 'copied_at'])
+        if update_fields:
+            coupon.save(update_fields=update_fields)
+    return JsonResponse({'success': True, 'coupon_code': coupon.coupon_code, 'message': 'Coupon copied and reserved.'})
+
+
 @superuser_required
 @require_POST
 def update_coupon(request, pk):
     coupon = get_object_or_404(Coupon, pk=pk)
-    form = CouponForm(request.POST, instance=coupon)
+    data = request.POST.copy()
+    if coupon.used_by and coupon.used_by.startswith('RESERVED:') and not data.get('used_by'):
+        data['used_by'] = coupon.used_by
+    form = CouponForm(data, instance=coupon)
     if form.is_valid():
         coupon = form.save()
         return JsonResponse({'success': True, 'message': f'Coupon {coupon.coupon_code} updated successfully.'})
