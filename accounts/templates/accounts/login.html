@@ -1,137 +1,24 @@
 {% extends 'core/base.html' %}
 {% block title %}Login | Web Automation with Excel{% endblock %}
-
 {% block content %}
-<style>
-    
-    .login-container {
-        min-height: calc(100vh - 160px);
-        background: #f8f9fa;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding: 3rem 20px 2rem;
-    }
-    .login-card-modern {
-        background: #ffffff;
-        border-radius: 20px;
-        width: 100%;
-        max-width: 400px;
-        padding: 2.5rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        animation: fadeIn 0.5s ease;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    .login-icon {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, #4F46E5, #7C3AED);
-        border-radius: 20px;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-        font-size: 2.5rem;
-        color: white;
-        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
-    }
-    .login-title-modern {
-        color: #111827;
-        font-size: 1.75rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    .login-subtitle-modern {
-        color: #6B7280;
-        text-align: center;
-        font-size: 0.95rem;
-        margin-bottom: 2rem;
-    }
-    .form-label-modern {
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
-    }
-    .form-control-modern {
-        border: 2px solid #E5E7EB;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        background: #FAFBFC;
-    }
-    .form-control-modern:focus {
-        border-color: #4F46E5;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-        background: #ffffff;
-    }
-    .btn-modern {
-        background: linear-gradient(135deg, #4F46E5, #7C3AED);
-        border: none;
-        color: white;
-        padding: 14px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 1rem;
-        width: 100%;
-        margin-top: 1rem;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .btn-modern:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
-    }
-    .btn-modern:active {
-        transform: translateY(0);
-    }
-    .alert-modern {
-        background: #FEF2F2;
-        border: 1px solid #FECACA;
-        color: #991B1B;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 0.85rem;
-        margin-bottom: 1.5rem;
-    }
-</style>
-
-<div class="login-container">
-    <div class="login-card-modern">
-        <div class="login-icon">⚙️</div>
-        <h3 class="login-title-modern">Welcome Back</h3>
-        <p class="login-subtitle-modern">Sign in to access Web Automation with Excel</p>
-
-        {% if form.errors %}
-            <div class="alert-modern">
-                <i class="fa-solid fa-circle-exclamation me-2"></i>
-                Invalid credentials. Please check your username and password.
-            </div>
-        {% endif %}
-
-        <form method="POST">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label class="form-label-modern">Username</label>
-                <input type="text" name="username" class="form-control form-control-modern" 
-                       placeholder="Enter your username" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label-modern">Password</label>
-                <input type="password" name="password" class="form-control form-control-modern" 
-                       placeholder="Enter your password" required>
-            </div>
-            <button type="submit" class="btn-modern">
-                <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Sign In
-            </button>
-        </form>
+<section class="relative mx-auto flex min-h-[calc(100vh-11rem)] max-w-6xl items-center justify-center overflow-hidden py-5 sm:py-10">
+  <div class="absolute left-0 top-1/4 h-72 w-72 rounded-full bg-indigo-300/25 blur-3xl"></div><div class="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl"></div>
+  <div class="relative grid w-full overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-[0_28px_80px_rgba(49,46,129,.16)] lg:grid-cols-[1.05fr_.95fr]">
+    <div class="relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 px-7 py-10 text-white sm:px-10 lg:flex lg:min-h-[590px] lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+      <div class="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-violet-500/25 blur-3xl"></div><div class="absolute -bottom-28 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"></div>
+      <div class="relative"><span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[.18em] text-indigo-100"><i class="fa-solid fa-shield-halved text-cyan-300"></i> Secure Workspace</span><h1 class="mt-6 max-w-xl text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">Make everyday work faster with smart automation.</h1><p class="mt-5 max-w-lg text-sm leading-7 text-indigo-100 sm:text-base">Excel automation से repetitive work कम करें, accuracy बढ़ाएं और अपने daily workflow को अधिक तेज, आसान और व्यवस्थित बनाएं।</p></div>
+      <div class="relative mt-9 grid gap-3 sm:grid-cols-3 lg:mt-12"><div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><i class="fa-solid fa-bolt text-amber-300"></i><p class="mt-2 text-sm font-bold">Fast Workflow</p></div><div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><i class="fa-solid fa-lock text-emerald-300"></i><p class="mt-2 text-sm font-bold">Secure Access</p></div><div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"><i class="fa-solid fa-chart-line text-cyan-300"></i><p class="mt-2 text-sm font-bold">Live Control</p></div></div>
     </div>
-</div>
+    <div class="flex items-center px-6 py-9 sm:px-10 lg:px-12"><div class="mx-auto w-full max-w-md">
+      <span class="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-xl text-white shadow-lg shadow-indigo-200"><i class="fa-solid fa-user-lock"></i></span><p class="mt-7 text-xs font-extrabold uppercase tracking-[.18em] text-indigo-600">Account Login</p><h2 class="mt-2 text-3xl font-extrabold text-slate-950">Welcome back</h2><p class="mt-2 text-sm leading-6 text-slate-500">अपना username और password डालकर dashboard खोलें।</p>
+      {% if form.errors %}<div class="mt-6 flex gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-800"><i class="fa-solid fa-circle-exclamation mt-1"></i><span>Username या password सही नहीं है। कृपया दोबारा जांचें।</span></div>{% endif %}
+      <form method="post" class="mt-7 space-y-5" data-loading-text="Signing you in...">{% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <div><label for="login_username" class="mb-2 block text-sm font-extrabold text-slate-700">Username</label><div class="relative"><i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i><input id="login_username" type="text" name="username" value="{{ form.username.value|default_if_none:'' }}" autocomplete="username" autofocus required placeholder="Enter your username" class="!rounded-xl !border-slate-200 !bg-slate-50 !py-3 !pl-11 !pr-4 focus:!border-indigo-500 focus:!bg-white"></div></div>
+        <div><label for="login_password" class="mb-2 block text-sm font-extrabold text-slate-700">Password</label><div class="relative"><i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i><input id="login_password" type="password" name="password" autocomplete="current-password" required placeholder="Enter your password" class="!rounded-xl !border-slate-200 !bg-slate-50 !py-3 !pl-11 !pr-12 focus:!border-indigo-500 focus:!bg-white"><button type="button" id="toggle-login-password" class="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 hover:bg-indigo-50 hover:text-indigo-600" aria-label="Show password"><i class="fa-solid fa-eye"></i></button></div></div>
+        <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:from-indigo-700 hover:to-violet-700"><i class="fa-solid fa-right-to-bracket"></i> Sign In Securely</button>
+      </form><p class="mt-6 text-center text-xs leading-5 text-slate-400"><i class="fa-solid fa-lock mr-1 text-emerald-500"></i>Authorized users only. Your session is securely protected.</p>
+    </div></div>
+  </div>
+</section>
 {% endblock %}
+{% block extra_js %}<script>document.getElementById('toggle-login-password')?.addEventListener('click',function(){const input=document.getElementById('login_password'),visible=input.type==='text';input.type=visible?'password':'text';this.querySelector('i').className=visible?'fa-solid fa-eye':'fa-solid fa-eye-slash';this.setAttribute('aria-label',visible?'Show password':'Hide password')});</script>{% endblock %}

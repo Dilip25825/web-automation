@@ -88,7 +88,33 @@
       </ul>
     </article>
   </section>
+
   {% if request.user.is_superuser %}
+  <section class="grid gap-5 lg:grid-cols-2">
+    <article class="app-card border-t-4 border-t-amber-500 p-6 sm:p-8">
+      <span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-50 text-amber-700"><i class="fa-solid fa-copy"></i></span>
+      <p class="mt-5 text-xs font-extrabold uppercase tracking-[.18em] text-amber-700">Superuser Reports & Bulk Tools</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-slate-950">Bulk Copy कैसे इस्तेमाल करें?</h2>
+      <ol class="mt-5 space-y-3 text-sm leading-6 text-slate-600">
+        <li><strong>1.</strong> Coupons page पर <strong>Bulk Copy</strong> button दबाएं।</li>
+        <li><strong>2.</strong> Discount Amount और copy किए जाने वाले coupons की संख्या डालें।</li>
+        <li><strong>3.</strong> Copy Coupons दबाएं। सभी codes comma के बाद नई line में clipboard पर आ जाएंगे।</li>
+        <li><strong>4.</strong> Copied coupons अपने-आप Reserved हो जाएंगे; इन्हें दोबारा किसी दूसरे client को न दें।</li>
+      </ol>
+    </article>
+    <article class="app-card border-t-4 border-t-sky-500 p-6 sm:p-8">
+      <span class="grid h-12 w-12 place-items-center rounded-xl bg-sky-50 text-sky-700"><i class="fa-solid fa-chart-column"></i></span>
+      <p class="mt-5 text-xs font-extrabold uppercase tracking-[.18em] text-sky-700">Superuser Only</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-slate-950">Monthly Activation Report</h2>
+      <ul class="mt-5 space-y-3 text-sm leading-6 text-slate-600">
+        <li>UserInfo hero में हर operator के activated IDs और PaymentStatus total के अलग cards दिखते हैं।</li>
+        <li><strong>Month Total</strong> card selected month का कुल activation और payment दिखाता है।</li>
+        <li>Left और Right arrows से पिछले तथा अगले महीने की report बिना page reload देख सकते हैं।</li>
+        <li>यह report केवल superuser को दिखाई देती है; regular users इसे नहीं देख सकते।</li>
+      </ul>
+    </article>
+  </section>
+  {% endif %}  {% if request.user.is_superuser %}
   <article class="overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 shadow-sm p-6 sm:p-8">
     <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">केवल Superuser के लिए</p>
     <h2 class="mt-2 text-2xl font-extrabold text-violet-950"><i class="fa-solid fa-user-shield mr-2"></i>Admin याद रखने योग्य बातें</h2>

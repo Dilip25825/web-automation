@@ -447,7 +447,7 @@
             max-width: 85%;
             height: 100vh;
             z-index: 50;
-            background: white;
+            background: linear-gradient(160deg, #0f172a, #312e81 58%, #4338ca);
             padding: 1.5rem 1rem;
             transition: right 0.3s ease;
             box-shadow: -4px 0 30px rgba(0,0,0,0.1);
@@ -465,7 +465,7 @@
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #475569;
+            color: #ffffff;
             cursor: pointer;
         }
 
@@ -473,21 +473,21 @@
             display: block;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
-            color: #475569;
+            color: #e0e7ff;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.15s ease;
         }
 
         .mobile-menu-panel .nav-item.active {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
+            background: #ffffff;
+            color: #3730a3;
             box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
         }
 
         .mobile-menu-panel .nav-item:hover {
-            background: #f1f5ff;
-            color: #4338ca;
+            background: rgba(255,255,255,.12);
+            color: #ffffff;
         }
 
         .mobile-menu-panel .nav-item i {
@@ -496,7 +496,7 @@
         }
 
         .mobile-menu-panel .divider {
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid rgba(255,255,255,.16);
             margin: 0.75rem 0;
         }
 
@@ -506,8 +506,8 @@
             text-align: left;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
-            background: #fef2f2;
-            color: #e11d48;
+            background: rgba(244,63,94,.16);
+            color: #fecdd3;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -515,7 +515,7 @@
         }
 
         .mobile-menu-panel .logout-btn:hover {
-            background: #fee2e2;
+            background: rgba(244,63,94,.28);
         }
 
         .mobile-menu-panel .logout-btn i {
@@ -556,11 +556,11 @@
         </div>
     </div>
 
-    <nav class="sticky top-0 z-40 border-b border-indigo-100/80 bg-white/90 shadow-[0_6px_24px_rgba(79,70,229,0.08)] backdrop-blur-xl">
+    <nav class="sticky top-0 z-40 border-b border-white/10 bg-gradient-to-r from-slate-950/95 via-indigo-950/95 to-indigo-800/95 text-white shadow-[0_10px_35px_rgba(15,23,42,0.25)] backdrop-blur-xl">
         <div class="mx-auto flex min-h-[4.5rem] max-w-[1920px] items-center gap-5 px-4 sm:px-6">
-            <a class="flex shrink-0 items-center gap-2.5 text-lg font-extrabold text-slate-900 sm:text-xl" href="{% url 'core:home' %}">
-                <span class="h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-indigo-100 bg-white shadow-md shadow-indigo-200"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
-                <span>Web Automation <span class="text-violet-700">With Excel</span></span>
+            <a class="flex shrink-0 items-center gap-2.5 text-lg font-extrabold text-white sm:text-xl" href="{% url 'core:home' %}">
+                <span class="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-white/25 bg-white shadow-lg shadow-indigo-950/30"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
+                <span>Web Automation <span class="text-cyan-300">With Excel</span></span>
             </a>
 
             {% if request.user.is_authenticated %}
@@ -572,30 +572,30 @@
                 <!-- Desktop Menu (Hidden on mobile) -->
                 <div class="hidden w-full items-center justify-between lg:flex">
                     <div class="flex items-center gap-1 text-sm font-bold text-slate-600">
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'core:dashboard' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
                             <i class="fa-solid fa-table-columns"></i> Dashboard
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'userinfo_dashboard' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'licensing:userinfo_dashboard' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'userinfo_dashboard' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'licensing:userinfo_dashboard' %}">
                             <i class="fa-solid fa-users"></i> UserInfo
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'pacserp_dashboard' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'licensing:pacserp_dashboard' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'licensing' and request.resolver_match.url_name == 'pacserp_dashboard' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'licensing:pacserp_dashboard' %}">
                             <i class="fa-solid fa-tractor"></i> ERP
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'reminders' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'reminders:dashboard' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'reminders' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'reminders:dashboard' %}">
                             <i class="fa-solid fa-bell"></i> Reminders
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'khata' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'khata:dashboard' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'khata' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'khata:dashboard' %}">
                             <i class="fa-solid fa-file-invoice-dollar"></i> Khata
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'downloads:public_downloads' %}">
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'coupons' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>
+                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'downloads:public_downloads' %}">
                             <i class="fa-solid fa-download"></i> Download
                         </a>
-                        <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'coupons' %}bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200{% else %}text-slate-600 hover:bg-indigo-50 hover:text-indigo-700{% endif %}" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>
                     </div>
 
                     <form action="{% url 'accounts:logout' %}" method="post">
                         {% csrf_token %}
-                        <button class="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:border-rose-200 hover:bg-rose-100" data-logout>
+                        <button class="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-rose-500/25" data-logout>
                             <i class="fa-solid fa-right-from-bracket"></i>{{ user.username }} &middot; Logout
                         </button>
                     </form>
@@ -603,9 +603,9 @@
             {% else %}
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
                 <div class="ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
-                    <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-download"></i> Downloads</a>
-                    <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-tags"></i> Pricing</a>
-                    <a href="{% url 'core:contact' %}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"><i class="fa-solid fa-address-card"></i> Contact</a>
+                    <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-download"></i> Downloads</a>
+                    <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-tags"></i> Pricing</a>
+                    <a href="{% url 'core:contact' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-address-card"></i> Contact</a>
                     <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
                 </div>
             {% endif %}

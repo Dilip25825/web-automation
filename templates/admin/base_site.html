@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Web Automation Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block responsive %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/admin-theme.css' %}">
+{% endblock %}
+
+{% block branding %}
+<div class="wa-admin-brand">
+    <span class="wa-admin-logo">W</span>
+    <div>
+        <h1 id="site-name"><a href="{% url 'admin:index' %}">Web Automation</a></h1>
+        <span>Administration Control Center</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block nav-global %}
+<div class="wa-admin-shortcuts">
+    <a href="{% url 'core:dashboard' %}">Main Dashboard</a>
+    <a href="{% url 'core:home' %}">Public Website</a>
+</div>
+{% endblock %}

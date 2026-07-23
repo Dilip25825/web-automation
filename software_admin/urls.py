@@ -3,7 +3,7 @@ from django.urls import include, path
 from django.http import HttpResponse
 admin.site.site_header = 'Web Automation with Excel'
 admin.site.site_title = 'Web Automation with Excel'
-admin.site.index_title = 'Web Automation with Excel Administration'
+admin.site.index_title = 'Administration Dashboard'
 
 
 def health_check(request):

@@ -13,7 +13,7 @@ from .forms import UserInfoForm, PacsErpForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
-from django.db.models import Count, Sum
+from django.db.models import Sum
 
 
 
@@ -59,67 +59,15 @@ def userinfo_dashboard(request):
             clients = clients.filter(search_filter).distinct()
 
         clients = Paginator(clients.order_by('-id'), 10).get_page(request.GET.get('page'))
-
-        current_month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        requested_month = request.GET.get('report_month', '').strip()
-        month_start = current_month_start
-        if requested_month:
-            try:
-                parsed_month = datetime.strptime(requested_month, '%Y-%m')
-                month_start = timezone.make_aware(parsed_month, timezone.get_current_timezone())
-                if month_start > current_month_start:
-                    month_start = current_month_start
-            except ValueError:
-                month_start = current_month_start
-        if month_start.month == 12:
-            next_month = month_start.replace(year=month_start.year + 1, month=1)
-        else:
-            next_month = month_start.replace(month=month_start.month + 1)
-        if month_start.month == 1:
-            previous_month = month_start.replace(year=month_start.year - 1, month=12)
-        else:
-            previous_month = month_start.replace(month=month_start.month - 1)
-        monthly_records = UserInfoData.objects.filter(
-            is_active=1,
-            activation_date__gte=month_start,
-            activation_date__lt=next_month,
-        ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
-        if not request.user.is_superuser:
-            monthly_records = monthly_records.none()
-        monthly_activation_report = list(
-            monthly_records.values('accepte_by')
-            .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
-            .order_by('-activation_count', 'accepte_by')
-        )
-        monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
-        monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
-        report_month = month_start.strftime('%B %Y')
-        report_month_value = month_start.strftime('%Y-%m')
-        previous_month_value = previous_month.strftime('%Y-%m')
-        next_month_value = next_month.strftime('%Y-%m') if next_month <= current_month_start else ''
     except Exception as error:
         messages.error(request, f'Database Fetch Error: {error}')
         clients = []
-        monthly_activation_report = []
-        monthly_activation_count = 0
-        monthly_payment_total = 0
-        report_month = timezone.localdate().strftime('%B %Y')
-        report_month_value = timezone.localdate().strftime('%Y-%m')
-        previous_month_value = ''
-        next_month_value = ''
 
     context = {
         'clients': clients,
         'search_query': search_query,
         'partial_results': partial_results,
         'farmer_form': None if partial_results else UserInfoForm(),
-        'monthly_activation_report': monthly_activation_report,
-        'monthly_activation_count': monthly_activation_count,
-        'monthly_payment_total': monthly_payment_total,
-        'report_month': report_month,
-        'report_month_value': report_month_value,
-        'previous_month_value': previous_month_value,
-        'next_month_value': next_month_value,
     }
     return render(request, 'licensing/userinfo_dashboard.html', context)
 @login_required(login_url='accounts:login')
