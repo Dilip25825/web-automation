@@ -61,6 +61,11 @@ def dashboard(request):
     pending = tasks.filter(status__in=['PENDING', 'IN_PROGRESS'])
     active_filter = request.GET.get('filter', 'pending')
     filters = {
+        'all': {
+            'tasks': tasks,
+            'label': 'All Tasks',
+            'description': 'Every task assigned in this workspace.',
+        },
         'pending': {
             'tasks': pending,
             'label': 'Pending Tasks',

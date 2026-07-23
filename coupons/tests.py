@@ -55,3 +55,40 @@ class CouponTests(TestCase):
         Coupon.objects.create(coupon_code=code, discount_amount=750, used_by="Customer One")
         response = self.client.get(reverse("coupons:dashboard"), {"q": code[4:9]})
         self.assertContains(response, code)
+    def test_superuser_can_bulk_copy_available_coupons_by_amount(self):
+        coupons = [
+            Coupon.objects.create(coupon_code=generate_coupon_code(750), discount_amount=750)
+            for _ in range(3)
+        ]
+        Coupon.objects.create(coupon_code=generate_coupon_code(500), discount_amount=500)
+        self.client.force_login(self.superuser)
+        response = self.client.post(reverse('coupons:bulk_copy'), {
+            'discount_amount': '750', 'quantity': '2',
+        })
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload['coupon_codes']), 2)
+        self.assertEqual(payload['copy_text'], ',\n'.join(payload['coupon_codes']))
+        for coupon in coupons[:2]:
+            coupon.refresh_from_db()
+            self.assertEqual(coupon.copied_by, self.superuser)
+            self.assertTrue(coupon.used_by.startswith('RESERVED:'))
+        coupons[2].refresh_from_db()
+        self.assertIsNone(coupons[2].used_by)
+
+    def test_bulk_copy_is_superuser_only(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('coupons:bulk_copy'), {
+            'discount_amount': '750', 'quantity': '1',
+        }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 403)
+
+    def test_bulk_copy_does_not_reserve_partial_quantity(self):
+        coupon = Coupon.objects.create(coupon_code=generate_coupon_code(750), discount_amount=750)
+        self.client.force_login(self.superuser)
+        response = self.client.post(reverse('coupons:bulk_copy'), {
+            'discount_amount': '750', 'quantity': '2',
+        })
+        self.assertEqual(response.status_code, 409)
+        coupon.refresh_from_db()
+        self.assertIsNone(coupon.used_by)

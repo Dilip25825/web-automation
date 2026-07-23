@@ -101,6 +101,45 @@ def bulk_create_coupons(request):
         ])
     return JsonResponse({'success': True, 'message': f'{len(codes)} unique coupons generated successfully.'})
 
+@superuser_required
+@require_POST
+def bulk_copy_coupons(request):
+    amount = request.POST.get('discount_amount', '').strip()
+    quantity = request.POST.get('quantity', '').strip()
+    if not amount.isdigit() or int(amount) <= 0:
+        return JsonResponse({'success': False, 'message': 'Enter a valid discount amount.'}, status=400)
+    if not quantity.isdigit() or not 1 <= int(quantity) <= 500:
+        return JsonResponse({'success': False, 'message': 'Number of coupons must be between 1 and 500.'}, status=400)
+
+    requested = int(quantity)
+    with transaction.atomic():
+        coupons = list(
+            Coupon.objects.select_for_update()
+            .filter(status=True, used_by__isnull=True, discount_amount=int(amount))
+            .order_by('id')[:requested]
+        )
+        if len(coupons) < requested:
+            return JsonResponse({
+                'success': False,
+                'message': f'Only {len(coupons)} available coupon(s) found for ₹{int(amount)}. Nothing was copied.',
+                'available': len(coupons),
+            }, status=409)
+
+        copied_at = timezone.now()
+        for coupon in coupons:
+            coupon.used_by = f'RESERVED:{coupon.pk}'
+            coupon.copied_by = request.user
+            coupon.copied_at = copied_at
+            coupon.save(update_fields=['used_by', 'copied_by', 'copied_at'])
+
+    codes = [coupon.coupon_code for coupon in coupons]
+    return JsonResponse({
+        'success': True,
+        'coupon_codes': codes,
+        'copy_text': ',\n'.join(codes),
+        'message': f'{len(codes)} coupons copied and reserved successfully.',
+    })
+
 @login_required(login_url='accounts:login')
 @require_POST
 def reserve_coupon(request, pk):

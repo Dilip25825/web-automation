@@ -544,10 +544,18 @@
         @keyframes appModalFade { from { opacity: 0; } to { opacity: 1; } }
         .swal2-popup.activation-swal-popup,.swal2-popup.erp-activation-swal-popup { animation: appModalIn .24s ease-out both; }
         .farmer-form-modal.is-open,.erp-form-modal.is-open { animation: appModalFade .2s ease-out both; }
-        .farmer-form-dialog,.erp-form-dialog { animation: appModalIn .24s ease-out both; }    </style
+        .farmer-form-dialog,.erp-form-dialog { animation: appModalIn .24s ease-out both; }    </style>
 </head>
 
 <body class="min-h-screen font-sans antialiased">
+    <div id="global-loading-overlay" class="fixed inset-0 z-[30000] hidden items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-hidden="true">
+        <div class="flex min-w-60 flex-col items-center rounded-2xl border border-white/30 bg-white px-8 py-7 text-center shadow-2xl">
+            <span class="h-12 w-12 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></span>
+            <p id="global-loading-text" class="mt-4 font-extrabold text-slate-800">Loading...</p>
+            <p class="mt-1 text-xs text-slate-500">Please wait</p>
+        </div>
+    </div>
+
     <nav class="sticky top-0 z-40 border-b border-indigo-100/80 bg-white/90 shadow-[0_6px_24px_rgba(79,70,229,0.08)] backdrop-blur-xl">
         <div class="mx-auto flex min-h-[4.5rem] max-w-[1920px] items-center gap-5 px-4 sm:px-6">
             <a class="flex shrink-0 items-center gap-2.5 text-lg font-extrabold text-slate-900 sm:text-xl" href="{% url 'core:home' %}">
@@ -770,6 +778,96 @@
         {% endfor %}
     {% endif %}
 
+    </script>
+    <script>
+    (() => {
+        const overlay = document.getElementById('global-loading-overlay');
+        const label = document.getElementById('global-loading-text');
+        let showTimer = null;
+        let skipUnloadUntil = 0;
+
+        const hide = () => {
+            clearTimeout(showTimer);
+            showTimer = null;
+            if (!overlay) return;
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            overlay.setAttribute('aria-hidden', 'true');
+        };
+
+        const show = (text = 'Loading...', delay = 120) => {
+            if (!overlay) return;
+            clearTimeout(showTimer);
+            if (label) label.textContent = text;
+            showTimer = setTimeout(() => {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                overlay.setAttribute('aria-hidden', 'false');
+            }, delay);
+        };
+
+        const ajaxManagedForm = form => form.matches([
+            '[data-khata-ajax-form]',
+            '[data-khata-nav-form]',
+            '[data-reminder-ajax-form]',
+            '[data-download-ajax-form]',
+            '[data-userinfo-ajax-form]',
+            '[data-erp-ajax-form]',
+            '#userinfo-search-form',
+            '#erp-search-form',
+            '#coupon-form',
+            '#coupon-bulk-form',
+            '#coupon-search'
+        ].join(','));
+
+        const excludedLink = link => {
+            if (!link || link.hasAttribute('data-no-loader') || link.hasAttribute('download')) return true;
+            if (link.target && link.target.toLowerCase() === '_blank') return true;
+            const raw = link.getAttribute('href') || '';
+            if (!raw || raw.startsWith('#') || /^(javascript:|mailto:|tel:|upi:)/i.test(raw)) return true;
+            if (link.matches('[data-bs-toggle="modal"],[data-modal-open],[data-reminder-filter],[data-userinfo-reset],[data-erp-reset],.coupon-pagination a,#coupon-reset')) return true;
+            let url;
+            try { url = new URL(link.href, window.location.href); } catch (_) { return true; }
+            if (url.origin !== window.location.origin) return true;
+            return url.searchParams.has('export') ||
+                /\/(download|download-pdf|attachment)(\/|$)/i.test(url.pathname);
+        };
+
+        window.AppLoader = { show, hide };
+
+        document.addEventListener('submit', event => {
+            const form = event.target.closest('form');
+            if (!form) return;
+            queueMicrotask(() => {
+                if (event.defaultPrevented || ajaxManagedForm(form) || form.hasAttribute('data-no-loader')) return;
+                const method = (form.method || 'get').toUpperCase();
+                show(form.dataset.loadingText || (method === 'GET' ? 'Loading results...' : 'Saving changes...'));
+            });
+        });
+
+        document.addEventListener('click', event => {
+            const link = event.target.closest('a[href]');
+            if (!link) return;
+            queueMicrotask(() => {
+                if (event.defaultPrevented) return;
+                if (excludedLink(link)) {
+                    let url;
+                    try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+                    if (url.searchParams.has('export') || /\/(download-pdf|attachment)(\/|$)/i.test(url.pathname)) {
+                        skipUnloadUntil = Date.now() + 5000;
+                    }
+                    return;
+                }
+                show(link.dataset.loadingText || 'Opening page...');
+            });
+        });
+
+        window.addEventListener('beforeunload', () => { if (Date.now() >= skipUnloadUntil) show('Loading...', 0); });
+        window.addEventListener('pageshow', hide);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') hide();
+        });
+    })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>
