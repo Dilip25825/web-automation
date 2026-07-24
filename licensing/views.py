@@ -59,8 +59,6 @@ def userinfo_dashboard(request):
                 search_filter |= models.Q(mobile=numeric_query) | models.Q(operator_mobile=numeric_query)
             clients = clients.filter(search_filter).distinct()
 
-        clients = Paginator(clients.order_by('-id'), 10).get_page(request.GET.get('page'))
-
         current_month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         requested_month = request.GET.get('report_month', '').strip()
         month_start = current_month_start
@@ -80,6 +78,15 @@ def userinfo_dashboard(request):
             previous_month = month_start.replace(year=month_start.year - 1, month=12)
         else:
             previous_month = month_start.replace(month=month_start.month - 1)
+        report_user = request.GET.get('report_user', '').strip() if request.user.is_superuser else ''
+        if report_user:
+            clients = clients.filter(
+                accepte_by__iexact=report_user,
+                activation_date__gte=month_start,
+                activation_date__lt=next_month,
+            )
+        clients = Paginator(clients.order_by('-id'), 10).get_page(request.GET.get('page'))
+
         monthly_records = UserInfoData.objects.filter(
             is_active=1,
             activation_date__gte=month_start,
@@ -108,6 +115,7 @@ def userinfo_dashboard(request):
         report_month_value = timezone.localdate().strftime('%Y-%m')
         previous_month_value = ''
         next_month_value = ''
+        report_user = ''
 
     context = {
         'clients': clients,
@@ -121,6 +129,7 @@ def userinfo_dashboard(request):
         'report_month_value': report_month_value,
         'previous_month_value': previous_month_value,
         'next_month_value': next_month_value,
+        'report_user': report_user,
     }
     return render(request, 'licensing/userinfo_dashboard.html', context)
 @login_required(login_url='accounts:login')
