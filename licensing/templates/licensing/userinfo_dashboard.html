@@ -129,7 +129,36 @@
     .farmer-field label { display:block; color:#334155; font-size:.78rem; font-weight:800; margin-bottom:.3rem; text-transform:uppercase; }
     .farmer-field input, .farmer-field select, .farmer-field textarea { width:100% !important; box-sizing:border-box; background:#fff !important; color:#172033 !important; border:1px solid #cbd5e1 !important; }
     .farmer-form-footer { display:flex; justify-content:flex-end; gap:.6rem; padding:1rem 1.35rem; border-top:1px solid #e2e8f0; background:#f8fafc; }
-    @media (max-width:640px) { .farmer-form-body { grid-template-columns:1fr; max-height:70vh; } .farmer-form-modal { padding:.4rem; } .farmer-form-dialog { margin:.2rem auto; } }</style>
+    @media (max-width:640px) { .farmer-form-body { grid-template-columns:1fr; max-height:70vh; } .farmer-form-modal { padding:.4rem; } .farmer-form-dialog { margin:.2rem auto; } }
+    /* Unified professional modal theme */
+    .farmer-form-modal,.userinfo-activation-modal,.userinfo-detail-modal{background:rgba(15,23,42,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);padding:clamp(.55rem,2vw,1.5rem)}
+    .farmer-form-modal.is-open,.userinfo-activation-modal.is-open,.userinfo-detail-modal.is-open{align-items:center;animation:appModalIn .2s ease-out both}
+    .farmer-form-dialog,.userinfo-activation-dialog,.userinfo-detail-dialog{border:1px solid rgba(255,255,255,.7);border-radius:1.25rem;box-shadow:0 30px 90px rgba(15,23,42,.38);display:flex;flex-direction:column;margin:auto;max-height:calc(100vh - 2rem)}
+    .farmer-form-header,.userinfo-activation-header,.userinfo-detail-header{background:linear-gradient(135deg,#111827 0%,#4338ca 54%,#7c3aed 100%);isolation:isolate;overflow:hidden;padding:1.15rem 1.4rem;position:relative}
+    .farmer-form-header:after,.userinfo-activation-header:after,.userinfo-detail-header:after{background:rgba(255,255,255,.09);border-radius:999px;content:'';height:10rem;position:absolute;right:-3rem;top:-6rem;width:10rem;z-index:-1}
+    .farmer-form-header h3,.userinfo-activation-header h3,.userinfo-detail-header h3{color:#fff;font-size:1.18rem;letter-spacing:-.015em}
+    .farmer-form-header p,.userinfo-activation-header p,.userinfo-detail-header p{color:#e0e7ff;font-size:.8rem}
+    .userinfo-modal-eyebrow{color:#c4b5fd;display:block;font-size:.62rem;font-weight:850;letter-spacing:.15em;margin-bottom:.28rem}
+    .farmer-form-close,.userinfo-activation-close,.userinfo-detail-header .userinfo-detail-close{align-items:center;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:.65rem;color:#fff;cursor:pointer;display:flex;flex:0 0 2.25rem;font-size:1.5rem;height:2.25rem;justify-content:center;line-height:1;position:relative;transition:.16s ease;z-index:2}
+    .farmer-form-close:hover,.userinfo-activation-close:hover,.userinfo-detail-header .userinfo-detail-close:hover{background:#fff;color:#4338ca;transform:rotate(4deg)}
+    .userinfo-activation-header{align-items:center;display:flex;justify-content:space-between}
+    .farmer-form-body{background:#f8fafc;gap:.8rem;padding:1.1rem;scrollbar-color:#c7d2fe transparent}
+    .farmer-field{background:#fff;border:1px solid #e2e8f0;border-radius:.8rem;padding:.72rem .78rem;transition:border-color .16s ease,box-shadow .16s ease}
+    .farmer-field:focus-within{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+    .farmer-field label{color:#475569;font-size:.69rem;letter-spacing:.055em;margin-bottom:.4rem}
+    .farmer-field input,.farmer-field select,.farmer-field textarea,.userinfo-activation-fields input{border:1px solid #cbd5e1!important;border-radius:.62rem!important;box-shadow:none!important;min-height:2.25rem;padding:.44rem .65rem!important;transition:border-color .16s ease,box-shadow .16s ease}
+    .farmer-field input:focus,.farmer-field select:focus,.farmer-field textarea:focus,.userinfo-activation-fields input:focus{border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.14)!important;outline:0}
+    .userinfo-activation-details,.userinfo-detail-grid{background:#f8fafc}
+    .userinfo-activation-detail,.userinfo-detail-item{background:#fff;border-color:#e2e8f0;border-radius:.8rem;box-shadow:0 1px 2px rgba(15,23,42,.03);padding:.78rem .85rem}
+    .userinfo-activation-detail{border-left:3px solid #6366f1}
+    .userinfo-activation-fields{background:#fff;padding:.4rem 1.35rem 1.15rem}
+    .farmer-form-footer,.userinfo-activation-footer,.userinfo-detail-footer{background:#fff;border-top:1px solid #e2e8f0;box-shadow:0 -8px 24px rgba(15,23,42,.035);flex-shrink:0;padding:.9rem 1.25rem}
+    .farmer-form-footer button,.userinfo-activation-footer button,.userinfo-detail-footer button{align-items:center;border-radius:.68rem!important;display:inline-flex;font-size:.8rem;font-weight:800;justify-content:center;min-height:2.55rem;padding:.58rem 1rem!important}
+    .farmer-form-footer .btn-primary,.userinfo-activation-footer button[type=submit]{background:linear-gradient(135deg,#4f46e5,#7c3aed)!important;border:0!important;box-shadow:0 8px 18px rgba(79,70,229,.22);color:#fff!important}
+    .userinfo-detail-grid{overflow-y:auto}
+    @media(max-width:640px){.farmer-form-modal,.userinfo-activation-modal,.userinfo-detail-modal{padding:.35rem}.farmer-form-dialog,.userinfo-activation-dialog,.userinfo-detail-dialog{border-radius:1rem;max-height:calc(100vh - .7rem)}.farmer-form-header,.userinfo-activation-header,.userinfo-detail-header{padding:.9rem 1rem}.farmer-form-body{gap:.65rem;padding:.75rem}.farmer-field{padding:.65rem}.userinfo-activation-details{gap:.55rem;padding:.8rem}.userinfo-activation-fields{padding:.25rem .9rem .9rem}.farmer-form-footer,.userinfo-activation-footer,.userinfo-detail-footer{padding:.72rem .85rem}.farmer-form-footer button,.userinfo-activation-footer button{flex:1}.userinfo-detail-grid{padding:.75rem}}
+    .farmer-section-divider{align-items:center;color:#4338ca;display:flex;font-size:.72rem;font-weight:850;gap:.5rem;grid-column:1/-1;letter-spacing:.08em;margin:.2rem 0 -.1rem;padding:.55rem .15rem .2rem;text-transform:uppercase}.farmer-section-divider:after{background:#c7d2fe;content:'';height:1px;flex:1}.farmer-field select{min-height:2.25rem!important;padding:.4rem .65rem!important}
+</style>
 <div class="mx-auto max-w-[96rem] space-y-6 px-4 py-6 sm:px-6 lg:px-8">
 
     <div class="app-card overflow-hidden">
@@ -232,6 +261,7 @@
                         {% csrf_token %}
                         <div class="farmer-form-body">
                             {% for field in farmer_form %}
+                            {% if field.name == 'razorpay_payment_link_id' %}<div class="farmer-section-divider"><i class="fas fa-credit-card"></i><span>Razorpay Payment Details</span></div>{% endif %}
                             <div class="farmer-field">
                                 <label for="modal_{{ field.name }}">{{ field.label }}</label>
                                 <div id="modal_{{ field.name }}_wrapper">{{ field }}</div>
@@ -248,7 +278,7 @@
             </div>
             <div id="userinfo-activation-modal" class="userinfo-activation-modal" aria-hidden="true">
                 <div class="userinfo-activation-dialog">
-                    <div class="userinfo-activation-header"><h3><i class="fas fa-rocket me-2"></i>Activate PACS</h3><p id="userinfo-activation-name"></p></div>
+                    <div class="userinfo-activation-header"><div><span class="userinfo-modal-eyebrow">SECURE ACTIVATION</span><h3><i class="fas fa-rocket me-2"></i>Activate PACS</h3><p id="userinfo-activation-name"></p></div><button type="button" class="userinfo-activation-close" aria-label="Close">&times;</button></div>
                     <div class="userinfo-activation-details">
                         <div class="userinfo-activation-detail"><span>PACS ID</span><strong id="userinfo-activation-id">-</strong></div>
                         <div class="userinfo-activation-detail"><span>Mobile</span><strong id="userinfo-activation-mobile">-</strong></div>
@@ -650,7 +680,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmerForm = document.getElementById('farmer-modal-form');
     const farmerTitle = document.getElementById('farmer-form-title');
     const farmerSubmit = document.getElementById('farmer-form-submit');
-    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status','for_whys','f_year','is_pri','limit_of_entrys','accepte_by'];
+    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','for_whys','f_year','is_pri','limit_of_entrys','accepte_by','razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'];
+    const purposeField = document.getElementById('id_for_whys');
+    const financialYearField = document.getElementById('id_f_year');
+    let purposeYears = {};
+    try { purposeYears = JSON.parse(financialYearField?.dataset.purposeYears || '{}'); } catch (error) { purposeYears = {}; }
+    function syncPriorityFromYear(financialYear) {
+        const priorityField = document.getElementById('id_is_pri');
+        if (!priorityField) return;
+        const value = String(financialYear || '').toUpperCase();
+        priorityField.value = value.includes('ISSCLAIM') ? 3 : value.includes('ROLLOVER') ? 4 : 1;
+    }
+    function syncFinancialYears(purpose, selectedYear) {
+        if (!financialYearField) return;
+        const years = purposeYears[purpose] || [];
+        financialYearField.innerHTML = '';
+        financialYearField.add(new Option('-- Select Financial Year --', ''));
+        years.forEach(function (year) { financialYearField.add(new Option(year, year)); });
+        if (selectedYear && !years.includes(selectedYear)) financialYearField.add(new Option(selectedYear, selectedYear));
+        financialYearField.value = selectedYear || '';
+        syncPriorityFromYear(selectedYear);
+    }
+    if (purposeField) purposeField.addEventListener('change', function () { syncFinancialYears(this.value, ''); });
+    if (financialYearField) financialYearField.addEventListener('change', function () { syncPriorityFromYear(this.value); });
     function openFarmerModal(client, copyRecord) {
         const isUpdate = !!client && !copyRecord;
         const isCopy = !!client && !!copyRecord;
@@ -660,9 +712,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (client) {
             const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, razorpay_payment_link_id: client.dataset.razorpayLinkId, razorpay_payment_id: client.dataset.razorpayPaymentId, razorpay_reference_id: client.dataset.razorpayReferenceId, razorpay_payment_status: client.dataset.razorpayStatus, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = values[name] || ''; });
+            syncFinancialYears(values.for_whys, values.f_year);
             if (isCopy) { const mobile = document.getElementById('id_mobile'); if (mobile) mobile.value = ''; ['razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'].forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; }); }
         } else {
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; });
+            syncFinancialYears('', '');
         }
         farmerModal.classList.add('is-open'); farmerModal.setAttribute('aria-hidden', 'false');
     }    document.getElementById('open-add-farmer').addEventListener('click', function () { openFarmerModal(null); });
@@ -682,6 +736,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const userinfoActivationModal = document.getElementById('userinfo-activation-modal');
     const closeUserinfoActivation = function () { userinfoActivationModal.classList.remove('is-open'); userinfoActivationModal.setAttribute('aria-hidden','true'); };
     document.getElementById('userinfo-activation-cancel').addEventListener('click', closeUserinfoActivation);
+    userinfoActivationModal.querySelector('.userinfo-activation-close').addEventListener('click', closeUserinfoActivation);
     userinfoActivationModal.addEventListener('click', function (event) { if (event.target === userinfoActivationModal) closeUserinfoActivation(); });
     if (activateButton) activateButton.addEventListener('click', function () {
         const client = selectedClient(); if (!client) return;

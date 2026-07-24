@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404, get_object_or_404
 from django.contrib import messages
-from django.db import models
+from django.db import models, transaction
 from .models import UserInfoData
 from .models import tblPacsErp,tblUPI
 from datetime import datetime, timedelta
@@ -14,6 +14,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
 from django.db.models import Count, Sum
+from django.views.decorators.http import require_POST
 
 
 
@@ -177,135 +178,236 @@ def toggle_activation(request, pk):
 # =====================================================================
 
 
+def _erp_queryset_for_user(user):
+    queryset = tblPacsErp.objects.all()
+    if user.is_superuser:
+        return queryset
+    return queryset.filter(
+        models.Q(expiry_date__lt=timezone.localdate())
+        | models.Q(accepte_by__iexact=user.username)
+    ).exclude(erp_id__iendswith=' Expired')
+
+
 @login_required(login_url='accounts:login')
 def pacserp_dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('accounts:login')
-        
-    if not request.user.is_superuser:
-        messages.error(request, "Only Admin can open ERP.")  # ⚠️ यहाँ 'e' हटाया
-        return redirect('core:dashboard')  # Redirect to named main hub route
     search_query = request.GET.get('search_id', '').strip()
     partial_results = request.GET.get('partial') == '1'
-    erp_form = None if partial_results else PacsErpForm()
-    erp_records = []
-    
-    # ON ERROR HANDLING: Database execution safe rakhne ke liye try-except block
+
     try:
+        erp_records = _erp_queryset_for_user(request.user)
         if search_query:
-            # DUPLICATE & SEARCH LOGIC FIX: 
-            # 1. Hamare variables lowercase me TblPacsErp ke fields se match hone chahiye (pacs_name, system_id, operator_mobile)
-            # 2. Agar user numeric search kar rha hai, to hi use operator_mobile par chalayein taaki SQL crash na ho.
-            
             if search_query.isdigit():
-                # Agar sirf numbers hain, toh operator_mobile, pacs_name aur system_id teeno me dhoondhein
-                erp_records = tblPacsErp.objects.filter(
-                    models.Q(operator_mobile=int(search_query))
-                )
+                erp_records = erp_records.filter(operator_mobile=int(search_query))
             else:
-                # Agar user string type kar rha hai, toh check sirf string variables par hoga taaki Numeric Field block crash na ho
-                erp_records = tblPacsErp.objects.filter(
-                    models.Q(pacs_name__icontains=search_query) |
-                    models.Q(erp_id__icontains=search_query) |
-                    models.Q(remark__icontains=search_query) |
-                    models.Q(system_id__icontains=search_query)
+                erp_records = erp_records.filter(
+                    models.Q(pacs_name__icontains=search_query)
+                    | models.Q(erp_id__icontains=search_query)
+                    | models.Q(remark__icontains=search_query)
+                    | models.Q(system_id__icontains=search_query)
                 )
-        else:
-            # DEFAULT STATE: Latests 10 entries clean tarike se pull karein
-            erp_records = tblPacsErp.objects.all().order_by('-id')
-            
-    except Exception as e:
-        messages.error(request, f"NCL Database Fetch Error: {str(e)}")
+        current_month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        requested_month = request.GET.get('report_month', '').strip()
+        month_start = current_month_start
+        if requested_month:
+            try:
+                parsed_month = datetime.strptime(requested_month, '%Y-%m')
+                month_start = timezone.make_aware(parsed_month, timezone.get_current_timezone())
+                if month_start > current_month_start:
+                    month_start = current_month_start
+            except ValueError:
+                month_start = current_month_start
+        next_month = (
+            month_start.replace(year=month_start.year + 1, month=1)
+            if month_start.month == 12
+            else month_start.replace(month=month_start.month + 1)
+        )
+        previous_month = (
+            month_start.replace(year=month_start.year - 1, month=12)
+            if month_start.month == 1
+            else month_start.replace(month=month_start.month - 1)
+        )
+        report_user = request.GET.get('report_user', '').strip() if request.user.is_superuser else ''
+        if report_user:
+            erp_records = erp_records.filter(
+                accepte_by__iexact=report_user,
+                activation_date__gte=month_start,
+                activation_date__lt=next_month,
+            )
+        erp_records = Paginator(erp_records.order_by('-id'), 10).get_page(request.GET.get('page'))
+
+        monthly_records = tblPacsErp.objects.filter(
+            is_active=1,
+            activation_date__gte=month_start,
+            activation_date__lt=next_month,
+        ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
+        if not request.user.is_superuser:
+            monthly_records = monthly_records.none()
+        monthly_activation_report = list(
+            monthly_records.values('accepte_by')
+            .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
+            .order_by('-activation_count', 'accepte_by')
+        )
+        monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
+        monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
+        report_month = month_start.strftime('%B %Y')
+        report_month_value = month_start.strftime('%Y-%m')
+        previous_month_value = previous_month.strftime('%Y-%m')
+        next_month_value = next_month.strftime('%Y-%m') if next_month <= current_month_start else ''
+    except Exception as error:
+        messages.error(request, f'NCL Database Fetch Error: {error}')
         erp_records = []
-        
-    paginator = Paginator(erp_records.order_by('-id') if hasattr(erp_records, 'order_by') else erp_records, 10)
-    page_number = request.GET.get('page', 1)
-    try:
-        erp_records = paginator.page(page_number)
-    except (PageNotAnInteger, EmptyPage):
-        erp_records = paginator.page(1)
+        monthly_activation_report = []
+        monthly_activation_count = 0
+        monthly_payment_total = 0
+        report_month = timezone.localdate().strftime('%B %Y')
+        report_month_value = timezone.localdate().strftime('%Y-%m')
+        previous_month_value = ''
+        next_month_value = ''
+        report_user = ''
 
     return render(request, 'licensing/pacserp_dashboard.html', {
-        'erp_records': erp_records, 
+        'erp_records': erp_records,
         'search_query': search_query,
-        'erp_form': erp_form,
+        'erp_form': None if (partial_results or not request.user.is_superuser) else PacsErpForm(),
         'partial_results': partial_results,
+        'monthly_activation_report': monthly_activation_report,
+        'monthly_activation_count': monthly_activation_count,
+        'monthly_payment_total': monthly_payment_total,
+        'report_month': report_month,
+        'report_month_value': report_month_value,
+        'previous_month_value': previous_month_value,
+        'next_month_value': next_month_value,
+        'report_user': report_user,
     })
 
-
 @login_required(login_url='accounts:login')
+@require_POST
 @userinfo_ajax_action
 def toggle_erp_activation(request, pk):
-    """
-    NCL ERP ACTIVATION LOGIC: Modal form se expiry_date capture karke update aur save karega.
-    """
-    # ON ERROR HANDLING: Database workflow ko safe rakhne ke liye try-except block
+    current_search = request.GET.get('search_id', '').strip()
+    action = request.POST.get('action', 'activate').strip().lower()
     try:
-        record = get_object_or_404(tblPacsErp, pk=pk)
-        current_search = request.GET.get('search_id', '').strip()
-        
-        # 1. ACTIVATE / UPDATE FLOW (POST Request)
-        if request.method == 'POST':
-            input_amount = request.POST.get('amount', '0').strip()
-            input_utr_number = request.POST.get('utr_number', '').strip()
-            input_expiry_date = request.POST.get('expiry_date', '').strip()  # <-- Form se value li
+        if action not in {'activate', 'deactivate'}:
+            raise ValueError('Invalid ERP action.')
+        if action == 'deactivate' and not request.user.is_superuser:
+            messages.error(request, 'Only superuser can deactivate ERP records.')
+            return redirect('licensing:pacserp_dashboard')
 
-            input_remark = request.POST.get('remark', '').strip() 
+        allowed_records = _erp_queryset_for_user(request.user)
+        record = get_object_or_404(allowed_records, pk=pk)
 
-            if ((datetime.strptime(input_expiry_date, "%Y-%m-%d").date()) - date.today()) > timedelta(days=364):
-                messages.error(request, "Date 1 Year Se Jyada Nahi ho sakti hai.")
-                return redirect('licensing:pacserp_dashboard')
-            
-            if not input_amount.isdigit() or not input_amount:
-                input_amount = 0
-                
-            logged_in_user = request.user.username if request.user.is_authenticated else "System"
-            
-            # Standard assignments
-            record.amount = int(input_amount)
-            record.payment_status = int(input_amount)
-            record.utr_number = input_utr_number
-            record.remark = f"Activated by {logged_in_user}. {input_remark}".strip()
-            record.is_active = 1
-            
-            # ON ERROR HANDLING & VALIDATION: Blank string check aur safe date parsing
-            if input_expiry_date:  # Agar date field me value hai (khali nahi hai)
-                try:
-                    # String date को Django object formatting ke mutabik convert kiya
-                    record.expiry_date = datetime.strptime(input_expiry_date, "%Y-%m-%d").date()
-
-                except (ValueError, TypeError):
-                    # Agar user ne galat format dala to safe exit ke liye validation error handle kiya
-                    messages.error(request, "Date ka format sahi nahi hai. Kripya YYYY-MM-DD format use karein.")
-                    return redirect('licensing:pacserp_dashboard')
-            else:
-                # DUPLICATE CHECK / SAFE EXIT: Agar user ne form me date chhod di hai, to use None (NULL) set karein
-                record.expiry_date = None
-
-            record.save()  # <-- Ab database save perfectly execute hoga bina crash kiye
-            messages.success(request, f"ERP Pacs ID {record.erp_id} Activated/Updated successfully!")
-            
-        # 2. DEACTIVATE FLOW (GET Request)
-        else:
+        if action == 'deactivate':
             record.payment_status = 4000
             record.amount = 0
             record.is_active = 0
-            record.expiry_date = (record.expiry_date - timedelta(days=365)) if record.expiry_date else (date.today() - timedelta(days=1))
-                
-            # Note: Deactivate par custom logic ke mutabik expiry_date ko change nahi kiya hai taaki purana record safe rahe.
+            record.accepte_by = ''
+            record.expiry_date = (
+                record.expiry_date - timedelta(days=365)
+                if record.expiry_date
+                else timezone.localdate() - timedelta(days=1)
+            )
             record.save()
-            messages.warning(request, f"ERP Pacs ID {record.erp_id} Deactivated successfully!")
-            
-    except Exception as e:
-        messages.error(request, f"ERP Status & Date Update Failed: {str(e)}")
+            messages.warning(request, f'ERP Pacs ID {record.erp_id} Deactivated successfully!')
+        else:
+            input_amount = request.POST.get('amount', '0').strip()
+            input_utr_number = request.POST.get('utr_number', '').strip()
+            input_remark = request.POST.get('remark', '').strip()
+            if not input_amount.isdigit():
+                input_amount = '0'
+            activation_amount = int(input_amount)
+
+            if not request.user.is_superuser:
+                if activation_amount <= 0:
+                    raise ValueError('Activation amount zero se bada hona chahiye.')
+                if not input_utr_number:
+                    raise ValueError('UTR / Transaction Number required hai.')
+                duplicate_utr = tblPacsErp.objects.filter(
+                    utr_number__iexact=input_utr_number
+                ).exists()
+                if duplicate_utr:
+                    raise ValueError('Ye UTR / Transaction Number pehle use ho chuka hai.')
+                currently_active = (
+                    int(record.is_active or 0) == 1
+                    and record.expiry_date
+                    and record.expiry_date >= timezone.localdate()
+                )
+                if currently_active:
+                    raise ValueError('Active ERP record ko non-superuser renew nahi kar sakta.')
+
+            logged_in_user = request.user.username
+            activation_time = timezone.now()
+            activation_day = timezone.localdate()
+            try:
+                expiry_date = activation_day.replace(year=activation_day.year + 1)
+            except ValueError:
+                expiry_date = activation_day.replace(year=activation_day.year + 1, day=28)
+
+            with transaction.atomic():
+                locked_records = _erp_queryset_for_user(request.user).select_for_update()
+                record = locked_records.get(pk=pk)
+                old_amount = int(record.amount or 0)
+                old_payment_status = int(record.payment_status or 0)
+                create_renewal_copy = (
+                    old_amount > 0
+                    and old_payment_status > 0
+                    and old_amount == old_payment_status
+                )
+
+                if create_renewal_copy:
+                    original_erp_id = (record.erp_id or '').strip()
+                    if not original_erp_id:
+                        raise ValueError('Blank ERP ID ko renew nahi kiya ja sakta.')
+                    if original_erp_id.lower().endswith(' expired'):
+                        raise ValueError('Expired ERP history record ko dobara activate nahi kiya ja sakta.')
+
+                    record.erp_id = f'{original_erp_id} Expired'
+                    record.is_active = 0
+                    record.save(update_fields=['erp_id', 'is_active'])
+                    source_record = record
+                    record = tblPacsErp.objects.create(
+                        amount=activation_amount,
+                        brach=source_record.brach,
+                        dist=source_record.dist,
+                        erp_id=original_erp_id,
+                        expiry_date=expiry_date,
+                        is_active=1,
+                        last_login=source_record.last_login,
+                        operator_mobile=source_record.operator_mobile,
+                        pacs_name=source_record.pacs_name,
+                        payment_status=activation_amount,
+                        remark=f'Activated by {logged_in_user}. {input_remark}'.strip(),
+                        state=source_record.state,
+                        system_id=source_record.system_id,
+                        utr_number=input_utr_number,
+                        version_info=source_record.version_info,
+                        accepte_by=logged_in_user,
+                        activation_date=activation_time,
+                        razorpay_payment_link_id=None,
+                        razorpay_payment_id=None,
+                        razorpay_reference_id=None,
+                        razorpay_payment_status=None,
+                    )
+                    success_message = f'ERP ID {original_erp_id} renewed successfully; old record Expired history me safe hai.'
+                else:
+                    record.amount = activation_amount
+                    record.payment_status = activation_amount
+                    record.utr_number = input_utr_number
+                    record.remark = f'Activated by {logged_in_user}. {input_remark}'.strip()
+                    record.is_active = 1
+                    record.accepte_by = logged_in_user
+                    record.activation_date = activation_time
+                    record.expiry_date = expiry_date
+                    record.save()
+                    success_message = f'ERP Pacs ID {record.erp_id} Activated successfully!'
+
+            messages.success(request, success_message)
+    except Exception as error:
+        messages.error(request, f'ERP Status Update Failed: {error}')
         return redirect('licensing:pacserp_dashboard')
-        
-    # Redirect routing logic to retain the search state
+
     if current_search:
-        return redirect(f"/licensing/pacserp/?search_id={current_search}")
+        return redirect(f'/licensing/pacserp/?search_id={current_search}')
     return redirect('licensing:pacserp_dashboard')
-
-
 
 @login_required
 def generate_invoice(request, pk):
@@ -333,7 +435,7 @@ def generate_erp_invoice(request, pk):
     """
     # ON ERROR HANDLING: Safe database lookup pattern
     try:
-        record = get_object_or_404(tblPacsErp, pk=pk)
+        record = get_object_or_404(_erp_queryset_for_user(request.user), pk=pk)
         
         # Call explicit separate engine file logic
         pdf_buffer = generate_erp_invoice_pdf(request, record)
@@ -417,6 +519,9 @@ def create_userinfo(request):
 @login_required
 @userinfo_ajax_action
 def create_pacserp(request):
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superuser can add ERP records.')
+        return redirect('licensing:pacserp_dashboard')
     """
     Form view to insert new records into TblPacsErp table.
     ON ERROR HANDLING: Default isActive=1 force inject kiya hai save karne se pehle.
@@ -439,6 +544,8 @@ def create_pacserp(request):
                 # FORCE INJECT VALUES: database model class names ke mutabik isActive ko 1 kiya
                 new_record.is_active = 1  # <-- Ye line automatic default 1 set karegi
                 new_record.last_login = timezone.now()
+                new_record.accepte_by = request.user.username
+                new_record.activation_date = timezone.now()
                 
                 # Final database save layer
                 new_record.save()
@@ -457,6 +564,7 @@ def create_pacserp(request):
 
 
 @login_required
+@require_POST
 @userinfo_ajax_action
 def delete_record_view(request, record_id):
     """
@@ -560,6 +668,9 @@ def update_userinfo_view(request, client_id):
 @login_required
 @userinfo_ajax_action
 def update_pacserp_view(request, record_id):
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superuser can update ERP records.')
+        return redirect('licensing:pacserp_dashboard')
     """
     TblPacsErp master record ko safe update karne ka backend view.
     On Error Goto/Try-Except aur Duplicate check logic pehle se implemented hai.

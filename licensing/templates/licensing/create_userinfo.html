@@ -30,12 +30,24 @@
     </div>
 </div>
 <script>
-document.getElementById('id_f_year')?.addEventListener('blur', function () {
-    let value = this.value.trim();
-    value = value.replace(/\s+R$/i, ' ROLLOVER').replace(/\s+[IP]$/i, ' ISSClaim');
-    this.value = value;
+const purposeField = document.getElementById('id_for_whys');
+const financialYearField = document.getElementById('id_f_year');
+let purposeYears = {};
+try { purposeYears = JSON.parse(financialYearField?.dataset.purposeYears || '{}'); } catch (error) { purposeYears = {}; }
+function syncFinancialYears(purpose, selectedYear) {
+    if (!financialYearField) return;
+    const years = purposeYears[purpose] || [];
+    financialYearField.innerHTML = '';
+    financialYearField.add(new Option('-- Select Financial Year --', ''));
+    years.forEach(year => financialYearField.add(new Option(year, year)));
+    if (selectedYear && !years.includes(selectedYear)) financialYearField.add(new Option(selectedYear, selectedYear));
+    financialYearField.value = selectedYear || '';
+}
+purposeField?.addEventListener('change', function () { syncFinancialYears(this.value, ''); });
+financialYearField?.addEventListener('change', function () {
+    const value = String(this.value || '').toUpperCase();
     const priority = document.getElementById('id_is_pri');
-    if (priority) priority.value = value.includes('ISSClaim') ? 3 : value.includes('ROLLOVER') ? 4 : 1;
+    if (priority) priority.value = value.includes('ISSCLAIM') ? 3 : value.includes('ROLLOVER') ? 4 : 1;
 });
 </script>
 {% endblock %}

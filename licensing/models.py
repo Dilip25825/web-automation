@@ -122,7 +122,12 @@ class tblPacsErp(models.Model):
     system_id = models.CharField(max_length=255, db_column='systemID', null=True, blank=True)
     utr_number = models.CharField(max_length=255, db_column='UtrNumber', null=True, blank=True)
     version_info = models.TextField(db_column='VersionInfo', null=True, blank=True)
-
+    accepte_by = models.TextField(db_column='AccepteBy', null=True, blank=True)
+    activation_date = models.DateTimeField(db_column='ActivationDate', null=True, blank=True)
+    razorpay_payment_link_id = models.CharField(max_length=50, db_column='RazorpayPaymentLinkID', unique=True, null=True, blank=True)
+    razorpay_payment_id = models.CharField(max_length=50, db_column='RazorpayPaymentID', unique=True, null=True, blank=True)
+    razorpay_reference_id = models.CharField(max_length=40, db_column='RazorpayReferenceID', unique=True, null=True, blank=True)
+    razorpay_payment_status = models.CharField(max_length=20, db_column='RazorpayPaymentStatus', null=True, blank=True)
     @property
     def hero_pacs_name(self):
         """Use the PACS name segment after the first slash for compact display."""
