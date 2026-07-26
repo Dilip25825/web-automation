@@ -107,6 +107,7 @@ class tblPacsErp(models.Model):
     # ON ERROR FIX: Explicit unique fields mapping for NCL PacsErp table
     id = models.AutoField(primary_key=True, db_column='ID')
     amount = models.IntegerField(db_column='Amount', default=0, null=True, blank=True)
+    current_amount = models.IntegerField(db_column='CurrentAmount', default=4500, null=True, blank=True)
     brach = models.CharField(max_length=255, db_column='Brach', null=True, blank=True)
     date_time = models.DateTimeField(db_column='Date_Time', auto_now_add=True, null=True, blank=True)
     dist = models.CharField(max_length=255, db_column='Dist', null=True, blank=True)

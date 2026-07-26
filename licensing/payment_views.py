@@ -6,6 +6,7 @@ from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
+from .erp_payment_services import create_erp_payment_link, get_erp_payment_status, process_erp_payment_link_paid, process_erp_payment_link_state
 from .models import UserInfoData
 from .payment_services import (PaymentError, create_razorpay_payment_link, find_payment_record, get_existing_payment_status, process_payment_link_paid, process_payment_link_state, record_from_token, verify_razorpay_webhook_signature)
 
@@ -61,6 +62,27 @@ def payment_create(request):
         return _error(error)
 
 
+@require_POST
+def erp_payment_create(request):
+    try:
+        body = _json_body(request)
+        record_id = str(body.get('record_id') or '').strip()
+        if not record_id or not record_id.isdigit():
+            raise PaymentError('Valid ERP database ID is required.', 'INVALID_ERP_RECORD_ID')
+        return JsonResponse(create_erp_payment_link(record_id=int(record_id)))
+    except PaymentError as error:
+        return _error(error)
+
+@require_GET
+def erp_payment_status(request):
+    try:
+        token = request.GET.get('token', '').strip()
+        if not token:
+            raise PaymentError('ERP payment token is required.', 'TOKEN_REQUIRED')
+        return JsonResponse(get_erp_payment_status(token))
+    except PaymentError as error:
+        return _error(error)
+
 @require_GET
 def payment_status(request):
     try:
@@ -85,10 +107,19 @@ def razorpay_webhook(request):
         link = ((payload.get('payload') or {}).get('payment_link') or {}).get('entity') or {}
         if event == 'payment_link.paid':
             payment = ((payload.get('payload') or {}).get('payment') or {}).get('entity') or {}
-            result = process_payment_link_paid(link, payment)
+            if str((link.get('notes') or {}).get('record_type') or '').lower() == 'pacs_erp':
+                result = process_erp_payment_link_paid(link, payment)
+                result['record_type'] = 'pacs_erp'
+            else:
+                result = process_payment_link_paid(link, payment)
+                result['record_type'] = 'userinfo'
             return JsonResponse({'success': True, 'processed': True, **result})
         if event in {'payment_link.expired', 'payment_link.cancelled'}:
-            process_payment_link_state(link, event.rsplit('.', 1)[-1])
+            state = event.rsplit('.', 1)[-1]
+            if str((link.get('notes') or {}).get('record_type') or '').lower() == 'pacs_erp':
+                process_erp_payment_link_state(link, state)
+            else:
+                process_payment_link_state(link, state)
         return JsonResponse({'success': True, 'processed': False})
     except PaymentError as error:
         return _error(error)

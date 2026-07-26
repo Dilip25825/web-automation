@@ -375,6 +375,7 @@ def toggle_erp_activation(request, pk):
                     source_record = record
                     record = tblPacsErp.objects.create(
                         amount=activation_amount,
+                        current_amount=3500,
                         brach=source_record.brach,
                         dist=source_record.dist,
                         erp_id=original_erp_id,
@@ -399,6 +400,7 @@ def toggle_erp_activation(request, pk):
                     success_message = f'ERP ID {original_erp_id} renewed successfully; old record Expired history me safe hai.'
                 else:
                     record.amount = activation_amount
+                    record.current_amount = 3500
                     record.payment_status = activation_amount
                     record.utr_number = input_utr_number
                     record.remark = f'Activated by {logged_in_user}. {input_remark}'.strip()
@@ -552,6 +554,7 @@ def create_pacserp(request):
                 
                 # FORCE INJECT VALUES: database model class names ke mutabik isActive ko 1 kiya
                 new_record.is_active = 1  # <-- Ye line automatic default 1 set karegi
+                new_record.current_amount = int(new_record.current_amount or 4500)
                 new_record.last_login = timezone.now()
                 new_record.accepte_by = request.user.username
                 new_record.activation_date = timezone.now()

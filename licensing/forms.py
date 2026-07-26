@@ -102,7 +102,15 @@ class PacsErpForm(forms.ModelForm):
     class Meta:
         model = tblPacsErp
         # PacsErpForm bilkul sahi hai, isey waisa hi rehne dein
-        fields = ['erp_id', 'pacs_name', 'brach', 'dist', 'state', 'operator_mobile', 'amount', 'payment_status', 'expiry_date', 'utr_number', 'accepte_by', 'activation_date', 'remark']
+        fields = ['erp_id', 'pacs_name', 'brach', 'dist', 'state', 'operator_mobile', 'amount', 'current_amount', 'payment_status', 'expiry_date', 'utr_number', 'accepte_by', 'activation_date', 'razorpay_payment_link_id', 'razorpay_payment_id', 'razorpay_reference_id', 'razorpay_payment_status', 'remark']
+
+        labels = {
+            'current_amount': 'Current Amount',
+            'razorpay_payment_link_id': 'Razorpay Payment Link ID',
+            'razorpay_payment_id': 'Razorpay Payment ID',
+            'razorpay_reference_id': 'Razorpay Reference ID',
+            'razorpay_payment_status': 'Razorpay Payment Status',
+        }
 
         widgets = {
             'erp_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
@@ -112,11 +120,16 @@ class PacsErpForm(forms.ModelForm):
             'state': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'operator_mobile': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'current_amount': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'min': '0'}),
             'payment_status': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'expiry_date': forms.DateInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'type': 'date'}),
             'utr_number': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'accepte_by': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'activation_date': forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'class': 'form-control bg-dark text-light border-secondary', 'type': 'datetime-local'}),
+            'razorpay_payment_link_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_payment_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_reference_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'razorpay_payment_status': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
 
             'remark': forms.Textarea(attrs={'class': 'form-control bg-dark text-light border-secondary', 'rows': 3}),
         }
@@ -124,3 +137,5 @@ class PacsErpForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['activation_date'].input_formats = ['%Y-%m-%dT%H:%M']
+        if not self.instance.pk:
+            self.fields['current_amount'].initial = 4500
