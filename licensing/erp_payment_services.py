@@ -1,4 +1,5 @@
 import secrets
+from datetime import timedelta
 
 from django.core import signing
 from django.db import transaction
@@ -180,9 +181,10 @@ def create_erp_payment_link(erp_id=None, record_id=None):
 def _expiry_one_year_from_today():
     today = timezone.localdate()
     try:
-        return today.replace(year=today.year + 1)
+        anniversary = today.replace(year=today.year + 1)
     except ValueError:
-        return today.replace(year=today.year + 1, day=28)
+        anniversary = today.replace(year=today.year + 1, day=28)
+    return anniversary - timedelta(days=1)
 
 
 def process_erp_payment_link_paid(link, payment):

@@ -350,6 +350,7 @@ def toggle_erp_activation(request, pk):
                 expiry_date = activation_day.replace(year=activation_day.year + 1)
             except ValueError:
                 expiry_date = activation_day.replace(year=activation_day.year + 1, day=28)
+            expiry_date -= timedelta(days=1)
 
             with transaction.atomic():
                 locked_records = _erp_queryset_for_user(request.user).select_for_update()
