@@ -14,6 +14,13 @@ def _is_fully_paid(record):
     amount = int(record.amount or 0)
     return amount > 0 and int(record.payment_status or 0) == amount
 
+def _is_currently_active(record):
+    return (
+        int(record.is_active or 0) == 1
+        and record.expiry_date is not None
+        and record.expiry_date >= timezone.localdate()
+    )
+
 
 def find_erp_payment_record(erp_id, for_update=False):
     erp_id = str(erp_id or '').strip()
@@ -45,13 +52,16 @@ def erp_record_from_token(token):
         raise PaymentError('ERP payment status token has expired.', 'TOKEN_EXPIRED', 401) from exc
     except signing.BadSignature as exc:
         raise PaymentError('Invalid ERP payment status token.', 'INVALID_TOKEN', 401) from exc
+    link_id = str(payload.get('link_id') or '').strip()
+    if link_id:
+        linked_record = tblPacsErp.objects.filter(razorpay_payment_link_id=link_id).first()
+        if linked_record is not None:
+            return linked_record
     try:
         record = tblPacsErp.objects.get(pk=payload['record_id'])
     except (tblPacsErp.DoesNotExist, KeyError, ValueError) as exc:
         raise PaymentError('ERP payment record was not found.', 'ERP_RECORD_NOT_FOUND', 404) from exc
-    if payload.get('erp_id') != (record.erp_id or ''):
-        raise PaymentError('ERP payment token no longer matches this record.', 'TOKEN_RECORD_MISMATCH', 409)
-    if payload.get('link_id') and payload['link_id'] != (record.razorpay_payment_link_id or ''):
+    if link_id and link_id != (record.razorpay_payment_link_id or ''):
         raise PaymentError('ERP payment token is no longer current.', 'STALE_TOKEN', 409)
     return record
 
@@ -76,11 +86,14 @@ def get_erp_payment_status(token):
         record.save(update_fields=['razorpay_payment_status'])
     return {'success': True, 'paid': False, 'status': (remote_status or record.razorpay_payment_status or 'created').upper(), 'erp_id': record.erp_id, 'record_id': record.pk, 'amount': int(record.current_amount or 4500) * 100}
 
-def _response(record, link=None, paid=False):
+def _response(record, link=None, paid=False, already_paid=False):
     return {
         'success': True,
         'paid': paid,
-        'already_paid': False,
+        'already_paid': already_paid,
+        'active': _is_currently_active(record),
+        'renewal_required': _is_fully_paid(record) and not _is_currently_active(record),
+        'expiry_date': record.expiry_date.isoformat() if record.expiry_date else None,
         'payment_url': None if paid else (link or {}).get('short_url'),
         'payment_token': None if paid else _erp_token(record),
         'amount': int(record.current_amount or 4500) * 100,
@@ -103,6 +116,8 @@ def create_erp_payment_link(erp_id=None, record_id=None):
                 raise PaymentError('Expired ERP history record cannot be activated.', 'ERP_HISTORY_RECORD', 409)
         else:
             record = find_erp_payment_record(erp_id, for_update=True)
+        if _is_fully_paid(record) and _is_currently_active(record):
+            return _response(record, paid=True, already_paid=True)
         amount_rupees = int(record.current_amount or (3500 if _is_fully_paid(record) else 4500))
         if amount_rupees <= 0:
             raise PaymentError('ERP payment amount is not configured.', 'INVALID_DATABASE_AMOUNT', 409)
@@ -118,9 +133,16 @@ def create_erp_payment_link(erp_id=None, record_id=None):
                 payment_id = str(payment_summary.get('id') or payment_summary.get('payment_id') or '').strip()
                 if not payment_id:
                     raise PaymentError('Razorpay Payment ID is missing.', 'MISSING_PAYMENT_ID', 400)
-                payment = _razorpay_request('GET', f'payments/{payment_id}')
-                result = process_erp_payment_link_paid(link, payment)
-                return {**_response(record, paid=True), **result}
+                previous_payment_already_recorded = (
+                    _is_fully_paid(record)
+                    and str(record.razorpay_payment_id or '').strip() == payment_id
+                )
+                if not previous_payment_already_recorded:
+                    payment = _razorpay_request('GET', f'payments/{payment_id}')
+                    result = process_erp_payment_link_paid(link, payment)
+                    return {**_response(record, paid=True), **result}
+                # This paid link belongs to the previous activation. Keep its
+                # Payment ID as history and create a fresh link for renewal.
         reference = f'E{record.pk}-{secrets.token_hex(8)}'[:40]
         record.razorpay_reference_id = reference
         record.razorpay_payment_link_id = None
@@ -138,7 +160,7 @@ def create_erp_payment_link(erp_id=None, record_id=None):
             },
             'notify': {'sms': False, 'email': False},
             'reminder_enable': True,
-            'notes': {'record_type': 'pacs_erp', 'record_id': str(record.pk), 'erp_id': record.erp_id or ''},
+            'notes': {'record_type': 'pacs_erp', 'record_id': str(record.pk), 'erp_id': record.erp_id or '', 'payment_amount_paise': str(amount_rupees * 100)},
         }
         try:
             link = _razorpay_request('POST', 'payment_links', json=payload)
@@ -172,13 +194,18 @@ def process_erp_payment_link_paid(link, payment):
             record = tblPacsErp.objects.select_for_update().get(razorpay_payment_link_id=link_id)
         except tblPacsErp.DoesNotExist as exc:
             raise PaymentError('Unknown ERP Payment Link ID.', 'UNKNOWN_ERP_PAYMENT_LINK', 404) from exc
-        expected = int(record.current_amount or 4500) * 100
+        link_amount = int(link.get('amount') or 0)
+        notes = link.get('notes') or {}
+        snapshot_amount = int(notes.get('payment_amount_paise') or 0) if isinstance(notes, dict) else 0
         if link.get('reference_id') != record.razorpay_reference_id:
             raise PaymentError('ERP Payment Link does not match the local record.', 'PAYMENT_LINK_MISMATCH', 400)
         if str(link.get('currency') or '').upper() != 'INR' or str(payment.get('currency') or '').upper() != 'INR':
             raise PaymentError('Payment currency is invalid.', 'WRONG_CURRENCY', 400)
-        if int(link.get('amount') or 0) != expected or int(payment.get('amount') or 0) != expected:
-            raise PaymentError('Paid amount does not match CurrentAmount.', 'WRONG_AMOUNT', 400)
+        if link_amount <= 0 or int(payment.get('amount') or 0) != link_amount:
+            raise PaymentError('Captured payment amount does not match the Payment Link.', 'WRONG_AMOUNT', 400)
+        if snapshot_amount and snapshot_amount != link_amount:
+            raise PaymentError('Payment Link amount does not match its secure amount snapshot.', 'WRONG_AMOUNT', 400)
+        expected = link_amount
         if str(link.get('status') or '').lower() != 'paid' or str(payment.get('status') or '').lower() != 'captured':
             raise PaymentError('Payment has not been captured.', 'PAYMENT_NOT_CAPTURED', 400)
         payment_id = str(payment.get('id') or payment.get('payment_id') or '').strip()
