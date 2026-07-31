@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import secrets
+from datetime import datetime, timezone as datetime_timezone
 
 import requests
 from django.conf import settings
@@ -177,13 +178,18 @@ def _apply_paid_entities(record, link, payment):
         record.utr_number = bank_rrn
         update_fields.append('utr_number')
     if not duplicate:
+        payment_timestamp = payment.get('created_at')
+        try:
+            activation_date = datetime.fromtimestamp(int(payment_timestamp), tz=datetime_timezone.utc)
+        except (TypeError, ValueError, OverflowError):
+            activation_date = timezone.now()
         record.accepte_by = 'Razorpay'
         update_fields.append('accepte_by')
         record.razorpay_payment_id = payment_id
         record.razorpay_payment_status = 'paid'
         record.payment_status = record.amount
         record.is_active = 1
-        record.activation_date = record.activation_date or timezone.now()
+        record.activation_date = activation_date
         update_fields.extend(['razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
     if update_fields:
         record.save(update_fields=update_fields)

@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+from datetime import datetime, timezone as datetime_timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -153,6 +154,12 @@ class RazorpayPaymentTests(SimpleTestCase):
         self.assertEqual(item.payment_status,2000)
         self.assertEqual(item.utr_number,'123456789012')
         item.save.assert_called_once_with(update_fields=['utr_number', 'accepte_by', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
+
+    def test_payment_activation_date_uses_razorpay_payment_time(self):
+        item = record(activation_date=datetime(2025, 1, 1, tzinfo=datetime_timezone.utc))
+        paid_at = 1785450600
+        services._apply_paid_entities(item, link(), payment(created_at=paid_at))
+        self.assertEqual(item.activation_date, datetime.fromtimestamp(paid_at, tz=datetime_timezone.utc))
 
     @patch('licensing.payment_services.UserInfoData.objects')
     def test_25_expired_event_does_not_deactivate_paid_record(self, objects):
