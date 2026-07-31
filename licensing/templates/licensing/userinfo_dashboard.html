@@ -214,16 +214,16 @@
                 <button type="button" class="btn btn-sm border border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white" id="bulk-invoice"><i class="fas fa-file-invoice me-1"></i>Invoice</button>
                 {% if request.user.is_superuser %}
                 <button type="button" class="btn btn-sm btn-outline-danger" id="bulk-delete"><i class="fas fa-trash-alt me-1"></i>Delete</button>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="bulk-copy"><i class="fas fa-copy me-1"></i>Copy</button>
                 {% endif %}
+                <button type="button" class="btn btn-sm btn-outline-primary" id="bulk-copy"><i class="fas fa-copy me-1"></i>Copy</button>
             </div>
             <div id="userinfo-row-actions-menu" class="userinfo-row-actions-menu" role="menu" aria-hidden="true">
                 <button type="button" data-row-view role="menuitem"><i class="fas fa-eye text-sky-600"></i><span>View Details</span></button>
                 {% if request.user.is_superuser %}<button type="button" data-row-trigger="bulk-update" role="menuitem"><i class="fas fa-edit text-indigo-600"></i><span>Update</span></button>{% endif %}
                 <button type="button" id="userinfo-row-toggle-action" data-row-trigger="toggle" role="menuitem"><i class="fas fa-check-circle text-emerald-600"></i><span>Activate</span></button>
                 <button type="button" data-row-trigger="bulk-invoice" role="menuitem"><i class="fas fa-file-invoice text-blue-600"></i><span>Invoice</span></button>
-                {% if request.user.is_superuser %}<button type="button" data-row-trigger="bulk-copy" role="menuitem"><i class="fas fa-copy text-violet-600"></i><span>Copy</span></button>
-                <div class="userinfo-row-actions-separator"></div>
+                <button type="button" data-row-trigger="bulk-copy" role="menuitem"><i class="fas fa-copy text-violet-600"></i><span>Copy</span></button>
+                {% if request.user.is_superuser %}<div class="userinfo-row-actions-separator"></div>
                 <button type="button" data-row-trigger="bulk-delete" class="userinfo-row-action-danger" role="menuitem"><i class="fas fa-trash-alt"></i><span>Delete</span></button>{% endif %}
             </div>
             <div id="userinfo-detail-modal" class="userinfo-detail-modal" aria-hidden="true">

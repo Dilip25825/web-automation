@@ -277,7 +277,7 @@ def pacserp_dashboard(request):
     return render(request, 'licensing/pacserp_dashboard.html', {
         'erp_records': erp_records,
         'search_query': search_query,
-        'erp_form': None if (partial_results or not request.user.is_superuser) else PacsErpForm(),
+        'erp_form': None if partial_results else PacsErpForm(),
         'partial_results': partial_results,
         'monthly_activation_report': monthly_activation_report,
         'monthly_activation_count': monthly_activation_count,
@@ -531,9 +531,16 @@ def create_userinfo(request):
 @login_required
 @userinfo_ajax_action
 def create_pacserp(request):
+    copy_source_id = request.POST.get('copy_source_id', '').strip() if request.method == 'POST' else ''
     if not request.user.is_superuser:
-        messages.error(request, 'Only superuser can add ERP records.')
-        return redirect('licensing:pacserp_dashboard')
+        can_copy = (
+            request.method == 'POST'
+            and copy_source_id.isdigit()
+            and _erp_queryset_for_user(request.user).filter(pk=int(copy_source_id)).exists()
+        )
+        if not can_copy:
+            messages.error(request, 'Only superuser can add ERP records. Other users can copy permitted records only.')
+            return redirect('licensing:pacserp_dashboard')
     """
     Form view to insert new records into TblPacsErp table.
     ON ERROR HANDLING: Default isActive=1 force inject kiya hai save karne se pehle.
