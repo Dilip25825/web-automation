@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load tz %}
 
 {% block title %}User Info Database Dashboard{% endblock %}
 
@@ -35,6 +36,8 @@
     .userinfo-monthly-card.is-selected { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.28),0 .45rem 1rem rgba(15,23,42,.2); }
     .userinfo-monthly-card.summary { background: linear-gradient(135deg,rgba(56,189,248,.25),rgba(99,102,241,.22)); border-color: rgba(125,211,252,.32); cursor: default; }
     .userinfo-monthly-card.summary:hover { transform: none; }
+    .userinfo-monthly-card.today-summary { background: linear-gradient(135deg,rgba(16,185,129,.32),rgba(5,150,105,.2)); border-color: rgba(110,231,183,.46); cursor: default; }
+    .userinfo-monthly-card.today-summary:hover { transform: none; }
     .userinfo-monthly-card:nth-child(6n+2) { background: linear-gradient(135deg,rgba(16,185,129,.28),rgba(5,150,105,.16)); border-color: rgba(110,231,183,.4); }
     .userinfo-monthly-card:nth-child(6n+3) { background: linear-gradient(135deg,rgba(168,85,247,.28),rgba(124,58,237,.17)); border-color: rgba(216,180,254,.4); }
     .userinfo-monthly-card:nth-child(6n+4) { background: linear-gradient(135deg,rgba(245,158,11,.29),rgba(217,119,6,.16)); border-color: rgba(253,230,138,.42); }
@@ -149,12 +152,12 @@
     .farmer-field{background:#fff;border:1px solid #e2e8f0;border-radius:.8rem;padding:.72rem .78rem;transition:border-color .16s ease,box-shadow .16s ease}
     .farmer-field:focus-within{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
     .farmer-field label{color:#475569;font-size:.69rem;letter-spacing:.055em;margin-bottom:.4rem}
-    .farmer-field input,.farmer-field select,.farmer-field textarea,.userinfo-activation-fields input{border:1px solid #cbd5e1!important;border-radius:.62rem!important;box-shadow:none!important;min-height:2.25rem;padding:.44rem .65rem!important;transition:border-color .16s ease,box-shadow .16s ease}
-    .farmer-field input:focus,.farmer-field select:focus,.farmer-field textarea:focus,.userinfo-activation-fields input:focus{border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.14)!important;outline:0}
+    .farmer-field input,.farmer-field select,.farmer-field textarea,.userinfo-activation-fields input,.userinfo-activation-fields select{border:1px solid #cbd5e1!important;border-radius:.62rem!important;box-shadow:none!important;min-height:2.25rem;padding:.44rem .65rem!important;transition:border-color .16s ease,box-shadow .16s ease}
+    .farmer-field input:focus,.farmer-field select:focus,.farmer-field textarea:focus,.userinfo-activation-fields input:focus,.userinfo-activation-fields select:focus{border-color:#6366f1!important;box-shadow:0 0 0 3px rgba(99,102,241,.14)!important;outline:0}
     .userinfo-activation-details,.userinfo-detail-grid{background:#f8fafc}
     .userinfo-activation-detail,.userinfo-detail-item{background:#fff;border-color:#e2e8f0;border-radius:.8rem;box-shadow:0 1px 2px rgba(15,23,42,.03);padding:.78rem .85rem}
     .userinfo-activation-detail{border-left:3px solid #6366f1}
-    .userinfo-activation-fields{background:#fff;padding:.4rem 1.35rem 1.15rem}
+    .userinfo-activation-fields{background:#fff;padding:.4rem 1.35rem 1.15rem}.userinfo-activation-fields select{background:#fff;border:1px solid #cbd5e1;border-radius:.62rem;min-height:2.25rem;padding:.44rem .65rem;width:100%}.activation-khata-check{align-items:center!important;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.7rem;display:flex!important;gap:.55rem;padding:.65rem .75rem}.activation-khata-check input{min-height:auto!important;width:auto!important}.activation-khata-help{color:#64748b;display:block;font-size:.7rem;margin-top:.35rem}
     .farmer-form-footer,.userinfo-activation-footer,.userinfo-detail-footer{background:#fff;border-top:1px solid #e2e8f0;box-shadow:0 -8px 24px rgba(15,23,42,.035);flex-shrink:0;padding:.9rem 1.25rem}
     .farmer-form-footer button,.userinfo-activation-footer button,.userinfo-detail-footer button{align-items:center;border-radius:.68rem!important;display:inline-flex;font-size:.8rem;font-weight:800;justify-content:center;min-height:2.55rem;padding:.58rem 1rem!important}
     .farmer-form-footer .btn-primary,.userinfo-activation-footer button[type=submit]{background:linear-gradient(135deg,#4f46e5,#7c3aed)!important;border:0!important;box-shadow:0 8px 18px rgba(79,70,229,.22);color:#fff!important}
@@ -186,6 +189,7 @@
                     <div class="userinfo-monthly-report-head"><strong><i class="fas fa-chart-column"></i> Monthly Activation Report</strong><nav class="userinfo-monthly-nav" aria-label="Report month navigation"><a href="?report_month={{ previous_month_value }}" data-report-month="{{ previous_month_value }}" title="Previous month"><i class="fas fa-chevron-left"></i></a><span>{{ report_month }}</span>{% if next_month_value %}<a href="?report_month={{ next_month_value }}" data-report-month="{{ next_month_value }}" title="Next month"><i class="fas fa-chevron-right"></i></a>{% else %}<span class="is-disabled" aria-disabled="true" style="min-width:1.9rem;padding:0"><i class="fas fa-chevron-right"></i></span>{% endif %}</nav></div>
                     <div class="userinfo-monthly-cards">
                         <article class="userinfo-monthly-card summary"><span class="userinfo-monthly-card-icon"><i class="fas fa-calendar-check"></i></span><div class="userinfo-monthly-card-copy"><strong>Month Total</strong><div class="userinfo-monthly-card-stats"><span><b>{{ monthly_activation_count }}</b> IDs Active</span><span><b>₹{{ monthly_payment_total|default:0 }}</b> Payment</span></div></div></article>
+                        <article class="userinfo-monthly-card today-summary"><span class="userinfo-monthly-card-icon"><i class="fas fa-indian-rupee-sign"></i></span><div class="userinfo-monthly-card-copy"><strong>Today Collection</strong><div class="userinfo-monthly-card-stats"><span><b>{{ today_activation_count }}</b> IDs Active</span><span><b>&#8377;{{ today_collection_total|default:0 }}</b> Collected</span></div></div></article>
                         {% for report in monthly_activation_report %}<button type="button" class="userinfo-monthly-card{% if report_user == report.accepte_by %} is-selected{% endif %}" data-userinfo-report-user="{{ report.accepte_by }}" title="{{ report.accepte_by }} के {{ report_month }} records दिखाएँ"><span class="userinfo-monthly-card-icon"><i class="fas fa-user-check"></i></span><span class="userinfo-monthly-card-copy"><strong title="{{ report.accepte_by }}">{{ report.accepte_by }}</strong><span class="userinfo-monthly-card-stats"><span><b>{{ report.activation_count }}</b> IDs</span><span><b>₹{{ report.payment_total|default:0 }}</b></span></span></span></button>{% empty %}<div class="userinfo-monthly-empty">इस महीने अभी कोई active UserInfo record नहीं है।</div>{% endfor %}
                     </div>
                 </section>{% endif %}
@@ -287,10 +291,10 @@
                         <div class="userinfo-activation-detail"><span>Mobile</span><strong id="userinfo-activation-mobile">-</strong></div>
                         <div class="userinfo-activation-detail"><span>Activation Type</span><strong id="userinfo-activation-purpose">-</strong></div>
                         <div class="userinfo-activation-detail"><span>Financial Year</span><strong id="userinfo-activation-year">-</strong></div>
-                        <div class="userinfo-activation-detail"><span>Activated By</span><strong>{{ request.user.username }}</strong></div>
+                        <div class="userinfo-activation-detail"><span>Activated By</span><strong id="userinfo-activation-accepted-display">{{ request.user.username }}</strong></div>
                     </div>
-                    <form id="userinfo-activation-form" method="post" data-userinfo-ajax-form><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                        <div class="userinfo-activation-fields"><label for="userinfo-activation-amount">Activation Amount (Rs.)</label><input id="userinfo-activation-amount" name="amount" type="number" min="0" required><label for="userinfo-activation-utr">UTR / Transaction Number</label><input id="userinfo-activation-utr" name="utr_number" type="text" placeholder="Optional transaction ID"></div>
+                    <form id="userinfo-activation-form" method="post" data-userinfo-ajax-form><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" id="userinfo-activation-token" name="activation_token" value="">
+                        <div class="userinfo-activation-fields"><label for="userinfo-activation-amount">Activation Amount (Rs.)</label><input id="userinfo-activation-amount" name="amount" type="number" min="0" required><label for="userinfo-activation-utr">UTR / Transaction Number</label><input id="userinfo-activation-utr" name="utr_number" type="text" placeholder="Optional transaction ID">{% if request.user.is_superuser %}<label for="userinfo-accepted-by-user">Activated By</label><select id="userinfo-accepted-by-user" name="accepted_by_user">{% for option in activation_user_options %}<option value="{{ option.id }}" data-username="{{ option.username|escape }}" data-customer-id="{{ option.customer_id }}"{% if option.selected %} selected{% endif %}>{{ option.username }}</option>{% endfor %}</select><label class="activation-khata-check"><input id="userinfo-khata-effect" name="khata_effect" type="checkbox" value="1"><span>Khata ledger me amount baki add karein</span></label><label for="userinfo-khata-customer">Khata Customer / Ledger</label><select id="userinfo-khata-customer" name="khata_customer"><option value="">-- Select Khata Customer --</option>{% for customer in activation_khata_customers %}<option value="{{ customer.id }}">{{ customer.name }} ({{ customer.phone }})</option>{% endfor %}</select><small class="activation-khata-help">Admin ke alawa user par Khata effect required hai. Pehli selection future ke liye mapping save karegi.</small>{% endif %}</div>
                         <div class="userinfo-activation-footer"><button type="button" id="userinfo-activation-cancel" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</button><button type="submit" class="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-700 hover:to-purple-700"><i class="fas fa-save me-1"></i>Save &amp; Activate</button></div>
                     </form>
                 </div>
@@ -367,6 +371,7 @@
                             <td>
                                 <strong class="userinfo-primary"><i class="fas fa-phone text-slate-400"></i> {{ client.operator_mobile|default:"-" }}</strong>
                                 <span class="userinfo-secondary">Operator mobile</span>
+                                <span class="userinfo-secondary"><i class="far fa-calendar-plus"></i> Created: {{ client.date_time|timezone:"UTC"|date:"d M Y, h:i A"|default:"-" }}</span>
                             </td>                            <td>
                                 {% if client.payment_status == client.amount %}
                                 <span class="status-pill status-active bg-green-100 text-green-800"><i class="fas fa-circle-check"></i> Active</span>
@@ -737,6 +742,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     const activateButton = document.getElementById('bulk-activate');
     const userinfoActivationModal = document.getElementById('userinfo-activation-modal');
+    const newActivationToken = function () { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (char) { const value = Math.random() * 16 | 0; return (char === 'x' ? value : (value & 3 | 8)).toString(16); }); };
+    const userinfoAcceptedUser = document.getElementById('userinfo-accepted-by-user');
+    const userinfoKhataEffect = document.getElementById('userinfo-khata-effect');
+    const userinfoKhataCustomer = document.getElementById('userinfo-khata-customer');
+    const syncUserinfoKhata = function (reset) { if (!userinfoAcceptedUser) return; const option = userinfoAcceptedUser.options[userinfoAcceptedUser.selectedIndex]; const username = option ? option.dataset.username || option.text : ''; const required = username.toLowerCase() !== 'admin'; document.getElementById('userinfo-activation-accepted-display').textContent = username || '-'; if (reset && userinfoKhataEffect) userinfoKhataEffect.checked = required; if (required && userinfoKhataEffect) userinfoKhataEffect.checked = true; if (userinfoKhataEffect) userinfoKhataEffect.dataset.requiredLedger = required ? 'true' : 'false'; if (reset && userinfoKhataCustomer && option && option.dataset.customerId) userinfoKhataCustomer.value = option.dataset.customerId; if (userinfoKhataCustomer && userinfoKhataEffect) userinfoKhataCustomer.disabled = !userinfoKhataEffect.checked; };
+    if (userinfoAcceptedUser) userinfoAcceptedUser.addEventListener('change', function () { syncUserinfoKhata(true); });
+    if (userinfoKhataEffect) userinfoKhataEffect.addEventListener('change', function () { if (this.dataset.requiredLedger === 'true' && !this.checked) this.checked = true; syncUserinfoKhata(false); });
     const closeUserinfoActivation = function () { userinfoActivationModal.classList.remove('is-open'); userinfoActivationModal.setAttribute('aria-hidden','true'); };
     document.getElementById('userinfo-activation-cancel').addEventListener('click', closeUserinfoActivation);
     userinfoActivationModal.querySelector('.userinfo-activation-close').addEventListener('click', closeUserinfoActivation);
@@ -752,6 +764,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('userinfo-activation-year').textContent = client.dataset.year || '-';
         document.getElementById('userinfo-activation-amount').value = client.dataset.amount || '0';
         document.getElementById('userinfo-activation-utr').value = client.dataset.utr || '';
+        document.getElementById('userinfo-activation-token').value = newActivationToken();
+        syncUserinfoKhata(true);
         userinfoActivationModal.classList.add('is-open'); userinfoActivationModal.setAttribute('aria-hidden','false');
     });    const deactivateButton = document.getElementById('bulk-deactivate');
     if (deactivateButton) deactivateButton.addEventListener('click', function () {
@@ -761,8 +775,11 @@ document.addEventListener('DOMContentLoaded', function () {
             Swal.fire({ icon: 'info', title: 'Already inactive', text: 'Selected PACS record is already inactive.' });
             return;
         }
-        Swal.fire({ title: 'Deactivate PACS account?', text: client.dataset.name + ' will be deactivated.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Yes, deactivate', cancelButtonText: 'Cancel' }).then(function (result) {
-            if (result.isConfirmed) window.userinfoAjaxAction(client.dataset.toggleUrl, { method: 'GET', loadingText: 'Deactivating...' });
+        Swal.fire({ title: 'Deactivate PACS account?', text: client.dataset.name + ' will be deactivated.', icon: 'warning', input: 'checkbox', inputValue: 0, inputPlaceholder: 'Khata balance ko GOT entry se reverse karein', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Yes, deactivate', cancelButtonText: 'Cancel' }).then(function (result) {
+            if (!result.isConfirmed) return;
+            const csrf = document.querySelector('#userinfo-activation-form [name=csrfmiddlewaretoken]').value;
+            const body = new URLSearchParams({ action: 'deactivate', reverse_khata: result.value ? '1' : '0', csrfmiddlewaretoken: csrf });
+            window.userinfoAjaxAction(client.dataset.toggleUrl, { method: 'POST', body: body, loadingText: 'Deactivating...' });
         });
     });
     const deleteButton = document.getElementById('bulk-delete');

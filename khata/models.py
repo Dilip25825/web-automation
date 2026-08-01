@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import uuid
 
 class Customer(models.Model):
     # Har customer kisi ek user (dukaandaar) se juda hoga
@@ -46,3 +47,32 @@ class ShopProfile(models.Model):
 
     def __str__(self):
         return self.shop_name
+
+class ActivationLedgerMapping(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activation_ledger_mappings')
+    accepted_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accepted_activation_ledgers')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='activation_user_mappings')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'accepted_user'], name='unique_activation_ledger_user_mapping'),
+        ]
+
+
+class ActivationLedgerEntry(models.Model):
+    SOURCE_TYPES = (('USERINFO', 'UserInfo'), ('PACS_ERP', 'PACS ERP'))
+
+    activation_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    source_type = models.CharField(max_length=20, choices=SOURCE_TYPES)
+    source_record_id = models.PositiveBigIntegerField()
+    activated_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_activation_ledger_entries')
+    accepted_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='assigned_activation_ledger_entries')
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='activation_ledger_entries')
+    transaction = models.OneToOneField(Transaction, on_delete=models.PROTECT, related_name='activation_entry')
+    reversal_transaction = models.OneToOneField(Transaction, on_delete=models.PROTECT, related_name='activation_reversal', null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['source_type', 'source_record_id'], name='khata_activ_source__918027_idx')]

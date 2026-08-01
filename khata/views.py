@@ -16,6 +16,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.exceptions import ValidationError
 from .drive_storage import delete_attachment, download_attachment, upload_attachment, validate_attachment
 from .models import ShopProfile
+from .transaction_services import delete_transaction_with_activation_links
 from django.core.paginator import Paginator #
 from django.views.decorators.http import require_POST
 from functools import wraps
@@ -440,25 +441,22 @@ def update_transaction(request, b64_trans_id):
 @ajax_action
 @require_POST
 def delete_transaction(request, b64_trans_id):
-    # Try block error aane se rokne ke liye
     try:
-        # Base64 string ko decode karke actual transaction ID nikalna
         actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
-        
-        # Check karein ki ye transaction isi user ke customer ka hai
         trans = get_object_or_404(Transaction, id=actual_trans_id, customer__user=request.user)
-        customer_id = trans.customer.id
-        
-        if trans.attachment_drive_id:
-            delete_attachment(trans.attachment_drive_id)
-        trans.delete()
-        messages.success(request, "Len-den ki entry delete kar di gayi hai.")
+        customer_id = trans.customer_id
+        result = delete_transaction_with_activation_links(trans, request.user)
+        for drive_id in result['attachment_ids']:
+            delete_attachment(drive_id)
+        if result['linked']:
+            messages.success(request, 'Activation se linked original aur reversal ledger entries delete kar di gayi hain.')
+        else:
+            messages.success(request, 'Len-den ki entry delete kar di gayi hai.')
         return redirect('khata:customer_detail', customer_id=customer_id)
-        
-    except Exception as e:
-        messages.error(request, f"Entry delete karne mein samasya: {str(e)}")
+    except Exception as error:
+        messages.error(request, f'Entry delete karne mein samasya: {error}')
         return redirect('khata:dashboard')
-    
+
 
 @login_required
 @ajax_action

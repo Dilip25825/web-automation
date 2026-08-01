@@ -15,6 +15,7 @@ from datetime import date
 from functools import wraps
 from django.db.models import Count, Sum
 from django.views.decorators.http import require_POST
+from .activation_ledger import activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry
 
 
 
@@ -101,6 +102,17 @@ def userinfo_dashboard(request):
         )
         monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
+        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_start = today_start + timedelta(days=1)
+        today_summary = UserInfoData.objects.filter(
+            is_active=1,
+            amount__gt=0,
+            payment_status=models.F('amount'),
+            activation_date__gte=today_start,
+            activation_date__lt=tomorrow_start,
+        ).aggregate(activation_count=Count('id'), payment_total=Sum('payment_status')) if request.user.is_superuser else {}
+        today_activation_count = today_summary.get('activation_count') or 0
+        today_collection_total = today_summary.get('payment_total') or 0
         report_month = month_start.strftime('%B %Y')
         report_month_value = month_start.strftime('%Y-%m')
         previous_month_value = previous_month.strftime('%Y-%m')
@@ -111,12 +123,15 @@ def userinfo_dashboard(request):
         monthly_activation_report = []
         monthly_activation_count = 0
         monthly_payment_total = 0
+        today_activation_count = 0
+        today_collection_total = 0
         report_month = timezone.localdate().strftime('%B %Y')
         report_month_value = timezone.localdate().strftime('%Y-%m')
         previous_month_value = ''
         next_month_value = ''
         report_user = ''
 
+    activation_context = activation_ledger_context(request.user)
     context = {
         'clients': clients,
         'search_query': search_query,
@@ -125,60 +140,71 @@ def userinfo_dashboard(request):
         'monthly_activation_report': monthly_activation_report,
         'monthly_activation_count': monthly_activation_count,
         'monthly_payment_total': monthly_payment_total,
+        'today_activation_count': today_activation_count,
+        'today_collection_total': today_collection_total,
         'report_month': report_month,
         'report_month_value': report_month_value,
         'previous_month_value': previous_month_value,
         'next_month_value': next_month_value,
         'report_user': report_user,
+        **activation_context,
     }
     return render(request, 'licensing/userinfo_dashboard.html', context)
 @login_required(login_url='accounts:login')
+@require_POST
 @userinfo_ajax_action
 def toggle_activation(request, pk):
-    """
-    UserInfoData table ke liye activation/deactivation action logic.
-    """
-    # ON ERROR HANDLING: Try-Except lagaya hai taaki invalid request par core crash na ho
+    current_search = request.GET.get('search_id', '').strip()
+    action = request.POST.get('action', 'activate').strip().lower()
     try:
-        client = get_object_or_404(UserInfoData, pk=pk)
-        current_search = request.GET.get('search_id', '').strip()
-        
-        if request.method == 'POST':
+        if action not in {'activate', 'deactivate'}:
+            raise ValueError('Invalid UserInfo action.')
+
+        if action == 'deactivate':
+            if not request.user.is_superuser:
+                raise ValueError('Only superuser can deactivate UserInfo records.')
+            with transaction.atomic():
+                client = UserInfoData.objects.select_for_update().get(pk=pk)
+                client.payment_status = 0
+                client.amount = 2000
+                client.is_active = 0
+                client.accepte_by = ''
+                client.save()
+                if request.POST.get('reverse_khata') == '1':
+                    reverse_activation_ledger_entry(source_type='USERINFO', source_record_id=client.pk)
+            messages.warning(request, f'PACS ID {client.id} Deactivated successfully!')
+        else:
             input_amount = request.POST.get('amount', '0').strip()
             input_utr_number = request.POST.get('utr_number', '').strip()
-            
-            # VALIDATION CHECK: Agar non-numeric data hai to safe format me 0 karein
-            if not input_amount.isdigit(): 
-                input_amount = 0
+            if not input_amount.isdigit():
+                input_amount = '0'
+            activation_amount = int(input_amount)
+            activation_plan = prepare_manual_activation(request, activation_amount)
+            accepted_username = activation_plan['accepted_username']
 
-            logged_in_user = request.user.username if request.user.is_authenticated else "System"
-
-            client.amount = int(input_amount)
-            client.payment_status = int(input_amount)
-            client.accepte_by = logged_in_user     
-            client.utr_number = input_utr_number       
-            client.is_active = 1                       
-            client.activation_date = timezone.now()
-            client.save()
-            messages.success(request, f"PACS ID {client.id} Activated successfully by {logged_in_user}!")
-        else:
-            # Deactivation flow
-            if client.amount == client.payment_status:
-                client.payment_status = 0 
-                client.amount = 2000 
-                client.is_active = 0
-                client.accepte_by = ""       
+            with transaction.atomic():
+                client = UserInfoData.objects.select_for_update().get(pk=pk)
+                client.amount = activation_amount
+                client.payment_status = activation_amount
+                client.accepte_by = accepted_username
+                client.utr_number = input_utr_number
+                client.is_active = 1
+                client.activation_date = timezone.now()
                 client.save()
-                messages.warning(request, f"PACS ID {client.id} Deactivated successfully!")
-                
-    except Exception as e:
-        messages.error(request, f"Status Update Failed: {str(e)}")
-        # FIX: Agar error aaye toh safe exit ke liye seedha userinfo_dashboard par redirect karein
+                create_activation_ledger_entry(
+                    activation_plan,
+                    request_user=request.user,
+                    source_type='USERINFO',
+                    source_record_id=client.pk,
+                    source_label=f'{client.for_whys or "Not assigned"} {client.f_year or ""} | Mobile {client.mobile} / Record #{client.pk}',
+                )
+            messages.success(request, f'PACS ID {client.id} Activated successfully by {accepted_username}!')
+    except Exception as error:
+        messages.error(request, f'Status Update Failed: {error}')
         return redirect('licensing:userinfo_dashboard')
-        
-    # FIX: Redirection links ko 'dashboard' se badal kar 'userinfo_dashboard' kiya gaya hai
+
     if current_search:
-        return redirect(f"/licensing/userinfo/?search_id={current_search}")
+        return redirect(f'/licensing/userinfo/?search_id={current_search}')
     return redirect('licensing:userinfo_dashboard')
 
 
@@ -258,6 +284,16 @@ def pacserp_dashboard(request):
         )
         monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
+        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_start = today_start + timedelta(days=1)
+        today_summary = tblPacsErp.objects.filter(
+            is_active=1,
+            expiry_date__gte=timezone.localdate(),
+            activation_date__gte=today_start,
+            activation_date__lt=tomorrow_start,
+        ).aggregate(activation_count=Count('id'), payment_total=Sum('payment_status')) if request.user.is_superuser else {}
+        today_activation_count = today_summary.get('activation_count') or 0
+        today_collection_total = today_summary.get('payment_total') or 0
         report_month = month_start.strftime('%B %Y')
         report_month_value = month_start.strftime('%Y-%m')
         previous_month_value = previous_month.strftime('%Y-%m')
@@ -268,12 +304,15 @@ def pacserp_dashboard(request):
         monthly_activation_report = []
         monthly_activation_count = 0
         monthly_payment_total = 0
+        today_activation_count = 0
+        today_collection_total = 0
         report_month = timezone.localdate().strftime('%B %Y')
         report_month_value = timezone.localdate().strftime('%Y-%m')
         previous_month_value = ''
         next_month_value = ''
         report_user = ''
 
+    activation_context = activation_ledger_context(request.user)
     return render(request, 'licensing/pacserp_dashboard.html', {
         'erp_records': erp_records,
         'search_query': search_query,
@@ -282,11 +321,14 @@ def pacserp_dashboard(request):
         'monthly_activation_report': monthly_activation_report,
         'monthly_activation_count': monthly_activation_count,
         'monthly_payment_total': monthly_payment_total,
+        'today_activation_count': today_activation_count,
+        'today_collection_total': today_collection_total,
         'report_month': report_month,
         'report_month_value': report_month_value,
         'previous_month_value': previous_month_value,
         'next_month_value': next_month_value,
         'report_user': report_user,
+        **activation_context,
     })
 
 @login_required(login_url='accounts:login')
@@ -306,16 +348,20 @@ def toggle_erp_activation(request, pk):
         record = get_object_or_404(allowed_records, pk=pk)
 
         if action == 'deactivate':
-            record.payment_status = 4000
-            record.amount = 0
-            record.is_active = 0
-            record.accepte_by = ''
-            record.expiry_date = (
-                record.expiry_date - timedelta(days=365)
-                if record.expiry_date
-                else timezone.localdate() - timedelta(days=1)
-            )
-            record.save()
+            with transaction.atomic():
+                record = _erp_queryset_for_user(request.user).select_for_update().get(pk=pk)
+                record.payment_status = 4000
+                record.amount = 0
+                record.is_active = 0
+                record.accepte_by = ''
+                record.expiry_date = (
+                    record.expiry_date - timedelta(days=365)
+                    if record.expiry_date
+                    else timezone.localdate() - timedelta(days=1)
+                )
+                record.save()
+                if request.POST.get('reverse_khata') == '1':
+                    reverse_activation_ledger_entry(source_type='PACS_ERP', source_record_id=record.pk)
             messages.warning(request, f'ERP Pacs ID {record.erp_id} Deactivated successfully!')
         else:
             input_amount = request.POST.get('amount', '0').strip()
@@ -343,7 +389,8 @@ def toggle_erp_activation(request, pk):
                 if currently_active:
                     raise ValueError('Active ERP record ko non-superuser renew nahi kar sakta.')
 
-            logged_in_user = request.user.username
+            activation_plan = prepare_manual_activation(request, activation_amount)
+            logged_in_user = activation_plan['accepted_username']
             activation_time = timezone.now()
             activation_day = timezone.localdate()
             try:
@@ -411,6 +458,14 @@ def toggle_erp_activation(request, pk):
                     record.expiry_date = expiry_date
                     record.save()
                     success_message = f'ERP Pacs ID {record.erp_id} Activated successfully!'
+
+                create_activation_ledger_entry(
+                    activation_plan,
+                    request_user=request.user,
+                    source_type='PACS_ERP',
+                    source_record_id=record.pk,
+                    source_label=f'ERP ID {record.erp_id} / Record #{record.pk}',
+                )
 
             messages.success(request, success_message)
     except Exception as error:
