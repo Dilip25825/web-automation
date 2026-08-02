@@ -24,8 +24,8 @@
   <section class="space-y-4">
     <div><p class="text-xs font-extrabold uppercase tracking-[.18em] text-sky-700">Module Overview</p><h2 class="mt-2 text-3xl font-extrabold text-slate-950">कौन-सा module किस काम के लिए है?</h2></div>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><i class="fa-solid fa-users"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">UserInfo</h3><p class="mt-2 text-sm leading-6 text-slate-600">Customer/User records खोजने, देखने, update करने, activate/deactivate करने और invoice निकालने के लिए।</p></article>
-      <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-violet-50 text-violet-700"><i class="fa-solid fa-tractor"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">ERP</h3><p class="mt-2 text-sm leading-6 text-slate-600">PACS/ERP records, activation, expiry, payment और संबंधित operational details manage करने के लिए।</p></article>
+      <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-blue-50 text-blue-700"><i class="fa-solid fa-users"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">User Licenses</h3><p class="mt-2 text-sm leading-6 text-slate-600">Customer/User records खोजने, देखने, update करने, activate/deactivate करने और invoice निकालने के लिए।</p></article>
+      <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-violet-50 text-violet-700"><i class="fa-solid fa-tractor"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">ERP Licenses</h3><p class="mt-2 text-sm leading-6 text-slate-600">PACS/ERP records, activation, expiry, payment और संबंधित operational details manage करने के लिए।</p></article>
       <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-700"><i class="fa-solid fa-bell"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">Reminders</h3><p class="mt-2 text-sm leading-6 text-slate-600">Follow-up, due date, priority और daily pending tasks को समय पर track करने के लिए।</p></article>
       <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><i class="fa-solid fa-file-invoice-dollar"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">Khata</h3><p class="mt-2 text-sm leading-6 text-slate-600">Customer ledger, दिए/मिले payment, balance, transaction proof और reports manage करने के लिए।</p></article>
       <article class="app-card p-6"><span class="grid h-11 w-11 place-items-center rounded-xl bg-cyan-50 text-cyan-700"><i class="fa-solid fa-download"></i></span><h3 class="mt-4 text-lg font-extrabold text-slate-900">Downloads</h3><p class="mt-2 text-sm leading-6 text-slate-600">Available software, files और approved resources को सुरक्षित तरीके से download करने के लिए।</p></article>
@@ -35,7 +35,7 @@
 
   <section class="grid gap-5 lg:grid-cols-2">
     <article class="app-card overflow-hidden">
-      <div class="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-blue-100">UserInfo Guide</p><h2 class="mt-2 text-2xl font-extrabold">Customer/User record पर काम करें</h2></div>
+      <div class="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-blue-100">User Licenses Guide</p><h2 class="mt-2 text-2xl font-extrabold">Customer/User record पर काम करें</h2></div>
       <ol class="space-y-4 p-6 text-sm leading-6 text-slate-600">
         <li><strong class="text-slate-900">Search:</strong> Login ID, mobile, PACS name या उपलब्ध पहचान से सही record खोजें।</li>
         <li><strong class="text-slate-900">View Details:</strong> Row के ⋮ menu से पूरी जानकारी पढ़ें; केवल जरूरी columns मुख्य table में दिखते हैं।</li>
@@ -46,7 +46,7 @@
       </ol>
     </article>
     <article class="app-card overflow-hidden">
-      <div class="bg-gradient-to-r from-violet-700 to-fuchsia-700 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-violet-100">ERP Guide</p><h2 class="mt-2 text-2xl font-extrabold">PACS/ERP record manage करें</h2></div>
+      <div class="bg-gradient-to-r from-violet-700 to-fuchsia-700 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-violet-100">ERP Licenses Guide</p><h2 class="mt-2 text-2xl font-extrabold">PACS/ERP record manage करें</h2></div>
       <ol class="space-y-4 p-6 text-sm leading-6 text-slate-600">
         <li>ERP ID, operator mobile, PACS name या उपलब्ध search information से record खोजें।</li>
         <li>View Details से पूरा record पढ़ें और सही PACS/ERP की पुष्टि करें।</li>
@@ -98,7 +98,7 @@
     <div class="mt-5 grid gap-4 md:grid-cols-2">
       <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Coupon नहीं मिला</strong><p class="mt-1 text-sm leading-6 text-slate-600">Code दोबारा copy/paste करें और कोई character छूटा है या नहीं देखें।</p></div>
       <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Coupon inactive या used है</strong><p class="mt-1 text-sm leading-6 text-slate-600">पुराना coupon दोबारा apply नहीं होगा। Coupon देने वाले user से संपर्क करें।</p></div>
-      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">User पहले coupon ले चुका है</strong><p class="mt-1 text-sm leading-6 text-slate-600">एक UserInfo record पर दूसरा coupon apply नहीं किया जा सकता।</p></div>
+      <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">User पहले coupon ले चुका है</strong><p class="mt-1 text-sm leading-6 text-slate-600">एक User License record पर दूसरा coupon apply नहीं किया जा सकता।</p></div>
       <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-800">Amount से ज्यादा discount</strong><p class="mt-1 text-sm leading-6 text-slate-600">छोटे discount वाला coupon लें या payable amount verify करें।</p></div>
     </div>
   </article>
@@ -170,7 +170,7 @@
       <p class="mt-5 text-xs font-extrabold uppercase tracking-[.18em] text-sky-700">Superuser Only</p>
       <h2 class="mt-2 text-2xl font-extrabold text-slate-950">Monthly Activation Report</h2>
       <ul class="mt-5 space-y-3 text-sm leading-6 text-slate-600">
-        <li>UserInfo hero में हर operator के activated IDs और PaymentStatus total के अलग cards दिखते हैं।</li>
+        <li>User Licenses hero में हर operator के activated IDs और PaymentStatus total के अलग cards दिखते हैं।</li>
         <li><strong>Month Total</strong> card selected month का कुल activation और payment दिखाता है।</li>
         <li>Left और Right arrows से पिछले तथा अगले महीने की report बिना page reload देख सकते हैं।</li>
         <li>यह report केवल superuser को दिखाई देती है; regular users इसे नहीं देख सकते।</li>

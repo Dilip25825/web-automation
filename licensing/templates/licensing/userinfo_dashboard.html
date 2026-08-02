@@ -1,10 +1,10 @@
 {% extends 'core/base.html' %}
 {% load tz %}
 
-{% block title %}User Info Database Dashboard{% endblock %}
+{% block title %}User Licenses{% endblock %}
 
 {% block content %}
-<div id="userinfo-loading-overlay" class="fixed inset-0 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"><div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl"><span class="h-12 w-12 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"></span><p id="userinfo-loading-text" class="mt-4 font-extrabold text-slate-800">Loading UserInfo...</p><p class="mt-1 text-xs text-slate-500">Please wait</p></div></div>
+<div id="userinfo-loading-overlay" class="fixed inset-0 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"><div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl"><span class="h-12 w-12 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"></span><p id="userinfo-loading-text" class="mt-4 font-extrabold text-slate-800">Loading User Licenses...</p><p class="mt-1 text-xs text-slate-500">Please wait</p></div></div>
 <style>
     #userinfo-loading-overlay { z-index: 20000 !important; }
     #userinfo-bulk-actions { display: none !important; }
@@ -173,7 +173,7 @@
             <section class="userinfo-control-hero" aria-label="UserInfo search controls">
                 <div class="userinfo-control-heading">
                     <div>
-                        <span class="userinfo-control-eyebrow">USERINFO CONTROL CENTER</span>
+                        <span class="userinfo-control-eyebrow">USER LICENSES CONTROL CENTER</span>
                         <h2>Find PACS Records</h2>
                         <p>Search an account and manage its records from one place.</p>
                     </div>
@@ -232,7 +232,7 @@
             </div>
             <div id="userinfo-detail-modal" class="userinfo-detail-modal" aria-hidden="true">
                 <div class="userinfo-detail-dialog">
-                    <div class="userinfo-detail-header"><div><span>USERINFO RECORD</span><h3 id="userinfo-detail-name">PACS Details</h3><p id="userinfo-detail-record-id"></p></div><button type="button" class="userinfo-detail-close" aria-label="Close">&times;</button></div>
+                    <div class="userinfo-detail-header"><div><span>USER LICENSE RECORD</span><h3 id="userinfo-detail-name">PACS Details</h3><p id="userinfo-detail-record-id"></p></div><button type="button" class="userinfo-detail-close" aria-label="Close">&times;</button></div>
                     <div class="userinfo-detail-grid">
                         <div class="userinfo-detail-item"><span>Login ID / Mobile</span><strong data-detail-field="mobile">-</strong></div>
                         <div class="userinfo-detail-item"><span>Operator Mobile</span><strong data-detail-field="operator">-</strong></div>
