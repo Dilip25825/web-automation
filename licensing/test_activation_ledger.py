@@ -25,10 +25,11 @@ class ActivationKhataIntegrationTests(TestCase):
         request.user = self.owner
         return request
 
-    def test_non_admin_accepted_user_requires_khata_effect(self):
+    def test_non_admin_can_activate_without_khata_effect(self):
         request = self.request({'accepted_by_user': self.operator.id})
-        with self.assertRaisesMessage(ActivationLedgerError, 'Khata ledger effect zaroori hai'):
-            prepare_manual_activation(request, 2000)
+        result = prepare_manual_activation(request, 2000)
+        self.assertFalse(result['ledger_enabled'])
+        self.assertEqual(result['accepted_username'], 'operator-one')
 
     def test_admin_can_activate_without_khata_effect(self):
         request = self.request({'accepted_by_user': self.owner.id})

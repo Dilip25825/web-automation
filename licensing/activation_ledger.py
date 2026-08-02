@@ -48,9 +48,7 @@ def prepare_manual_activation(request, amount):
         raise ActivationLedgerError('Selected Activated By user valid nahi hai.') from exc
 
     ledger_enabled = str(request.POST.get('khata_effect', '')).strip() == '1'
-    ledger_required = accepted_user.username.casefold() != 'admin'
-    if ledger_required and not ledger_enabled:
-        raise ActivationLedgerError('Admin ke alawa user select karne par Khata ledger effect zaroori hai.')
+
 
     prepared = {
         'accepted_user': accepted_user,
