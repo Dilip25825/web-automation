@@ -81,10 +81,17 @@ class RazorpayPaymentTests(SimpleTestCase):
 
     @patch('licensing.payment_services.UserInfoData.objects')
     @patch('licensing.payment_services._razorpay_request')
-    def test_08_existing_pending_link_is_reused(self, remote, objects):
-        objects.select_for_update.return_value.get.return_value=record(); remote.return_value={'id':'plink_test','short_url':'https://rzp.io/test','status':'created'}
+    def test_08_existing_pending_link_is_cancelled_and_replaced(self, remote, objects):
+        objects.select_for_update.return_value.get.return_value=record()
+        remote.side_effect=[
+            {'id':'plink_test','short_url':'https://rzp.io/old','status':'created'},
+            {'id':'plink_test','status':'cancelled'},
+            {'id':'plink_new','short_url':'https://rzp.io/new','status':'created'},
+        ]
         result=services.create_razorpay_payment_link(7)
-        self.assertEqual(result['payment_url'],'https://rzp.io/test'); remote.assert_called_once()
+        self.assertEqual(result['payment_url'],'https://rzp.io/new')
+        self.assertEqual(remote.call_count,3)
+        self.assertEqual(remote.call_args_list[1].args,('POST','payment_links/plink_test/cancel'))
 
     @patch('licensing.payment_services.UserInfoData.objects')
     @patch('licensing.payment_services._razorpay_request', side_effect=PaymentError('down','RAZORPAY_API_ERROR',502))

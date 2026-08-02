@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import tblPacsErp
-from .payment_services import PaymentError, PENDING_STATUSES, _razorpay_request
+from .payment_services import PaymentError, PENDING_STATUSES, _razorpay_request, cancel_pending_payment_link
 
 ERP_TOKEN_SALT = 'licensing.erp-razorpay-payment.v1'
 
@@ -126,9 +126,7 @@ def create_erp_payment_link(erp_id=None, record_id=None):
             link = _razorpay_request('GET', f'payment_links/{record.razorpay_payment_link_id}')
             remote_status = str(link.get('status') or '').lower()
             if remote_status in PENDING_STATUSES:
-                record.razorpay_payment_status = remote_status
-                record.save(update_fields=['razorpay_payment_status'])
-                return _response(record, link)
+                cancel_pending_payment_link(link)
             if remote_status == 'paid' and link.get('payments'):
                 payment_summary = link['payments'][-1]
                 payment_id = str(payment_summary.get('id') or payment_summary.get('payment_id') or '').strip()

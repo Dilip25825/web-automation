@@ -55,6 +55,19 @@ def _razorpay_request(method, path, **kwargs):
         raise PaymentError('Invalid response received from Razorpay.', 'RAZORPAY_INVALID_RESPONSE', 502) from exc
 
 
+def cancel_pending_payment_link(link):
+    """Cancel an older unpaid link before issuing a fresh payment attempt."""
+    link_id = str((link or {}).get('id') or '').strip()
+    remote_status = str((link or {}).get('status') or '').lower()
+    if not link_id or remote_status not in PENDING_STATUSES:
+        return link
+    cancelled = _razorpay_request('POST', f'payment_links/{link_id}/cancel')
+    cancelled_status = str((cancelled or {}).get('status') or '').lower()
+    if cancelled_status and cancelled_status != 'cancelled':
+        raise PaymentError('Previous Payment Link could not be cancelled.', 'PAYMENT_LINK_CANCEL_FAILED', 409)
+    return cancelled
+
+
 def find_payment_record(user_id, service, financial_year, for_update=False):
     if not str(user_id).isdigit():
         raise PaymentError('Invalid user ID.', 'INVALID_USER_ID')
@@ -116,9 +129,7 @@ def create_razorpay_payment_link(record_id):
             link = _razorpay_request('GET', f'payment_links/{record.razorpay_payment_link_id}')
             remote_status = str(link.get('status', '')).lower()
             if remote_status in PENDING_STATUSES:
-                record.razorpay_payment_status = remote_status
-                record.save(update_fields=['razorpay_payment_status'])
-                return _response(record, link)
+                cancel_pending_payment_link(link)
             if remote_status == 'paid' and link.get('payments'):
                 payment = link['payments'][-1]
                 _apply_paid_entities(record, link, payment)
