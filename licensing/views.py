@@ -79,7 +79,12 @@ def userinfo_dashboard(request):
             previous_month = month_start.replace(year=month_start.year - 1, month=12)
         else:
             previous_month = month_start.replace(month=month_start.month - 1)
-        report_user = request.GET.get('report_user', '').strip() if request.user.is_superuser else ''
+        requested_report_user = request.GET.get('report_user', '').strip()
+        report_user = (
+            requested_report_user
+            if request.user.is_superuser
+            else (request.user.username if requested_report_user else '')
+        )
         if report_user:
             clients = clients.filter(
                 accepte_by__iexact=report_user,
@@ -94,7 +99,7 @@ def userinfo_dashboard(request):
             activation_date__lt=next_month,
         ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
         if not request.user.is_superuser:
-            monthly_records = monthly_records.none()
+            monthly_records = monthly_records.filter(accepte_by__iexact=request.user.username)
         monthly_activation_report = list(
             monthly_records.values('accepte_by')
             .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
@@ -104,13 +109,16 @@ def userinfo_dashboard(request):
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
         today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_start = today_start + timedelta(days=1)
-        today_summary = UserInfoData.objects.filter(
+        today_records = UserInfoData.objects.filter(
             is_active=1,
             amount__gt=0,
             payment_status=models.F('amount'),
             activation_date__gte=today_start,
             activation_date__lt=tomorrow_start,
-        ).aggregate(activation_count=Count('id'), payment_total=Sum('payment_status')) if request.user.is_superuser else {}
+        )
+        if not request.user.is_superuser:
+            today_records = today_records.filter(accepte_by__iexact=request.user.username)
+        today_summary = today_records.aggregate(activation_count=Count('id'), payment_total=Sum('payment_status'))
         today_activation_count = today_summary.get('activation_count') or 0
         today_collection_total = today_summary.get('payment_total') or 0
         report_month = month_start.strftime('%B %Y')
@@ -261,7 +269,12 @@ def pacserp_dashboard(request):
             if month_start.month == 1
             else month_start.replace(month=month_start.month - 1)
         )
-        report_user = request.GET.get('report_user', '').strip() if request.user.is_superuser else ''
+        requested_report_user = request.GET.get('report_user', '').strip()
+        report_user = (
+            requested_report_user
+            if request.user.is_superuser
+            else (request.user.username if requested_report_user else '')
+        )
         if report_user:
             erp_records = erp_records.filter(
                 accepte_by__iexact=report_user,
@@ -276,7 +289,7 @@ def pacserp_dashboard(request):
             activation_date__lt=next_month,
         ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
         if not request.user.is_superuser:
-            monthly_records = monthly_records.none()
+            monthly_records = monthly_records.filter(accepte_by__iexact=request.user.username)
         monthly_activation_report = list(
             monthly_records.values('accepte_by')
             .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
@@ -286,12 +299,15 @@ def pacserp_dashboard(request):
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
         today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_start = today_start + timedelta(days=1)
-        today_summary = tblPacsErp.objects.filter(
+        today_records = tblPacsErp.objects.filter(
             is_active=1,
             expiry_date__gte=timezone.localdate(),
             activation_date__gte=today_start,
             activation_date__lt=tomorrow_start,
-        ).aggregate(activation_count=Count('id'), payment_total=Sum('payment_status')) if request.user.is_superuser else {}
+        )
+        if not request.user.is_superuser:
+            today_records = today_records.filter(accepte_by__iexact=request.user.username)
+        today_summary = today_records.aggregate(activation_count=Count('id'), payment_total=Sum('payment_status'))
         today_activation_count = today_summary.get('activation_count') or 0
         today_collection_total = today_summary.get('payment_total') or 0
         report_month = month_start.strftime('%B %Y')
