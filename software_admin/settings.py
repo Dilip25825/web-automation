@@ -171,6 +171,7 @@ RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')
 RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', '')
 RAZORPAY_API_BASE_URL = os.getenv('RAZORPAY_API_BASE_URL', 'https://api.razorpay.com/v1')
 PAYMENT_STATUS_TOKEN_MAX_AGE = int(os.getenv('PAYMENT_STATUS_TOKEN_MAX_AGE', '21600'))
+LICENSE_VALIDATION_API_KEY = os.getenv('LICENSE_VALIDATION_API_KEY', '').strip()
 
 # Khata attachments are stored privately in Google Drive.
 GOOGLE_DRIVE_FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID', '').strip()

@@ -15,6 +15,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('licensing/', include('licensing.urls')),
     path('api/payments/', include('licensing.payment_urls')),
+    path('api/licensing/', include('licensing.license_urls')),
     path('reminders/', include('reminders.urls')),
     path('khata/', include('khata.urls')),
     path('downloads/', include('onedownload.urls')),
