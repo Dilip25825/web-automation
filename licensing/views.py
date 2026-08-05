@@ -35,6 +35,113 @@ def userinfo_ajax_action(view_func):
     return wrapped
 
 
+def _activation_report_period(request):
+    """Return an IST-aware monthly, daily, or custom report period."""
+    today = timezone.localdate()
+    current_zone = timezone.get_current_timezone()
+    report_type = request.GET.get('report_type', 'monthly').strip().lower()
+    if report_type not in {'monthly', 'daily', 'range'}:
+        report_type = 'monthly'
+
+    def parse_date(value, fallback):
+        try:
+            return datetime.strptime(value, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            return fallback
+
+    report_date = parse_date(request.GET.get('report_date', '').strip(), today)
+    report_date = min(report_date, today)
+    range_end = parse_date(request.GET.get('range_end', '').strip(), today)
+    range_end = min(range_end, today)
+    range_start = parse_date(
+        request.GET.get('range_start', '').strip(),
+        range_end.replace(day=1),
+    )
+    range_start = min(range_start, today)
+    if range_start > range_end:
+        range_start, range_end = range_end, range_start
+    if (range_end - range_start).days > 365:
+        range_start = range_end - timedelta(days=365)
+
+    current_month_start = today.replace(day=1)
+    requested_month = request.GET.get('report_month', '').strip()
+    try:
+        month_date = datetime.strptime(requested_month, '%Y-%m').date().replace(day=1)
+    except ValueError:
+        month_date = current_month_start
+    month_date = min(month_date, current_month_start)
+    next_month_date = (
+        month_date.replace(year=month_date.year + 1, month=1)
+        if month_date.month == 12
+        else month_date.replace(month=month_date.month + 1)
+    )
+    previous_month_date = (
+        month_date.replace(year=month_date.year - 1, month=12)
+        if month_date.month == 1
+        else month_date.replace(month=month_date.month - 1)
+    )
+
+    if report_type == 'daily':
+        start_date = report_date
+        end_date = report_date
+        label = report_date.strftime('%d %b %Y')
+        total_label = 'Daily Total'
+    elif report_type == 'range':
+        start_date = range_start
+        end_date = range_end
+        label = f'{range_start.strftime("%d %b %Y")} - {range_end.strftime("%d %b %Y")}'
+        total_label = 'Range Total'
+    else:
+        start_date = month_date
+        end_date = next_month_date - timedelta(days=1)
+        label = month_date.strftime('%B %Y')
+        total_label = 'Month Total'
+
+    period_start = timezone.make_aware(datetime.combine(start_date, datetime.min.time()), current_zone)
+    period_end = timezone.make_aware(
+        datetime.combine(end_date + timedelta(days=1), datetime.min.time()),
+        current_zone,
+    )
+    return {
+        'report_type': report_type,
+        'period_start': period_start,
+        'period_end': period_end,
+        'report_label': label,
+        'report_total_label': total_label,
+        'report_month_value': month_date.strftime('%Y-%m'),
+        'previous_month_value': previous_month_date.strftime('%Y-%m'),
+        'next_month_value': (
+            next_month_date.strftime('%Y-%m')
+            if report_type == 'monthly' and next_month_date <= current_month_start
+            else ''
+        ),
+        'report_date_value': report_date.isoformat(),
+        'range_start_value': range_start.isoformat(),
+        'range_end_value': range_end.isoformat(),
+    }
+
+def _common_activation_summaries(queryset, user):
+    """Return fixed IST today and current-month activation summaries."""
+    today = timezone.localdate()
+    current_zone = timezone.get_current_timezone()
+    today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()), current_zone)
+    tomorrow_start = today_start + timedelta(days=1)
+    month_date = today.replace(day=1)
+    month_start = timezone.make_aware(datetime.combine(month_date, datetime.min.time()), current_zone)
+    next_month_date = month_date.replace(year=month_date.year + 1, month=1) if month_date.month == 12 else month_date.replace(month=month_date.month + 1)
+    next_month_start = timezone.make_aware(datetime.combine(next_month_date, datetime.min.time()), current_zone)
+    queryset = queryset.exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
+    if not user.is_superuser:
+        queryset = queryset.filter(accepte_by__iexact=user.username)
+
+    def summarize(start, end):
+        result = queryset.filter(activation_date__gte=start, activation_date__lt=end).aggregate(
+            activation_count=Count('id'), payment_total=Sum('payment_status')
+        )
+        return {'activation_count': result.get('activation_count') or 0, 'payment_total': result.get('payment_total') or 0}
+
+    return {'daily': summarize(today_start, tomorrow_start), 'monthly': summarize(month_start, next_month_start)}
+
 @login_required(login_url='accounts:login')
 def userinfo_dashboard(request):
     search_query = request.GET.get('search_id', '').strip()
@@ -60,25 +167,9 @@ def userinfo_dashboard(request):
                 search_filter |= models.Q(mobile=numeric_query) | models.Q(operator_mobile=numeric_query)
             clients = clients.filter(search_filter).distinct()
 
-        current_month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        requested_month = request.GET.get('report_month', '').strip()
-        month_start = current_month_start
-        if requested_month:
-            try:
-                parsed_month = datetime.strptime(requested_month, '%Y-%m')
-                month_start = timezone.make_aware(parsed_month, timezone.get_current_timezone())
-                if month_start > current_month_start:
-                    month_start = current_month_start
-            except ValueError:
-                month_start = current_month_start
-        if month_start.month == 12:
-            next_month = month_start.replace(year=month_start.year + 1, month=1)
-        else:
-            next_month = month_start.replace(month=month_start.month + 1)
-        if month_start.month == 1:
-            previous_month = month_start.replace(year=month_start.year - 1, month=12)
-        else:
-            previous_month = month_start.replace(month=month_start.month - 1)
+        report_period = _activation_report_period(request)
+        month_start = report_period['period_start']
+        next_month = report_period['period_end']
         requested_report_user = request.GET.get('report_user', '').strip()
         report_user = (
             requested_report_user
@@ -107,24 +198,22 @@ def userinfo_dashboard(request):
         )
         monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
-        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_start = today_start + timedelta(days=1)
-        today_records = UserInfoData.objects.filter(
-            is_active=1,
-            amount__gt=0,
-            payment_status=models.F('amount'),
-            activation_date__gte=today_start,
-            activation_date__lt=tomorrow_start,
-        )
-        if not request.user.is_superuser:
-            today_records = today_records.filter(accepte_by__iexact=request.user.username)
-        today_summary = today_records.aggregate(activation_count=Count('id'), payment_total=Sum('payment_status'))
-        today_activation_count = today_summary.get('activation_count') or 0
-        today_collection_total = today_summary.get('payment_total') or 0
-        report_month = month_start.strftime('%B %Y')
-        report_month_value = month_start.strftime('%Y-%m')
-        previous_month_value = previous_month.strftime('%Y-%m')
-        next_month_value = next_month.strftime('%Y-%m') if next_month <= current_month_start else ''
+        common_summaries = _common_activation_summaries(UserInfoData.objects.filter(is_active=1), request.user)
+        today_activation_count = common_summaries['daily']['activation_count']
+        today_collection_total = common_summaries['daily']['payment_total']
+        current_month_activation_count = common_summaries['monthly']['activation_count']
+        current_month_collection_total = common_summaries['monthly']['payment_total']
+        selected_activation_count = monthly_activation_count
+        selected_collection_total = monthly_payment_total
+        report_month = report_period['report_label']
+        report_total_label = report_period['report_total_label']
+        report_type = report_period['report_type']
+        report_month_value = report_period['report_month_value']
+        previous_month_value = report_period['previous_month_value']
+        next_month_value = report_period['next_month_value']
+        report_date_value = report_period['report_date_value']
+        range_start_value = report_period['range_start_value']
+        range_end_value = report_period['range_end_value']
     except Exception as error:
         messages.error(request, f'Database Fetch Error: {error}')
         clients = []
@@ -133,10 +222,20 @@ def userinfo_dashboard(request):
         monthly_payment_total = 0
         today_activation_count = 0
         today_collection_total = 0
-        report_month = timezone.localdate().strftime('%B %Y')
-        report_month_value = timezone.localdate().strftime('%Y-%m')
+        current_month_activation_count = 0
+        current_month_collection_total = 0
+        selected_activation_count = 0
+        selected_collection_total = 0
+        fallback_date = timezone.localdate()
+        report_month = fallback_date.strftime('%B %Y')
+        report_total_label = 'Month Total'
+        report_type = 'monthly'
+        report_month_value = fallback_date.strftime('%Y-%m')
         previous_month_value = ''
         next_month_value = ''
+        report_date_value = fallback_date.isoformat()
+        range_start_value = fallback_date.replace(day=1).isoformat()
+        range_end_value = fallback_date.isoformat()
         report_user = ''
 
     activation_context = activation_ledger_context(request.user)
@@ -150,7 +249,16 @@ def userinfo_dashboard(request):
         'monthly_payment_total': monthly_payment_total,
         'today_activation_count': today_activation_count,
         'today_collection_total': today_collection_total,
+        'current_month_activation_count': current_month_activation_count,
+        'current_month_collection_total': current_month_collection_total,
+        'selected_activation_count': selected_activation_count,
+        'selected_collection_total': selected_collection_total,
         'report_month': report_month,
+        'report_total_label': report_total_label,
+        'report_type': report_type,
+        'report_date_value': report_date_value,
+        'range_start_value': range_start_value,
+        'range_end_value': range_end_value,
         'report_month_value': report_month_value,
         'previous_month_value': previous_month_value,
         'next_month_value': next_month_value,
@@ -248,27 +356,9 @@ def pacserp_dashboard(request):
                     | models.Q(remark__icontains=search_query)
                     | models.Q(system_id__icontains=search_query)
                 )
-        current_month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        requested_month = request.GET.get('report_month', '').strip()
-        month_start = current_month_start
-        if requested_month:
-            try:
-                parsed_month = datetime.strptime(requested_month, '%Y-%m')
-                month_start = timezone.make_aware(parsed_month, timezone.get_current_timezone())
-                if month_start > current_month_start:
-                    month_start = current_month_start
-            except ValueError:
-                month_start = current_month_start
-        next_month = (
-            month_start.replace(year=month_start.year + 1, month=1)
-            if month_start.month == 12
-            else month_start.replace(month=month_start.month + 1)
-        )
-        previous_month = (
-            month_start.replace(year=month_start.year - 1, month=12)
-            if month_start.month == 1
-            else month_start.replace(month=month_start.month - 1)
-        )
+        report_period = _activation_report_period(request)
+        month_start = report_period['period_start']
+        next_month = report_period['period_end']
         requested_report_user = request.GET.get('report_user', '').strip()
         report_user = (
             requested_report_user
@@ -297,23 +387,22 @@ def pacserp_dashboard(request):
         )
         monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
         monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
-        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_start = today_start + timedelta(days=1)
-        today_records = tblPacsErp.objects.filter(
-            is_active=1,
-            expiry_date__gte=timezone.localdate(),
-            activation_date__gte=today_start,
-            activation_date__lt=tomorrow_start,
-        )
-        if not request.user.is_superuser:
-            today_records = today_records.filter(accepte_by__iexact=request.user.username)
-        today_summary = today_records.aggregate(activation_count=Count('id'), payment_total=Sum('payment_status'))
-        today_activation_count = today_summary.get('activation_count') or 0
-        today_collection_total = today_summary.get('payment_total') or 0
-        report_month = month_start.strftime('%B %Y')
-        report_month_value = month_start.strftime('%Y-%m')
-        previous_month_value = previous_month.strftime('%Y-%m')
-        next_month_value = next_month.strftime('%Y-%m') if next_month <= current_month_start else ''
+        common_summaries = _common_activation_summaries(tblPacsErp.objects.filter(is_active=1, expiry_date__gte=timezone.localdate()), request.user)
+        today_activation_count = common_summaries['daily']['activation_count']
+        today_collection_total = common_summaries['daily']['payment_total']
+        current_month_activation_count = common_summaries['monthly']['activation_count']
+        current_month_collection_total = common_summaries['monthly']['payment_total']
+        selected_activation_count = monthly_activation_count
+        selected_collection_total = monthly_payment_total
+        report_month = report_period['report_label']
+        report_total_label = report_period['report_total_label']
+        report_type = report_period['report_type']
+        report_month_value = report_period['report_month_value']
+        previous_month_value = report_period['previous_month_value']
+        next_month_value = report_period['next_month_value']
+        report_date_value = report_period['report_date_value']
+        range_start_value = report_period['range_start_value']
+        range_end_value = report_period['range_end_value']
     except Exception as error:
         messages.error(request, f'NCL Database Fetch Error: {error}')
         erp_records = []
@@ -322,10 +411,20 @@ def pacserp_dashboard(request):
         monthly_payment_total = 0
         today_activation_count = 0
         today_collection_total = 0
-        report_month = timezone.localdate().strftime('%B %Y')
-        report_month_value = timezone.localdate().strftime('%Y-%m')
+        current_month_activation_count = 0
+        current_month_collection_total = 0
+        selected_activation_count = 0
+        selected_collection_total = 0
+        fallback_date = timezone.localdate()
+        report_month = fallback_date.strftime('%B %Y')
+        report_total_label = 'Month Total'
+        report_type = 'monthly'
+        report_month_value = fallback_date.strftime('%Y-%m')
         previous_month_value = ''
         next_month_value = ''
+        report_date_value = fallback_date.isoformat()
+        range_start_value = fallback_date.replace(day=1).isoformat()
+        range_end_value = fallback_date.isoformat()
         report_user = ''
 
     activation_context = activation_ledger_context(request.user)
@@ -339,7 +438,16 @@ def pacserp_dashboard(request):
         'monthly_payment_total': monthly_payment_total,
         'today_activation_count': today_activation_count,
         'today_collection_total': today_collection_total,
+        'current_month_activation_count': current_month_activation_count,
+        'current_month_collection_total': current_month_collection_total,
+        'selected_activation_count': selected_activation_count,
+        'selected_collection_total': selected_collection_total,
         'report_month': report_month,
+        'report_total_label': report_total_label,
+        'report_type': report_type,
+        'report_date_value': report_date_value,
+        'range_start_value': range_start_value,
+        'range_end_value': range_end_value,
         'report_month_value': report_month_value,
         'previous_month_value': previous_month_value,
         'next_month_value': next_month_value,

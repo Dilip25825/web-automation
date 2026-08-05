@@ -132,6 +132,16 @@ def create_razorpay_payment_link(record_id):
                 cancel_pending_payment_link(link)
             if remote_status == 'paid' and link.get('payments'):
                 payment = link['payments'][-1]
+                # A payment-link response may contain only a compact payment
+                # reference. Fetch the complete payment before validating
+                # currency, amount and capture status.
+                payment_id = payment.get('id') or payment.get('payment_id')
+                if payment_id and (
+                    not payment.get('currency')
+                    or not payment.get('status')
+                    or payment.get('amount') is None
+                ):
+                    payment = _razorpay_request('GET', f'payments/{payment_id}')
                 _apply_paid_entities(record, link, payment)
                 return _response(record)
         reference = f'U{record.pk}-{secrets.token_hex(8)}'[:40]
