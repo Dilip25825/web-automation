@@ -22,6 +22,14 @@ class PaymentError(Exception):
         self.http_status = http_status
 
 
+def require_payment_link_creation_enabled():
+    if not getattr(settings, 'RAZORPAY_PAYMENT_LINKS_ENABLED', False):
+        raise PaymentError(
+            'Online payment is temporarily unavailable. Please try again later.',
+            'PAYMENT_LINKS_DISABLED',
+            503,
+        )
+
 def _require_configuration(webhook=False):
     required = ['RAZORPAY_WEBHOOK_SECRET'] if webhook else ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET']
     missing = [name for name in required if not getattr(settings, name, '')]
@@ -122,6 +130,7 @@ def create_razorpay_payment_link(record_id):
         record = UserInfoData.objects.select_for_update().get(pk=record_id)
         if is_paid(record):
             return _response(record)
+        require_payment_link_creation_enabled()
         amount_rupees = int(record.amount or 0)
         if amount_rupees <= 0:
             raise PaymentError('Required payment amount is not configured.', 'INVALID_DATABASE_AMOUNT', 409)

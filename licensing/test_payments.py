@@ -12,7 +12,7 @@ from . import payment_views as views
 from .payment_services import PaymentError
 
 
-SETTINGS = override_settings(SECRET_KEY='test-secret', RAZORPAY_KEY_ID='rzp_test_key', RAZORPAY_KEY_SECRET='secret', RAZORPAY_WEBHOOK_SECRET='webhook-secret', RAZORPAY_API_BASE_URL='https://api.razorpay.test/v1', PAYMENT_STATUS_TOKEN_MAX_AGE=21600)
+SETTINGS = override_settings(SECRET_KEY='test-secret', RAZORPAY_KEY_ID='rzp_test_key', RAZORPAY_KEY_SECRET='secret', RAZORPAY_WEBHOOK_SECRET='webhook-secret', RAZORPAY_API_BASE_URL='https://api.razorpay.test/v1', PAYMENT_STATUS_TOKEN_MAX_AGE=21600, RAZORPAY_PAYMENT_LINKS_ENABLED=True)
 
 
 def record(**changes):
@@ -72,6 +72,17 @@ class RazorpayPaymentTests(SimpleTestCase):
     def test_06_client_amount_is_not_a_service_argument(self):
         self.assertEqual(services.create_razorpay_payment_link.__code__.co_argcount,1)
 
+    @override_settings(RAZORPAY_PAYMENT_LINKS_ENABLED=False)
+    @patch('licensing.payment_services.UserInfoData.objects')
+    def test_disabled_switch_blocks_new_payment_link(self, objects):
+        objects.select_for_update.return_value.get.return_value = record(
+            razorpay_payment_link_id=None,
+            razorpay_reference_id=None,
+        )
+        with self.assertRaises(PaymentError) as caught:
+            services.create_razorpay_payment_link(7)
+        self.assertEqual(caught.exception.code, 'PAYMENT_LINKS_DISABLED')
+        self.assertEqual(caught.exception.http_status, 503)
     @patch('licensing.payment_services.UserInfoData.objects')
     def test_07_already_paid_does_not_create_link(self, objects):
         objects.select_for_update.return_value.get.return_value=record(payment_status=2000)

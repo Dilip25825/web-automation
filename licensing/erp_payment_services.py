@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import tblPacsErp
-from .payment_services import PaymentError, PENDING_STATUSES, _razorpay_request, cancel_pending_payment_link
+from .payment_services import PaymentError, PENDING_STATUSES, _razorpay_request, cancel_pending_payment_link, require_payment_link_creation_enabled
 
 ERP_TOKEN_SALT = 'licensing.erp-razorpay-payment.v1'
 
@@ -119,6 +119,7 @@ def create_erp_payment_link(erp_id=None, record_id=None):
             record = find_erp_payment_record(erp_id, for_update=True)
         if _is_fully_paid(record) and _is_currently_active(record):
             return _response(record, paid=True, already_paid=True)
+        require_payment_link_creation_enabled()
         amount_rupees = int(record.current_amount or (3500 if _is_fully_paid(record) else 4500))
         if amount_rupees <= 0:
             raise PaymentError('ERP payment amount is not configured.', 'INVALID_DATABASE_AMOUNT', 409)
