@@ -16,6 +16,8 @@ from functools import wraps
 from django.db.models import Count, Sum
 from django.views.decorators.http import require_POST
 from .activation_ledger import activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry
+from khata.models import Transaction
+from khata.views import build_transaction_whatsapp_url
 
 
 
@@ -27,13 +29,34 @@ def userinfo_ajax_action(view_func):
             queued = list(messages.get_messages(request))
             failed = any(message.level >= messages.ERROR for message in queued)
             text = ' '.join(str(message) for message in queued)
+            payload = {
+                'success': not failed,
+                'message': text or ('Action failed.' if failed else 'Changes saved successfully.'),
+            }
+            if getattr(request, '_licensing_whatsapp_url', ''):
+                payload['whatsapp_url'] = request._licensing_whatsapp_url
             return JsonResponse(
-                {'success': not failed, 'message': text or ('Action failed.' if failed else 'Changes saved successfully.')},
+                payload,
                 status=400 if failed else 200,
             )
         return response
     return wrapped
 
+
+def _activation_whatsapp_url(ledger_entry):
+    """Return a WhatsApp click-to-chat URL for a created activation ledger entry."""
+    if not ledger_entry:
+        return ''
+    totals = Transaction.objects.filter(customer=ledger_entry.customer).aggregate(
+        total_given=Sum('amount', filter=models.Q(trans_type='GIVEN')),
+        total_got=Sum('amount', filter=models.Q(trans_type='GOT')),
+    )
+    net_balance = (totals['total_given'] or 0) - (totals['total_got'] or 0)
+    return build_transaction_whatsapp_url(
+        ledger_entry.customer,
+        ledger_entry.transaction,
+        net_balance,
+    )
 
 def _activation_report_period(request):
     """Return an IST-aware monthly, daily, or custom report period."""
@@ -307,13 +330,14 @@ def toggle_activation(request, pk):
                 client.is_active = 1
                 client.activation_date = timezone.now()
                 client.save()
-                create_activation_ledger_entry(
+                ledger_entry = create_activation_ledger_entry(
                     activation_plan,
                     request_user=request.user,
                     source_type='USERINFO',
                     source_record_id=client.pk,
                     source_label=f'{client.for_whys or "Not assigned"} {client.f_year or ""} | Mobile {client.mobile} / Record #{client.pk}',
                 )
+            request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, f'PACS ID {client.id} Activated successfully by {accepted_username}!')
     except Exception as error:
         messages.error(request, f'Status Update Failed: {error}')
@@ -583,7 +607,7 @@ def toggle_erp_activation(request, pk):
                     record.save()
                     success_message = f'ERP Pacs ID {record.erp_id} Activated successfully!'
 
-                create_activation_ledger_entry(
+                ledger_entry = create_activation_ledger_entry(
                     activation_plan,
                     request_user=request.user,
                     source_type='PACS_ERP',
@@ -591,6 +615,7 @@ def toggle_erp_activation(request, pk):
                     source_label=f'ERP ID {record.erp_id} / Record #{record.pk}',
                 )
 
+            request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, success_message)
     except Exception as error:
         messages.error(request, f'ERP Status Update Failed: {error}')

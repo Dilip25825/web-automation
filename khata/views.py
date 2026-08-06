@@ -31,17 +31,53 @@ def ajax_action(view_func):
             queued = list(messages.get_messages(request))
             failed = any(message.level >= messages.WARNING for message in queued)
             message_text = ' '.join(str(message) for message in queued)
+            payload = {
+                'success': not failed,
+                'message': message_text or ('Action could not be completed.' if failed else 'Changes saved successfully.'),
+                'errors': [str(message) for message in queued if message.level >= messages.WARNING],
+            }
+            if getattr(request, '_khata_whatsapp_url', ''):
+                payload['whatsapp_url'] = request._khata_whatsapp_url
             return JsonResponse(
-                {
-                    'success': not failed,
-                    'message': message_text or ('Action could not be completed.' if failed else 'Changes saved successfully.'),
-                    'errors': [str(message) for message in queued if message.level >= messages.WARNING],
-                },
+                payload,
                 status=400 if failed else 200,
             )
         return response
     return wrapped
 
+
+def build_transaction_whatsapp_url(customer, latest_transaction, net_balance):
+    """Build a click-to-chat URL for one saved ledger transaction."""
+    phone_number = ''.join(filter(str.isdigit, customer.phone or ''))
+    if len(phone_number) == 10:
+        phone_number = "91" + phone_number
+    if not latest_transaction or not 11 <= len(phone_number) <= 15:
+        return ""
+
+    transaction_label = (
+        "Aapke khate mein udhaar joda gaya"
+        if latest_transaction.trans_type == 'GIVEN'
+        else "Aapse payment prapt hua"
+    )
+    if net_balance > 0:
+        balance_status = "Aapko dena hai"
+    elif net_balance < 0:
+        balance_status = "Aapko lena hai"
+    else:
+        balance_status = "Hisaab barabar hai"
+
+    remarks = (latest_transaction.remarks or "Koi vivaran nahi").strip()
+    message = (
+        f"Namaste {customer.name} ji,\n\n"
+        "Aapke khate mein nayi transaction darj hui hai.\n"
+        f"Date: {latest_transaction.date.strftime('%d %b %Y')}\n"
+        f"Type: {transaction_label}\n"
+        f"Amount: Rs. {latest_transaction.amount:.2f}\n"
+        f"Description: {remarks}\n\n"
+        f"Updated Balance: Rs. {abs(net_balance):.2f} ({balance_status})\n\n"
+        "Dhanyavaad!"
+    )
+    return f"https://wa.me/{phone_number}?text={urllib.parse.quote(message)}"
 
 @login_required
 def dashboard(request):
@@ -274,9 +310,11 @@ def customer_detail(request, customer_id):
         total_given = 0
         total_got = 0
         
-        for t in transactions:
+        transaction_list = list(transactions)
+        for serial_number, t in enumerate(transaction_list, start=1):
             # Base64 ID for security
             t.b64_id = base64.b64encode(str(t.id).encode('utf-8')).decode('utf-8')
+            t.serial_number = serial_number
             
             # Balance Calculation
             if t.trans_type == 'GIVEN':
@@ -326,6 +364,21 @@ def customer_detail(request, customer_id):
                         'attachment_uploaded_at',
                     ])
                 messages.success(request, 'Len-den ki entry save ho gayi!')
+                totals = Transaction.objects.filter(customer=customer).aggregate(
+                    total_given=Coalesce(
+                        Sum('amount', filter=Q(trans_type='GIVEN')),
+                        Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    ),
+                    total_got=Coalesce(
+                        Sum('amount', filter=Q(trans_type='GOT')),
+                        Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    ),
+                )
+                request._khata_whatsapp_url = build_transaction_whatsapp_url(
+                    customer,
+                    new_transaction,
+                    totals['total_given'] - totals['total_got'],
+                )
             except ValidationError as error:
                 if new_transaction:
                     new_transaction.delete()
@@ -345,9 +398,10 @@ def customer_detail(request, customer_id):
 
         # 6. Interest/Auto-months calculation
         auto_months = 0
+        last_trans = None
         last_transaction_date = timezone.now().date()
-        if transactions.exists():
-            last_trans = transactions.last()
+        if transaction_list:
+            last_trans = transaction_list[-1]
             last_transaction_date = last_trans.date 
             last_date = last_trans.date
             if hasattr(last_date, 'date'): last_date = last_date.date()
@@ -355,19 +409,15 @@ def customer_detail(request, customer_id):
             if days_passed > 0:
                 auto_months = round(days_passed / 30.0, 1)
 
-        # 7. WhatsApp Logic
-        whatsapp_url = ""
-        if net_balance > 0:
-            message = f"नमस्ते {customer.name} जी, आपका बकाया उधार ₹{net_balance:.2f} बाकी है, कृपया समय पर भुगतान करे.\nधन्यवाद!"
-            encoded_message = urllib.parse.quote(message)
-            phone_number = ''.join(filter(str.isdigit, customer.phone))
-            if len(phone_number) == 10: phone_number = "91" + phone_number
-            whatsapp_url = f"https://wa.me/{phone_number}?text={encoded_message}"
-            
+        # 7. WhatsApp click-to-chat message for the latest visible transaction
+        whatsapp_url = build_transaction_whatsapp_url(customer, last_trans, net_balance)
+
+        transaction_page = Paginator(transaction_list, 10).get_page(request.GET.get('page', 1))
+
         context = {
             'customer': customer,
             'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
-            'transactions': transactions,
+            'transactions': transaction_page,
             'net_balance': net_balance,
             'encoded_id': base64.b64encode(str(customer.id).encode('utf-8')).decode('utf-8'),
             'auto_months': auto_months,
