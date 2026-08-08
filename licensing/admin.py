@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ClientLicense,tblPacsErp,UserInfoData,tblUPI,Perpous,VersionInfo
+from .models import ClientLicense,tblPacsErp,UserInfoData,tblUPI,Perpous,VersionInfo,ErpApiClientToken
 
 admin.site.register(ClientLicense)
 admin.site.register(tblPacsErp)
@@ -38,3 +38,10 @@ class VersionAdmin(admin.ModelAdmin):
     # Admin list view mein column dikhane ke liye
     list_display = ('Description', 'Year','Version','Remark')
     search_fields = ('Description',)
+
+@admin.register(ErpApiClientToken)
+class ErpApiClientTokenAdmin(admin.ModelAdmin):
+    list_display = ('operator_mobile', 'token_prefix', 'device_hash', 'is_active', 'expires_at', 'last_used_at', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('operator_mobile', 'token_prefix')
+    readonly_fields = ('token_hash', 'token_prefix', 'device_hash', 'created_at', 'updated_at', 'last_used_at')

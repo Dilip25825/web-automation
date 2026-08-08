@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import license_views, views
 
 app_name = 'licensing'
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path('pacserp/invoice/<int:pk>/', views.generate_erp_invoice, name='generate_erp_invoice'),
     path('userinfo/add/', views.create_userinfo, name='create_userinfo'),
     path('pacserp/add/', views.create_pacserp, name='create_pacserp'),
+    path('erp/register/', license_views.erp_self_register, name='erp_self_register'),
     path('delete-record/<int:record_id>/', views.delete_record_view, name='delete_record'),
     path('userinfo/delete/<int:user_id>/', views.delete_userinfo_view, name='delete_userinfo'),
     path('userinfo/update/<int:client_id>/', views.update_userinfo_view, name='update_userinfo'),

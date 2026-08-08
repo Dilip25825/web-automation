@@ -13,8 +13,17 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(name, default=''):
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 
@@ -27,8 +36,23 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+DEBUG = env_bool('DJANGO_DEBUG', False)
+ALLOWED_HOSTS = env_list(
+    'ALLOWED_HOSTS',
+    '127.0.0.1,localhost' if DEBUG else 'web-automation-maar.onrender.com',
+)
+CSRF_TRUSTED_ORIGINS = env_list(
+    'CSRF_TRUSTED_ORIGINS',
+    '' if DEBUG else 'https://web-automation-maar.onrender.com',
+)
+
+if not DEBUG:
+    if not SECRET_KEY or len(SECRET_KEY) < 50 or SECRET_KEY.startswith('django-insecure-'):
+        raise ImproperlyConfigured('Production SECRET_KEY must be a strong random value of at least 50 characters.')
+    if not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS:
+        raise ImproperlyConfigured('Production ALLOWED_HOSTS must contain exact host names; wildcard is not allowed.')
+    if not CSRF_TRUSTED_ORIGINS or any(not origin.startswith('https://') for origin in CSRF_TRUSTED_ORIGINS):
+        raise ImproperlyConfigured('Production CSRF_TRUSTED_ORIGINS must contain HTTPS origins.')
 
 
 # Application definition
@@ -157,6 +181,15 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # 3. Cookie ko secure aur temporary rakhne ke liye
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '3600' if not DEBUG else '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', False)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
 # 1. Session ko 10 minutes (10 * 60 seconds = 600) par expire set kiya
 # SESSION_COOKIE_AGE = 600
 
@@ -173,6 +206,18 @@ RAZORPAY_API_BASE_URL = os.getenv('RAZORPAY_API_BASE_URL', 'https://api.razorpay
 PAYMENT_STATUS_TOKEN_MAX_AGE = int(os.getenv('PAYMENT_STATUS_TOKEN_MAX_AGE', '21600'))
 RAZORPAY_PAYMENT_LINKS_ENABLED = os.getenv('RAZORPAY_PAYMENT_LINKS_ENABLED', 'false').strip().lower() in {'1', 'true', 'yes', 'on'}
 LICENSE_VALIDATION_API_KEY = os.getenv('LICENSE_VALIDATION_API_KEY', '').strip()
+ERP_API_IP_RATE_LIMIT = int(os.getenv('ERP_API_IP_RATE_LIMIT', '60'))
+ERP_API_MOBILE_RATE_LIMIT = int(os.getenv('ERP_API_MOBILE_RATE_LIMIT', '20'))
+
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv(
+            'DJANGO_CACHE_BACKEND',
+            'django.core.cache.backends.locmem.LocMemCache',
+        ),
+        'LOCATION': os.getenv('DJANGO_CACHE_LOCATION', 'software-admin-cache'),
+    }
+}
 
 # Khata attachments are stored privately in Google Drive.
 GOOGLE_DRIVE_FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID', '').strip()

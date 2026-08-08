@@ -139,3 +139,17 @@ class PacsErpForm(forms.ModelForm):
         self.fields['activation_date'].input_formats = ['%Y-%m-%dT%H:%M']
         if not self.instance.pk:
             self.fields['current_amount'].initial = 4500
+
+class PublicPacsErpRegistrationForm(forms.Form):
+    erp_id = forms.CharField(label='ERP User ID', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'ERP login/user ID', 'autocomplete': 'off'}))
+    pacs_name = forms.CharField(label='PACS Name', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'PACS / Society name'}))
+    brach = forms.CharField(label='Branch', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'Branch name'}))
+    dist = forms.CharField(label='District', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'District'}))
+    state = forms.CharField(label='State', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'State'}))
+    operator_mobile = forms.CharField(label='Operator Mobile', max_length=10, widget=forms.TextInput(attrs={'readonly': 'readonly', 'inputmode': 'numeric'}))
+
+    def clean_operator_mobile(self):
+        value = ''.join(filter(str.isdigit, self.cleaned_data['operator_mobile']))
+        if len(value) != 10 or value[0] not in '6789':
+            raise forms.ValidationError('Valid 10 digit Indian mobile required hai.')
+        return value
