@@ -16,7 +16,7 @@ SETTINGS = override_settings(SECRET_KEY='test-secret', RAZORPAY_KEY_ID='rzp_test
 
 
 def record(**changes):
-    values = dict(pk=7, id=7, mobile=9876543210, for_whys='PMFBY', f_year='Kharif 2026', amount=2000, payment_status=0, is_active=0, activation_date=None, razorpay_payment_link_id='plink_test', razorpay_payment_id=None, razorpay_reference_id='U7-reference', razorpay_payment_status='created')
+    values = dict(pk=7, id=7, mobile=9876543210, for_whys='PMFBY', f_year='Kharif 2026', amount=2000, payment_status=0, is_active=0, activation_date=None, razorpay_payment_link_id='plink_test', razorpay_payment_id=None, razorpay_reference_id='U7-reference', razorpay_payment_status='created', limit_of_entrys=10)
     values.update(changes)
     item = SimpleNamespace(**values)
     item.save = MagicMock()
@@ -171,8 +171,27 @@ class RazorpayPaymentTests(SimpleTestCase):
         item=record(utr_number=None); services._apply_paid_entities(item,link(),payment(acquirer_data={'rrn':'123456789012'}))
         self.assertEqual(item.payment_status,2000)
         self.assertEqual(item.utr_number,'123456789012')
-        item.save.assert_called_once_with(update_fields=['utr_number', 'accepte_by', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
+        item.save.assert_called_once_with(update_fields=['utr_number', 'accepte_by', 'razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date', 'limit_of_entrys'])
 
+    def test_first_pmfby_payment_sets_entry_limit_to_3000(self):
+        item = record(limit_of_entrys=10, activation_date=None)
+        services._apply_paid_entities(item, link(), payment())
+        self.assertEqual(item.limit_of_entrys, 3000)
+        self.assertIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
+
+    def test_first_fasal_rin_payment_sets_entry_limit_to_3000(self):
+        item = record(
+            for_whys='FASAL RIN', is_pri='1',
+            limit_of_entrys=20, activation_date=None,
+        )
+        services._apply_paid_entities(item, link(), payment())
+        self.assertEqual(item.limit_of_entrys, 3000)
+        self.assertIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
+    def test_later_payment_does_not_overwrite_admin_entry_limit(self):
+        item = record(limit_of_entrys=4250, activation_date=datetime(2025, 1, 1, tzinfo=datetime_timezone.utc))
+        services._apply_paid_entities(item, link(), payment(id='pay_new'))
+        self.assertEqual(item.limit_of_entrys, 4250)
+        self.assertNotIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
     def test_payment_activation_date_uses_razorpay_payment_time(self):
         item = record(activation_date=datetime(2025, 1, 1, tzinfo=datetime_timezone.utc))
         paid_at = 1785450600

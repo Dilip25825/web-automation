@@ -323,8 +323,15 @@ def toggle_activation(request, pk):
 
             with transaction.atomic():
                 client = UserInfoData.objects.select_for_update().get(pk=pk)
+                first_paid_activation = (
+                    str(client.for_whys or '').strip().upper() in {'PMFBY', 'FASAL RIN'}
+                    and client.activation_date is None
+                    and activation_amount > 0
+                )
                 client.amount = activation_amount
                 client.payment_status = activation_amount
+                if first_paid_activation:
+                    client.limit_of_entrys = 3000
                 client.accepte_by = accepted_username
                 client.utr_number = input_utr_number
                 client.is_active = 1
@@ -677,16 +684,29 @@ def create_userinfo(request):
                 f_year = form.cleaned_data.get('f_year')
                 for_whys = form.cleaned_data.get('for_whys')
                 
-                # Sahi Duplicate Check logic: Ab yeh charo chizein match hongi tabhi error dega
-                if UserInfoData.objects.filter(
-                    pacs_name=pacs_name, 
-                    mobile=mobile, 
-                    f_year=f_year, 
-                    for_whys=for_whys
-                ).exists():
-                    messages.error(request, f"Duplicate Entry: ({mobile}) '{pacs_name}' ka record '{for_whys}' ({f_year}) ({mobile}) ke liye pehle se mojud hai!")
+                is_pmfby = str(for_whys or '').strip().upper() == 'PMFBY'
+                if is_pmfby:
+                    duplicate_exists = UserInfoData.objects.filter(
+                        mobile=mobile,
+                        for_whys__iexact='PMFBY',
+                        f_year__iexact=str(f_year or '').strip(),
+                    ).exists()
+                else:
+                    duplicate_exists = UserInfoData.objects.filter(
+                        pacs_name=pacs_name,
+                        mobile=mobile,
+                        f_year=f_year,
+                        for_whys=for_whys,
+                    ).exists()
+
+                if duplicate_exists:
+                    messages.error(request, f"Duplicate Entry: ({mobile}) ka '{for_whys}' ({f_year}) record pehle se maujood hai!")
                     return render(request, 'licensing/create_userinfo.html', {'form': form})
+
                 new_record = form.save(commit=False)
+                if is_pmfby:
+                    new_record.is_pri = None
+                    new_record.limit_of_entrys = 10
                 new_record.payment_status = 0
                 new_record.amount = 2000
                 new_record.date_time =timezone.now()

@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core import signing
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import F, Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
@@ -19,8 +20,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import PublicPacsErpRegistrationForm
-from .models import ErpApiClientToken, UserInfoData, VersionInfo, tblPacsErp, tblUPI
+from .forms import PublicFasalRinRegistrationForm, PublicPacsErpRegistrationForm, PublicPmfbyRegistrationForm
+from .models import ErpApiClientToken, Perpous, UserInfoData, VersionInfo, tblPacsErp, tblUPI
 
 
 ERP_REGISTRATION_SALT = 'licensing.erp-registration.v1'
@@ -104,6 +105,25 @@ def _operator_mobile(value):
         digits = digits[2:]
     return digits if len(digits) == 10 and digits[0] in "6789" else ""
 
+
+def _select_erp_record(operator_mobile):
+    """Prefer one active/unexpired row; otherwise return latest renewal row."""
+    today = timezone.localdate()
+    base_queryset = (
+        tblPacsErp.objects.filter(operator_mobile=int(operator_mobile))
+        .exclude(erp_id__iendswith=' Expired')
+    )
+    active_records = list(
+        base_queryset.filter(is_active=1, expiry_date__gte=today)
+        .order_by('-id')[:2]
+    )
+    if len(active_records) > 1:
+        return None, True
+    if active_records:
+        return active_records[0], False
+
+    fallback_records = list(base_queryset.order_by('-id')[:1])
+    return (fallback_records[0] if fallback_records else None), False
 
 def _erp_registration_url(request, operator_mobile):
     token = signing.dumps(
@@ -190,12 +210,8 @@ def register_erp_device(request):
     if _rate_limited(request, 'device-register-mobile', operator_mobile, 5):
         return _too_many_requests()
 
-    records = list(
-        tblPacsErp.objects.filter(operator_mobile=int(operator_mobile))
-        .exclude(erp_id__iendswith=' Expired')
-        .order_by('-id')[:2]
-    )
-    if not records:
+    record, multiple_active = _select_erp_record(operator_mobile)
+    if not record and not multiple_active:
         return JsonResponse(
             {
                 'success': True,
@@ -205,13 +221,13 @@ def register_erp_device(request):
                 'registration_url': _erp_registration_url(request, operator_mobile),
             }
         )
-    if len(records) > 1:
+    if multiple_active:
         return JsonResponse(
             {
                 'success': False,
                 'registered': False,
-                'status': 'MULTIPLE_ERP_RECORDS',
-                'message': 'Is mobile par multiple current ERP records mile. Support se contact karein.',
+                'status': 'MULTIPLE_ACTIVE_RECORDS',
+                'message': 'Is mobile par multiple active aur valid ERP records mile. Support se contact karein.',
             },
             status=409,
         )
@@ -310,12 +326,8 @@ def check_erp_subscription(request):
             status=401,
         )
 
-    records = list(
-        tblPacsErp.objects.filter(operator_mobile=int(operator_mobile))
-        .exclude(erp_id__iendswith=" Expired")
-        .order_by("-id")[:2]
-    )
-    if not records:
+    record, multiple_active = _select_erp_record(operator_mobile)
+    if not record and not multiple_active:
         return JsonResponse(
             {
                 "success": True,
@@ -326,18 +338,17 @@ def check_erp_subscription(request):
                 "registration_url": _erp_registration_url(request, operator_mobile),
             }
         )
-    if len(records) > 1:
+    if multiple_active:
         return JsonResponse(
             {
                 "success": False,
                 "authorized": False,
-                "status": "MULTIPLE_ERP_RECORDS",
-                "message": "Is OperatorMobile par multiple current ERP records mile. Support se contact karein.",
+                "status": "MULTIPLE_ACTIVE_RECORDS",
+                "message": "Is OperatorMobile par multiple active aur valid ERP records mile. Support se contact karein.",
             },
             status=409,
         )
 
-    record = records[0]
     if (
         int(record.is_active or 0) != 1
         and record.system_id == "Web registration"
@@ -509,7 +520,7 @@ def get_erp_upi(request):
             {
                 'success': False,
                 'status': 'UPI_NOT_CONFIGURED',
-                'message': 'Server par active UPI ID configured nahi hai.',
+                'message': 'Payment service abhi uplabdh nahi hai. Kripya support se sampark karein.',
             },
             status=503,
         )
@@ -521,6 +532,597 @@ def get_erp_upi(request):
             'upi_id': str(upi_record.upiID).strip(),
         }
     )
+
+PMFBY_PURPOSE = 'PMFBY'
+PMFBY_ENTRY_LIMIT = 10
+PMFBY_TOKEN_SALT = 'licensing.pmfby-session.v1'
+PMFBY_TOKEN_MAX_AGE = 12 * 60 * 60
+
+def _pmfby_queryset(mobile, financial_year):
+    return UserInfoData.objects.filter(mobile=int(mobile), for_whys__iexact=PMFBY_PURPOSE, f_year__iexact=financial_year.strip())
+
+def _select_pmfby_record(mobile, financial_year):
+    active_records = list(_pmfby_queryset(mobile, financial_year).filter(is_active=1).order_by('-id')[:2])
+    if len(active_records) > 1:
+        return None, True
+    if active_records:
+        return active_records[0], False
+    return _pmfby_queryset(mobile, financial_year).order_by('-id').first(), False
+
+def _pmfby_request_identity(body):
+    mobile = _operator_mobile(body.get('mobile') or body.get('user_id'))
+    financial_year = str(body.get('financial_year') or body.get('fYear') or '').strip()
+    return mobile, financial_year
+
+def _pmfby_years():
+    values = Perpous.objects.filter(forWhy__iexact=PMFBY_PURPOSE).exclude(fyear__isnull=True).exclude(fyear='').order_by('-fyear').values_list('fyear', flat=True).distinct()
+    return [str(year).strip() for year in values if str(year).strip()]
+
+def _pmfby_registration_url(request, mobile):
+    token = signing.dumps({'mobile': mobile}, salt=PMFBY_TOKEN_SALT, compress=True)
+    return request.build_absolute_uri(f"{reverse('licensing:pmfby_self_register')}?token={token}")
+
+def _pmfby_registration_initial(mobile):
+    initial = {'mobile': mobile, 'operator_mobile': mobile}
+    previous = UserInfoData.objects.filter(mobile=int(mobile)).order_by('-id').first()
+    if not previous:
+        return initial
+    for field_name in ('pacs_name', 'brach', 'dist', 'state'):
+        value = str(getattr(previous, field_name, '') or '').strip()
+        if value:
+            initial[field_name] = value
+    operator_mobile = _operator_mobile(getattr(previous, 'operator_mobile', None))
+    if operator_mobile:
+        initial['operator_mobile'] = operator_mobile
+    return initial
+
+def _pmfby_session_token(record):
+    return signing.dumps({'record_id': record.pk, 'mobile': str(record.mobile), 'financial_year': record.f_year}, salt=PMFBY_TOKEN_SALT, compress=True)
+
+def _pmfby_entry_limit(record):
+    configured_limit = getattr(record, 'limit_of_entrys', None)
+    if configured_limit is None:
+        return PMFBY_ENTRY_LIMIT
+    return max(0, _integer(configured_limit))
+
+@csrf_exempt
+@require_POST
+@never_cache
+def pmfby_options(request):
+    if _rate_limited(request, 'pmfby-options', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    return JsonResponse({'success': True, 'status': 'OK', 'app_code': 'PMFBY', 'for_whys': PMFBY_PURPOSE, 'financial_years': _pmfby_years()})
+
+@csrf_exempt
+@require_POST
+@never_cache
+def pmfby_subscription(request):
+    if _rate_limited(request, 'pmfby-login-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_JSON'}, status=400)
+    mobile, financial_year = _pmfby_request_identity(body)
+    if not mobile or not financial_year:
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_REQUEST', 'message': 'Kripya valid 10 digit mobile number aur sahi season/year select karein.'}, status=400)
+    if _rate_limited(request, 'pmfby-login-mobile', mobile, settings.ERP_API_MOBILE_RATE_LIMIT):
+        return _too_many_requests()
+    record, multiple_active = _select_pmfby_record(mobile, financial_year)
+    if multiple_active:
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'MULTIPLE_ACTIVE_RECORDS', 'message': 'Is mobile aur season ke liye ek se adhik active accounts mile hain. Kripya support se sampark karein.'}, status=409)
+    if not record:
+        return JsonResponse({'success': True, 'authorized': False, 'status': 'LICENSE_NOT_FOUND', 'message': 'Is mobile aur season ka account abhi bana nahi hai. Kripya registration complete karein.', 'registration_url': _pmfby_registration_url(request, mobile)})
+
+    authorized = _integer(record.is_active) == 1
+    if authorized:
+        status, message = 'ACTIVE', 'Login verification successful.'
+    else:
+        status, message = 'INACTIVE', 'Aapka account abhi active nahi hai. Kripya support se sampark karein.'
+
+    return JsonResponse({
+        'success': True, 'authorized': authorized, 'status': status, 'message': message,
+        'record_id': record.pk, 'mobile': str(record.mobile or mobile), 'pacs_name': record.pacs_name or '',
+        'for_whys': PMFBY_PURPOSE, 'financial_year': record.f_year or financial_year,
+
+        'record_token': _pmfby_session_token(record) if authorized else '',
+    })
+
+def _pmfby_record_from_token(record_token, lock=False):
+    try:
+        token_data = signing.loads(record_token, salt=PMFBY_TOKEN_SALT, max_age=PMFBY_TOKEN_MAX_AGE)
+        mobile = _operator_mobile(token_data.get('mobile'))
+        financial_year = str(token_data.get('financial_year') or '').strip()
+        record_id = _integer(token_data.get('record_id'))
+    except signing.SignatureExpired:
+        return None, JsonResponse({'success': False, 'status': 'TOKEN_EXPIRED', 'message': 'Aapka login session samapt ho gaya hai. Kripya dobara login karein.'}, status=401)
+    except signing.BadSignature:
+        return None, JsonResponse({'success': False, 'status': 'INVALID_TOKEN', 'message': 'Login verification nahi ho saki. Kripya dobara login karein.'}, status=401)
+    if not mobile or not financial_year or record_id <= 0:
+        return None, JsonResponse({'success': False, 'status': 'INVALID_REQUEST'}, status=400)
+    queryset = _pmfby_queryset(mobile, financial_year)
+    if lock:
+        queryset = queryset.select_for_update()
+    record = queryset.filter(pk=record_id).first()
+    if not record:
+        return None, JsonResponse({'success': False, 'status': 'LICENSE_NOT_FOUND'}, status=404)
+    return record, None
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def check_pmfby_entry(request):
+    if _rate_limited(request, 'pmfby-entry-check-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'allowed': False, 'status': 'INVALID_JSON'}, status=400)
+    record, error_response = _pmfby_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    if _integer(record.is_active) != 1:
+        return JsonResponse({'success': True, 'allowed': False, 'status': 'LICENSE_NOT_ACTIVE', 'message': 'Aapka account abhi active nahi hai. Kripya support se sampark karein.'})
+    paid = _integer(record.amount) > 0 and _integer(record.payment_status) == _integer(record.amount)
+    entry_count = max(0, _integer(record.entry_count))
+    entry_limit = _pmfby_entry_limit(record)
+    allowed = paid or entry_count < entry_limit
+    if paid:
+        message = 'Aapka payment complete hai. Upload shuru kiya ja sakta hai.'
+    elif allowed:
+        message = 'Aap free upload suvidha ka upyog kar rahe hain.'
+    else:
+        message = (
+            f'Aapne {entry_count} free entries successfully upload kar li hain. '
+            'Aage upload karne ke liye payment karna hoga.'
+        )
+    return JsonResponse({
+        'success': True,
+        'allowed': allowed,
+        'status': 'ENTRY_ALLOWED' if allowed else 'ENTRY_LIMIT_REACHED',
+        'message': message,
+        'access_type': 'PAID' if paid else 'FREE_TRIAL',
+    })
+
+@csrf_exempt
+@require_POST
+@never_cache
+def get_pmfby_upi(request):
+    if _rate_limited(request, 'pmfby-upi-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    record, error_response = _pmfby_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    if _integer(record.is_active) != 1:
+        return JsonResponse({'success': False, 'status': 'LICENSE_NOT_ACTIVE'}, status=403)
+    upi_record = tblUPI.objects.filter(isActive=1).exclude(upiID__isnull=True).exclude(upiID='').order_by('-ID').first()
+    if not upi_record:
+        return JsonResponse({'success': False, 'status': 'UPI_NOT_CONFIGURED', 'message': 'Payment service abhi uplabdh nahi hai. Kripya support se sampark karein.'}, status=503)
+    return JsonResponse({'success': True, 'status': 'OK', 'upi_id': str(upi_record.upiID).strip()})
+
+@csrf_exempt
+@require_POST
+@never_cache
+def consume_pmfby_entries(request):
+    if _rate_limited(request, 'pmfby-consume-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    record_token = str(body.get('record_token') or '').strip()
+    uploaded_count = _integer(body.get('uploaded_count'), default=0)
+    if uploaded_count <= 0:
+        return JsonResponse({'success': False, 'status': 'INVALID_REQUEST'}, status=400)
+    session_record, error_response = _pmfby_record_from_token(record_token)
+    if error_response:
+        return error_response
+
+    with transaction.atomic():
+        record = UserInfoData.objects.select_for_update().filter(pk=session_record.pk).first()
+        if not record:
+            return JsonResponse({'success': False, 'status': 'LICENSE_NOT_FOUND'}, status=404)
+        if _integer(record.is_active) != 1:
+            return JsonResponse({'success': False, 'status': 'LICENSE_NOT_ACTIVE'}, status=403)
+        new_count = max(0, _integer(record.entry_count)) + uploaded_count
+        paid = _integer(record.amount) > 0 and _integer(record.payment_status) == _integer(record.amount)
+        entry_limit = _pmfby_entry_limit(record)
+        if not paid and new_count > entry_limit:
+            return JsonResponse({'success': False, 'status': 'ENTRY_LIMIT_EXCEEDED', 'message': 'Aapki free upload suvidha poori ho chuki hai. Aage upload karne ke liye payment karein.'}, status=409)
+        record.entry_count = new_count
+        record.save(update_fields=['entry_count'])
+    return JsonResponse({'success': True, 'status': 'UPLOAD_RECORDED'})
+
+@require_http_methods(['GET', 'POST'])
+@never_cache
+def pmfby_self_register(request):
+    token = str(request.GET.get('token') or request.POST.get('token') or '').strip()
+    try:
+        payload = signing.loads(token, salt=PMFBY_TOKEN_SALT, max_age=PMFBY_TOKEN_MAX_AGE)
+        mobile = _operator_mobile(payload.get('mobile'))
+        if not mobile:
+            raise signing.BadSignature
+    except signing.SignatureExpired:
+        return render(request, 'licensing/pmfby_self_register.html', {'error': 'Registration link expire ho gaya. Excel se dobara login karein.'}, status=410)
+    except signing.BadSignature:
+        return render(request, 'licensing/pmfby_self_register.html', {'error': 'Registration link valid nahi hai.'}, status=400)
+
+    years = _pmfby_years()
+    form = PublicPmfbyRegistrationForm(
+        request.POST or None,
+        financial_years=years,
+        initial=_pmfby_registration_initial(mobile),
+    )
+    if request.method == 'POST' and form.is_valid():
+        if form.cleaned_data['mobile'] != mobile:
+            form.add_error('mobile', 'Signed mobile number change nahi kiya ja sakta.')
+            return render(request, 'licensing/pmfby_self_register.html', {'form': form, 'token': token, 'mobile': mobile})
+        year = form.cleaned_data['financial_year']
+        if _pmfby_queryset(mobile, year).exists():
+            return render(request, 'licensing/pmfby_self_register.html', {'already_exists': True, 'mobile': mobile})
+        with transaction.atomic():
+            if _pmfby_queryset(mobile, year).exists():
+                return render(request, 'licensing/pmfby_self_register.html', {'already_exists': True, 'mobile': mobile})
+            record = UserInfoData.objects.create(
+                mobile=int(mobile),
+                pacs_name=form.cleaned_data['pacs_name'],
+                brach=form.cleaned_data['brach'],
+                dist=form.cleaned_data['dist'],
+                state=form.cleaned_data['state'],
+                operator_mobile=int(form.cleaned_data['operator_mobile']),
+                f_year=year,
+                for_whys=PMFBY_PURPOSE,
+                is_pri=None,
+                u_pass=None,
+                amount=2500,
+                payment_status=0,
+                utr_number=None,
+                is_active=1,
+                entry_count=0,
+                limit_of_entrys=PMFBY_ENTRY_LIMIT,
+                date_time=timezone.now(),
+                activation_date=None,
+                accepte_by=None,
+                razorpay_payment_link_id=None,
+                razorpay_payment_id=None,
+                razorpay_reference_id=None,
+                razorpay_payment_status=None,
+                system_id='PMFBY Web Registration',
+            )
+        return render(request, 'licensing/pmfby_self_register.html', {'created': True, 'record': record})
+    return render(request, 'licensing/pmfby_self_register.html', {'form': form, 'token': token, 'mobile': mobile})
+
+
+FASAL_RIN_PURPOSE = 'FASAL RIN'
+FASAL_RIN_DEFAULT_AMOUNT = 2500
+FASAL_RIN_ENTRY_LIMIT = 20
+FASAL_RIN_PAID_ENTRY_LIMIT = 3000
+FASAL_RIN_TOKEN_SALT = 'licensing.fasal-rin-session.v1'
+FASAL_RIN_TOKEN_MAX_AGE = 12 * 60 * 60
+FASAL_RIN_WORK_TYPES = {
+    1: 'Loan Application',
+    2: 'Loan Approval',
+    3: 'IS/PRI Upload',
+}
+
+
+def _fasal_work_type(value):
+    work_type = _integer(value)
+    return work_type if work_type in FASAL_RIN_WORK_TYPES else 0
+
+
+def _fasal_queryset(mobile, financial_year, work_type):
+    return UserInfoData.objects.filter(
+        mobile=int(mobile),
+        for_whys__iexact=FASAL_RIN_PURPOSE,
+        f_year__iexact=financial_year.strip(),
+        is_pri=str(work_type),
+    )
+
+
+def _select_fasal_record(mobile, financial_year, work_type):
+    active_records = list(
+        _fasal_queryset(mobile, financial_year, work_type)
+        .filter(is_active=1)
+        .order_by('-id')[:2]
+    )
+    if len(active_records) > 1:
+        return None, True
+    if active_records:
+        return active_records[0], False
+    return _fasal_queryset(mobile, financial_year, work_type).order_by('-id').first(), False
+
+
+def _fasal_request_identity(body):
+    mobile = _operator_mobile(body.get('mobile') or body.get('user_id'))
+    financial_year = str(body.get('financial_year') or body.get('fYear') or '').strip()
+    work_type = _fasal_work_type(body.get('work_type') or body.get('is_pri') or body.get('IsPri'))
+    return mobile, financial_year, work_type
+
+
+def _fasal_years(work_type=0):
+    queryset = Perpous.objects.filter(forWhy__iexact=FASAL_RIN_PURPOSE)
+    if work_type == 3:
+        queryset = queryset.filter(fyear__icontains='ISSClaim')
+    values = (
+        queryset.exclude(fyear__isnull=True).exclude(fyear='')
+        .order_by('-fyear').values_list('fyear', flat=True).distinct()
+    )
+    return [str(year).strip() for year in values if str(year).strip()]
+
+
+def _fasal_registration_url(request, mobile, work_type):
+    token = signing.dumps(
+        {'mobile': mobile, 'work_type': work_type},
+        salt=FASAL_RIN_TOKEN_SALT,
+        compress=True,
+    )
+    return request.build_absolute_uri(f"{reverse('licensing:fasal_rin_self_register')}?token={token}")
+
+
+def _fasal_session_token(record, work_type):
+    return signing.dumps(
+        {
+            'record_id': record.pk,
+            'mobile': str(record.mobile),
+            'financial_year': record.f_year,
+            'work_type': work_type,
+        },
+        salt=FASAL_RIN_TOKEN_SALT,
+        compress=True,
+    )
+
+
+def _fasal_record_from_token(record_token):
+    try:
+        token_data = signing.loads(
+            record_token,
+            salt=FASAL_RIN_TOKEN_SALT,
+            max_age=FASAL_RIN_TOKEN_MAX_AGE,
+        )
+        mobile = _operator_mobile(token_data.get('mobile'))
+        financial_year = str(token_data.get('financial_year') or '').strip()
+        work_type = _fasal_work_type(token_data.get('work_type'))
+        record_id = _integer(token_data.get('record_id'))
+    except signing.SignatureExpired:
+        return None, 0, JsonResponse(
+            {'success': False, 'status': 'TOKEN_EXPIRED', 'message': 'Aapka login session samapt ho gaya hai. Kripya dobara login karein.'},
+            status=401,
+        )
+    except signing.BadSignature:
+        return None, 0, JsonResponse(
+            {'success': False, 'status': 'INVALID_TOKEN', 'message': 'Login verification nahi ho saki. Kripya dobara login karein.'},
+            status=401,
+        )
+    if not mobile or not financial_year or not work_type or record_id <= 0:
+        return None, 0, JsonResponse({'success': False, 'status': 'INVALID_REQUEST'}, status=400)
+    record = _fasal_queryset(mobile, financial_year, work_type).filter(pk=record_id).first()
+    if not record:
+        return None, 0, JsonResponse({'success': False, 'status': 'LICENSE_NOT_FOUND'}, status=404)
+    return record, work_type, None
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def fasal_rin_options(request):
+    if _rate_limited(request, 'fasal-options', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    work_type = _fasal_work_type(body.get('work_type'))
+    if not work_type:
+        return JsonResponse({'success': False, 'status': 'INVALID_WORK_TYPE', 'message': 'Is Excel file ka upload type valid nahi hai.'}, status=400)
+    return JsonResponse({
+        'success': True,
+        'status': 'OK',
+        'app_code': 'FASAL_RIN',
+        'service': FASAL_RIN_PURPOSE,
+        'work_type': work_type,
+        'work_type_name': FASAL_RIN_WORK_TYPES[work_type],
+        'financial_years': _fasal_years(work_type),
+    })
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def fasal_rin_subscription(request):
+    if _rate_limited(request, 'fasal-login-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_JSON'}, status=400)
+    mobile, financial_year, work_type = _fasal_request_identity(body)
+    if not mobile or not financial_year or not work_type:
+        return JsonResponse(
+            {'success': False, 'authorized': False, 'status': 'INVALID_REQUEST', 'message': 'Kripya valid mobile, financial year aur upload type use karein.'},
+            status=400,
+        )
+    if _rate_limited(request, 'fasal-login-mobile', mobile, settings.ERP_API_MOBILE_RATE_LIMIT):
+        return _too_many_requests()
+    record, multiple_active = _select_fasal_record(mobile, financial_year, work_type)
+    if multiple_active:
+        return JsonResponse(
+            {'success': False, 'authorized': False, 'status': 'MULTIPLE_ACTIVE_RECORDS', 'message': 'Is mobile, year aur upload type ke ek se adhik active accounts mile hain. Kripya support se sampark karein.'},
+            status=409,
+        )
+    if not record:
+        return JsonResponse({
+            'success': True,
+            'authorized': False,
+            'status': 'LICENSE_NOT_FOUND',
+            'message': 'Is mobile, year aur upload type ka account abhi bana nahi hai.',
+            'registration_url': _fasal_registration_url(request, mobile, work_type),
+        })
+    authorized = _integer(record.is_active) == 1
+    return JsonResponse({
+        'success': True,
+        'authorized': authorized,
+        'status': 'ACTIVE' if authorized else 'INACTIVE',
+        'message': 'Login verification successful.' if authorized else 'Aapka account abhi active nahi hai. Kripya support se sampark karein.',
+        'record_id': record.pk,
+        'mobile': str(record.mobile or mobile),
+        'pacs_name': record.pacs_name or '',
+        'service': FASAL_RIN_PURPOSE,
+        'financial_year': record.f_year or financial_year,
+        'work_type': work_type,
+        'work_type_name': FASAL_RIN_WORK_TYPES[work_type],
+        'record_token': _fasal_session_token(record, work_type) if authorized else '',
+    })
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def check_fasal_rin_entry(request):
+    if _rate_limited(request, 'fasal-entry-check-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'allowed': False, 'status': 'INVALID_JSON'}, status=400)
+    record, work_type, error_response = _fasal_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    if _integer(record.is_active) != 1:
+        return JsonResponse({'success': True, 'allowed': False, 'status': 'LICENSE_NOT_ACTIVE', 'message': 'Aapka account abhi active nahi hai. Kripya support se sampark karein.'})
+    paid = _integer(record.amount) > 0 and _integer(record.payment_status) == _integer(record.amount)
+    entry_count = max(0, _integer(record.entry_count))
+    entry_limit = _pmfby_entry_limit(record)
+    allowed = paid or entry_count < entry_limit
+    if paid:
+        message = 'Aapka payment complete hai. Upload shuru kiya ja sakta hai.'
+    elif allowed:
+        message = 'Aap free upload suvidha ka upyog kar rahe hain.'
+    else:
+        message = f'Aapne {entry_count} free entries successfully upload kar li hain. Aage upload karne ke liye payment karna hoga.'
+    return JsonResponse({
+        'success': True,
+        'allowed': allowed,
+        'status': 'ENTRY_ALLOWED' if allowed else 'ENTRY_LIMIT_REACHED',
+        'message': message,
+        'access_type': 'PAID' if paid else 'FREE_TRIAL',
+        'work_type': work_type,
+    })
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def consume_fasal_rin_entries(request):
+    if _rate_limited(request, 'fasal-consume-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    uploaded_count = _integer(body.get('uploaded_count'))
+    if uploaded_count <= 0:
+        return JsonResponse({'success': False, 'status': 'INVALID_REQUEST'}, status=400)
+    session_record, work_type, error_response = _fasal_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    with transaction.atomic():
+        record = UserInfoData.objects.select_for_update().filter(pk=session_record.pk).first()
+        if not record:
+            return JsonResponse({'success': False, 'status': 'LICENSE_NOT_FOUND'}, status=404)
+        if _integer(record.is_active) != 1:
+            return JsonResponse({'success': False, 'status': 'LICENSE_NOT_ACTIVE'}, status=403)
+        new_count = max(0, _integer(record.entry_count)) + uploaded_count
+        paid = _integer(record.amount) > 0 and _integer(record.payment_status) == _integer(record.amount)
+        entry_limit = _pmfby_entry_limit(record)
+        if not paid and new_count > entry_limit:
+            return JsonResponse(
+                {'success': False, 'status': 'ENTRY_LIMIT_EXCEEDED', 'message': 'Aapki free upload suvidha poori ho chuki hai. Aage upload karne ke liye payment karein.'},
+                status=409,
+            )
+        record.entry_count = new_count
+        record.save(update_fields=['entry_count'])
+    return JsonResponse({'success': True, 'status': 'UPLOAD_RECORDED', 'work_type': work_type})
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def get_fasal_rin_upi(request):
+    if _rate_limited(request, 'fasal-upi-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    record, _work_type, error_response = _fasal_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    if _integer(record.is_active) != 1:
+        return JsonResponse({'success': False, 'status': 'LICENSE_NOT_ACTIVE'}, status=403)
+    upi_record = tblUPI.objects.filter(isActive=1).exclude(upiID__isnull=True).exclude(upiID='').order_by('-ID').first()
+    if not upi_record:
+        return JsonResponse({'success': False, 'status': 'UPI_NOT_CONFIGURED', 'message': 'Payment service abhi uplabdh nahi hai. Kripya support se sampark karein.'}, status=503)
+    return JsonResponse({'success': True, 'status': 'OK', 'upi_id': str(upi_record.upiID).strip()})
+
+
+@require_http_methods(['GET', 'POST'])
+@never_cache
+def fasal_rin_self_register(request):
+    token = str(request.GET.get('token') or request.POST.get('token') or '').strip()
+    try:
+        payload = signing.loads(token, salt=FASAL_RIN_TOKEN_SALT, max_age=FASAL_RIN_TOKEN_MAX_AGE)
+        mobile = _operator_mobile(payload.get('mobile'))
+        work_type = _fasal_work_type(payload.get('work_type'))
+        if not mobile or not work_type:
+            raise signing.BadSignature
+    except signing.SignatureExpired:
+        return render(request, 'licensing/fasal_rin_self_register.html', {'error': 'Registration link expire ho gaya. Excel se dobara login karein.'}, status=410)
+    except signing.BadSignature:
+        return render(request, 'licensing/fasal_rin_self_register.html', {'error': 'Registration link valid nahi hai.'}, status=400)
+
+    years = _fasal_years(work_type)
+    form = PublicFasalRinRegistrationForm(
+        request.POST or None,
+        financial_years=years,
+        work_type_name=FASAL_RIN_WORK_TYPES[work_type],
+        initial=_pmfby_registration_initial(mobile),
+    )
+    if request.method == 'POST' and form.is_valid():
+        if form.cleaned_data['mobile'] != mobile:
+            form.add_error('mobile', 'Signed mobile number change nahi kiya ja sakta.')
+            return render(request, 'licensing/fasal_rin_self_register.html', {'form': form, 'token': token, 'mobile': mobile})
+        year = form.cleaned_data['financial_year']
+        if _fasal_queryset(mobile, year, work_type).exists():
+            return render(request, 'licensing/fasal_rin_self_register.html', {'already_exists': True, 'mobile': mobile, 'work_type_name': FASAL_RIN_WORK_TYPES[work_type]})
+        with transaction.atomic():
+            if _fasal_queryset(mobile, year, work_type).exists():
+                return render(request, 'licensing/fasal_rin_self_register.html', {'already_exists': True, 'mobile': mobile, 'work_type_name': FASAL_RIN_WORK_TYPES[work_type]})
+            record = UserInfoData.objects.create(
+                mobile=int(mobile),
+                pacs_name=form.cleaned_data['pacs_name'],
+                brach=form.cleaned_data['brach'],
+                dist=form.cleaned_data['dist'],
+                state=form.cleaned_data['state'],
+                operator_mobile=int(form.cleaned_data['operator_mobile']),
+                f_year=year,
+                for_whys=FASAL_RIN_PURPOSE,
+                is_pri=str(work_type),
+                u_pass=None,
+                amount=FASAL_RIN_DEFAULT_AMOUNT,
+                payment_status=0,
+                utr_number=None,
+                is_active=1,
+                entry_count=0,
+                limit_of_entrys=FASAL_RIN_ENTRY_LIMIT,
+                date_time=timezone.now(),
+                activation_date=None,
+                accepte_by=None,
+                razorpay_payment_link_id=None,
+                razorpay_payment_id=None,
+                razorpay_reference_id=None,
+                razorpay_payment_status=None,
+                system_id='FASAL RIN Web Registration',
+            )
+        return render(request, 'licensing/fasal_rin_self_register.html', {'created': True, 'record': record, 'work_type_name': FASAL_RIN_WORK_TYPES[work_type]})
+    return render(request, 'licensing/fasal_rin_self_register.html', {'form': form, 'token': token, 'mobile': mobile, 'work_type_name': FASAL_RIN_WORK_TYPES[work_type]})
+
 
 @csrf_exempt
 @require_POST

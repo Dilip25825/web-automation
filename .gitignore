@@ -4,3 +4,4 @@ __pycache__/
 *.py[cod]
 *$py.class
 staticfiles/
+licensing/vba/ErpApiLogin.bas

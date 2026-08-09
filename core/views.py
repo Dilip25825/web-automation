@@ -110,6 +110,9 @@ def dashboard(request):
     return render(request, 'core/dashboard.html')
 
 
-@login_required
 def documentation(request):
     return render(request, 'core/documentation.html')
+
+
+def client_guide(request):
+    return render(request, 'core/client_guide.html')

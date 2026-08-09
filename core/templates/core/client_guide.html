@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% block title %}KRP और PMFBY Client Guide | Web Automation with Excel{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-7xl px-1 py-2 sm:px-4 sm:py-6">
+  <section id="client-automation-guide" class="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
+    <div class="bg-gradient-to-br from-emerald-950 via-emerald-800 to-teal-600 p-6 text-white sm:p-9">
+      <p class="text-xs font-extrabold uppercase tracking-[.2em] text-emerald-100">Public Client User Guide</p>
+      <h2 class="mt-3 text-3xl font-extrabold sm:text-4xl">KRP और PMFBY Excel Automation</h2>
+      <p class="mt-3 max-w-3xl leading-7 text-emerald-50">Loan approval, loan upload, IS/PRI claim और PMFBY policy upload को सही तरीके से चलाने की client-facing guide। इस भाग को documentation link से बिना login भी पढ़ा जा सकता है।</p>
+      <div class="mt-6 flex flex-wrap gap-2 text-sm font-bold">
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-login">Portal Login</a>
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-loan-approval">Loan Approval</a>
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-loan-upload">Loan Upload</a>
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-claims">IS / PRI Claims</a>
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-pmfby">PMFBY</a>
+        <a class="rounded-full bg-white/15 px-4 py-2 hover:bg-white/25" href="#client-errors">समस्या समाधान</a>
+      </div>
+    </div>
+
+    <div class="space-y-6 p-6 sm:p-8">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-950">
+        <strong><i class="fa-solid fa-triangle-exclamation mr-2"></i>शुरू करने से पहले:</strong> अपनी authorized User ID से ही login करें। CAPTCHA और OTP browser में स्वयं पूरा करें। Stable internet रखें और काम शुरू करने से पहले Excel file की backup copy बना लें।
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        <article class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5"><span class="grid h-11 w-11 place-items-center rounded-xl bg-emerald-600 text-white"><i class="fa-solid fa-building-columns"></i></span><h3 class="mt-4 text-lg font-extrabold text-emerald-950">KRP Operations</h3><p class="mt-2 text-sm leading-6 text-slate-600">Loan approval, loan application upload और IS/PRI claim का कार्य।</p></article>
+        <article class="rounded-2xl border border-sky-100 bg-sky-50 p-5"><span class="grid h-11 w-11 place-items-center rounded-xl bg-sky-600 text-white"><i class="fa-solid fa-seedling"></i></span><h3 class="mt-4 text-lg font-extrabold text-sky-950">PMFBY Operations</h3><p class="mt-2 text-sm leading-6 text-slate-600">Policy Excel तैयार करना, single test, bulk upload और resume processing।</p></article>
+        <article class="rounded-2xl border border-violet-100 bg-violet-50 p-5"><span class="grid h-11 w-11 place-items-center rounded-xl bg-violet-600 text-white"><i class="fa-solid fa-file-excel"></i></span><h3 class="mt-4 text-lg font-extrabold text-violet-950">Excel Result</h3><p class="mt-2 text-sm leading-6 text-slate-600">हर entry का result, reference number और failure का कारण Remark में देखें।</p></article>
+      </div>
+
+      <article id="client-overview" class="app-card p-6 sm:p-8">
+        <p class="text-xs font-extrabold uppercase tracking-[.18em] text-emerald-700">काम करने का तरीका</p>
+        <h3 class="mt-2 text-2xl font-extrabold text-slate-950">Processing शुरू करने से पहले checklist</h3>
+        <div class="mt-5 grid gap-4 md:grid-cols-2">
+          <ul class="space-y-3 text-sm leading-6 text-slate-600">
+            <li><i class="fa-solid fa-check mr-2 text-emerald-600"></i>Blank Start/End Row होने पर पूरी applicable sheet process होगी।</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-600"></i>एक row fail होने पर बाकी rows चलती रहेंगी।</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-600"></i>Failed row का exact कारण Excel के <strong>Remark</strong> में मिलेगा।</li>
+            <li><i class="fa-solid fa-check mr-2 text-emerald-600"></i>Stop button नई row शुरू होने से रोकेगा; चल रही row पूरी हो सकती है।</li>
+          </ul>
+          <ul class="space-y-3 text-sm leading-6 text-slate-600">
+            <li><i class="fa-solid fa-wifi mr-2 text-sky-600"></i>Stable internet connection रखें।</li>
+            <li><i class="fa-solid fa-file-circle-xmark mr-2 text-sky-600"></i>Selected workbook को Microsoft Excel में बंद रखें।</li>
+            <li><i class="fa-solid fa-calendar-check mr-2 text-sky-600"></i>सही Financial Year या Season चुनें।</li>
+            <li><i class="fa-solid fa-flask mr-2 text-sky-600"></i>पहले एक row test करें, फिर bulk processing चलाएँ।</li>
+          </ul>
+        </div>
+      </article>
+
+      <article id="client-login" class="app-card overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-800 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-indigo-100">Step 1</p><h3 class="mt-2 text-2xl font-extrabold">Portal Login</h3></div>
+        <ol class="grid gap-3 p-6 text-sm leading-6 text-slate-600 md:grid-cols-2">
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">1. Credentials:</strong> User ID और Password भरें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">2. Period:</strong> KRP के लिए Financial Year या PMFBY के लिए Season चुनें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">3. Login:</strong> संबंधित Login button दबाएँ और browser खुलने दें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">4. Verification:</strong> CAPTCHA/OTP manually पूरा करें और User Profile में <strong>ACTIVE</strong> आने के बाद काम शुरू करें।</li>
+        </ol>
+        <p class="mx-6 mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>ध्यान दें:</strong> Session समाप्त होने पर दोबारा login और OTP की आवश्यकता हो सकती है। Password, OTP और CAPTCHA किसी से साझा न करें।</p>
+      </article>
+
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article id="client-loan-approval" class="app-card p-6 sm:p-8">
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-blue-700"><i class="fa-solid fa-list-check"></i></span>
+          <h3 class="mt-5 text-2xl font-extrabold text-slate-950">Loan Application Approval</h3>
+          <ol class="mt-5 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-600">
+            <li>Source में Branch या PACS चुनें।</li>
+            <li>PACS चुनने पर names load करके सही PACS select करें।</li>
+            <li>Loan Application Apply Filter चलाएँ।</li>
+            <li>Number of Entries भरें या Approve All चुनें।</li>
+            <li>Bulk Approval शुरू करके Process Status और final result देखें।</li>
+          </ol>
+        </article>
+        <article id="client-claims" class="app-card p-6 sm:p-8">
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-violet-50 text-violet-700"><i class="fa-solid fa-file-signature"></i></span>
+          <h3 class="mt-5 text-2xl font-extrabold text-slate-950">IS / PRI Claim Upload</h3>
+          <ol class="mt-5 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-600">
+            <li>IS/PRI Excel browse करें और सही Claim Type चुनें।</li>
+            <li>Start Row और End Row भरें; blank होने पर पूरी sheet process होगी।</li>
+            <li>Apply Filter से portal applications load करें।</li>
+            <li>Submit Claims From Excel चलाएँ।</li>
+            <li>Claim Number और exact Remark संबंधित Excel row में save होंगे।</li>
+          </ol>
+          <p class="mt-5 rounded-2xl bg-violet-50 p-4 text-sm leading-6 text-violet-900">Claim Number पहले से होने पर row दोबारा upload न करें। एक entry fail होने पर बाकी entries जारी रह सकती हैं।</p>
+        </article>
+      </div>
+
+      <article id="client-loan-upload" class="app-card overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-700 to-cyan-600 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-blue-100">KRP Excel</p><h3 class="mt-2 text-2xl font-extrabold">Loan Application Upload</h3><p class="mt-2 text-sm text-blue-50">Loan Upload, Loan Activity Details और Instructions sheets को portal data से मिलाकर भरें।</p></div>
+        <div class="space-y-6 p-6">
+          <div class="overflow-x-auto rounded-2xl border border-slate-200">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-slate-900 text-white"><tr><th class="px-4 py-3">Excel विकल्प</th><th class="px-4 py-3">क्या चुनें</th><th class="px-4 py-3">उपयोग</th></tr></thead>
+              <tbody class="divide-y divide-slate-100 text-slate-600">
+                <tr><td class="px-4 py-3 font-bold text-slate-900">Primary / Secondary Activity</td><td class="px-4 py-3">Agri Crops, Horti &amp; Veg Crops या Animal Husbandry</td><td class="px-4 py-3">Portal application के अनुसार सही activity चुनें।</td></tr>
+                <tr><td class="px-4 py-3 font-bold text-slate-900">Application Type</td><td class="px-4 py-3">Normal</td><td class="px-4 py-3">सामान्य loan application के लिए।</td></tr>
+                <tr><td class="px-4 py-3 font-bold text-slate-900">Land Type</td><td class="px-4 py-3">IRRIGATED / NON-IRRIGATED</td><td class="px-4 py-3">भूमि record के अनुसार चुनें।</td></tr>
+                <tr><td class="px-4 py-3 font-bold text-slate-900">Season</td><td class="px-4 py-3">KHARIF / RABI</td><td class="px-4 py-3">फसल के मौसम के अनुसार चुनें।</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl bg-emerald-50 p-5"><h4 class="font-extrabold text-emerald-950">Agri / Horti</h4><p class="mt-2 text-sm leading-6 text-slate-600">Crop, Survey Number, Khata Number, Land Area और Village सही भरें।</p></div>
+            <div class="rounded-2xl bg-sky-50 p-5"><h4 class="font-extrabold text-sky-950">Agri Amount</h4><p class="mt-2 text-sm leading-6 text-slate-600">Agri Loan Sanctioned Amount verify करें। Agri और Animal राशि अलग रखें।</p></div>
+            <div class="rounded-2xl bg-amber-50 p-5"><h4 class="font-extrabold text-amber-950">Animal Husbandry</h4><p class="mt-2 text-sm leading-6 text-slate-600">Livestock Type, Name, Units, Sanctioned Amount और Date भरें। Dropdown का नाम स्वयं न बदलें।</p></div>
+          </div>
+        </div>
+      </article>
+
+      <article id="client-pmfby" class="app-card overflow-hidden">
+        <div class="bg-gradient-to-r from-emerald-700 to-teal-600 p-6 text-white"><p class="text-xs font-extrabold uppercase tracking-[.16em] text-emerald-100">PMFBY Excel</p><h3 class="mt-2 text-2xl font-extrabold">PMFBY Policy Upload</h3></div>
+        <ol class="grid gap-3 p-6 text-sm leading-6 text-slate-600 md:grid-cols-2">
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">1.</strong> PMFBY login और सही Season selection complete करें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">2.</strong> Official report या supported old-format Excel browse करें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">3.</strong> Premium Debit Date और Sowing Date <code class="rounded bg-emerald-50 px-2 py-1 text-emerald-800">DD-MM-YYYY</code> में भरें।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">4.</strong> Requirements checklist confirm करके Prepare Excel चलाएँ।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">5.</strong> पहले Single Upload से test करें; सफल होने पर Bulk Upload चलाएँ।</li>
+          <li class="rounded-2xl border border-slate-100 p-4"><strong class="text-slate-900">6.</strong> Interrupted processing के लिए Resume Upload इस्तेमाल करें।</li>
+        </ol>
+        <p class="mx-6 mb-6 rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">Policy Number, Application Number, Uploaded Area, land-record farmer name और Remark workbook में save होने के बाद result verify करें।</p>
+      </article>
+
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article id="client-excel-rules" class="app-card p-6 sm:p-8">
+          <h3 class="text-2xl font-extrabold text-slate-950"><i class="fa-solid fa-file-excel mr-2 text-emerald-600"></i>Excel Handling Rules</h3>
+          <ul class="mt-5 space-y-3 text-sm leading-6 text-slate-600">
+            <li>Identifiers और mobile numbers को text के रूप में रखें ताकि leading zero न हटे।</li>
+            <li>Dates को required format में रखें और amount cells में text/symbol न मिलाएँ।</li>
+            <li>Processing के दौरान selected workbook बंद रखें।</li>
+            <li>Large batch से पहले original workbook की backup copy रखें।</li>
+            <li>Result उसी selected workbook में save होता है; file rename/move processing के बाद करें।</li>
+          </ul>
+        </article>
+        <article id="client-errors" class="app-card p-6 sm:p-8">
+          <h3 class="text-2xl font-extrabold text-slate-950"><i class="fa-solid fa-screwdriver-wrench mr-2 text-rose-600"></i>Errors, Recovery &amp; Support</h3>
+          <div class="mt-5 space-y-4 text-sm leading-6 text-slate-600">
+            <div class="rounded-2xl bg-rose-50 p-4"><strong class="text-rose-900">Row Failed:</strong> Remark पढ़ें, source data सुधारें और केवल failed row दोबारा चलाएँ।</div>
+            <div class="rounded-2xl bg-amber-50 p-4"><strong class="text-amber-900">Session / Verification Error:</strong> Portal session, internet और browser login check करके पुनः प्रयास करें।</div>
+            <div class="rounded-2xl bg-sky-50 p-4"><strong class="text-sky-900">Support को भेजें:</strong> अंतिम Process Status, Excel row number, Remark, operation name और selected Year/Season भेजें। Password, OTP या CAPTCHA कभी न भेजें।</div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}

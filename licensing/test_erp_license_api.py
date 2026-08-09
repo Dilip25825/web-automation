@@ -223,3 +223,43 @@ class ErpDeviceRegistrationApiTests(SimpleTestCase):
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 409)
         self.assertEqual(data['status'], 'DEVICE_ALREADY_REGISTERED')
+class ErpRecordSelectionTests(SimpleTestCase):
+    @patch('licensing.license_views.tblPacsErp.objects')
+    def test_active_valid_record_has_priority(self, objects):
+        base_queryset = MagicMock()
+        active_record = SimpleNamespace(id=10)
+        objects.filter.return_value.exclude.return_value = base_queryset
+        base_queryset.filter.return_value.order_by.return_value.__getitem__.return_value = [active_record]
+
+        record, multiple_active = license_views._select_erp_record('9876543210')
+
+        self.assertIs(record, active_record)
+        self.assertFalse(multiple_active)
+        base_queryset.order_by.assert_not_called()
+
+    @patch('licensing.license_views.tblPacsErp.objects')
+    def test_latest_record_is_used_for_renewal_when_no_active_valid_record_exists(self, objects):
+        base_queryset = MagicMock()
+        renewal_record = SimpleNamespace(id=11)
+        objects.filter.return_value.exclude.return_value = base_queryset
+        base_queryset.filter.return_value.order_by.return_value.__getitem__.return_value = []
+        base_queryset.order_by.return_value.__getitem__.return_value = [renewal_record]
+
+        record, multiple_active = license_views._select_erp_record('9876543210')
+
+        self.assertIs(record, renewal_record)
+        self.assertFalse(multiple_active)
+
+    @patch('licensing.license_views.tblPacsErp.objects')
+    def test_multiple_active_valid_records_are_rejected(self, objects):
+        base_queryset = MagicMock()
+        objects.filter.return_value.exclude.return_value = base_queryset
+        base_queryset.filter.return_value.order_by.return_value.__getitem__.return_value = [
+            SimpleNamespace(id=12),
+            SimpleNamespace(id=13),
+        ]
+
+        record, multiple_active = license_views._select_erp_record('9876543210')
+
+        self.assertIsNone(record)
+        self.assertTrue(multiple_active)

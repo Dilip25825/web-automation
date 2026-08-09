@@ -604,6 +604,7 @@
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
                 <div class="ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
                     <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-download"></i> Downloads</a>
+                    <a href="{% url 'core:client_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-book-open"></i> Client Guide</a>
                     <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-tags"></i> Pricing</a>
                     <a href="{% url 'core:contact' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-address-card"></i> Contact</a>
                     <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
@@ -625,7 +626,7 @@
             {% if request.user.is_authenticated %}
             <a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a><a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> User Licenses</a><a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP Licenses</a><a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a><a class="nav-item" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>
             {% endif %}
-            <a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
+            <a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a><a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> Client Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
             {% if request.user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
         </div>   </div>

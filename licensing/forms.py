@@ -142,7 +142,7 @@ class PacsErpForm(forms.ModelForm):
 
 class PublicPacsErpRegistrationForm(forms.Form):
     erp_id = forms.CharField(label='ERP User ID', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'ERP login/user ID', 'autocomplete': 'off'}))
-    pacs_name = forms.CharField(label='PACS Name', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'PACS / Society name'}))
+    pacs_name = forms.CharField(label='PACS Name / Bank Name', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'PACS / Bank name'}))
     brach = forms.CharField(label='Branch', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'Branch name'}))
     dist = forms.CharField(label='District', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'District'}))
     state = forms.CharField(label='State', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'State'}))
@@ -153,3 +153,69 @@ class PublicPacsErpRegistrationForm(forms.Form):
         if len(value) != 10 or value[0] not in '6789':
             raise forms.ValidationError('Valid 10 digit Indian mobile required hai.')
         return value
+
+
+class PublicPmfbyRegistrationForm(forms.Form):
+    mobile = forms.CharField(label='Mobile / Login Mobile ID', max_length=10, widget=forms.TextInput(attrs={'readonly': 'readonly', 'inputmode': 'numeric'}))
+    pacs_name = forms.CharField(label='PACS Name / Bank Name', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'PACS / Bank name'}))
+    brach = forms.CharField(label='Branch', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'Branch name'}))
+    dist = forms.CharField(label='District', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'District'}))
+    state = forms.CharField(label='State', max_length=50, widget=forms.TextInput(attrs={'placeholder': 'e.g. MADHYA PRADESH'}))
+    operator_mobile = forms.CharField(label='Operator Mobile', max_length=10, widget=forms.TextInput(attrs={'inputmode': 'numeric', 'placeholder': '10 digit operator mobile'}))
+    service = forms.CharField(label='Service', initial='PMFBY', disabled=True)
+
+
+
+
+    financial_year = forms.ChoiceField(label='Financial Year', choices=[])
+
+
+    def __init__(self, *args, financial_years=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['financial_year'].choices = [('', '-- Select Financial Year --')] + [
+            (year, year) for year in (financial_years or [])
+        ]
+
+    @staticmethod
+    def _clean_mobile(value):
+        digits = ''.join(filter(str.isdigit, value))
+        if len(digits) != 10 or digits[0] not in '6789':
+            raise forms.ValidationError('Valid 10 digit Indian mobile required hai.')
+        return digits
+
+    def clean_mobile(self):
+        return self._clean_mobile(self.cleaned_data['mobile'])
+
+    def clean_operator_mobile(self):
+        return self._clean_mobile(self.cleaned_data['operator_mobile'])
+
+class PublicFasalRinRegistrationForm(forms.Form):
+    mobile = forms.CharField(label='Mobile / Login Mobile ID', max_length=10, widget=forms.TextInput(attrs={'readonly': 'readonly', 'inputmode': 'numeric'}))
+    pacs_name = forms.CharField(label='PACS Name / Bank Name', max_length=255, widget=forms.TextInput(attrs={'placeholder': 'PACS / Bank name'}))
+    brach = forms.CharField(label='Branch', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'Branch name'}))
+    dist = forms.CharField(label='District', max_length=100, widget=forms.TextInput(attrs={'placeholder': 'District'}))
+    state = forms.CharField(label='State', max_length=50, widget=forms.TextInput(attrs={'placeholder': 'e.g. MADHYA PRADESH'}))
+    operator_mobile = forms.CharField(label='Operator Mobile', max_length=10, widget=forms.TextInput(attrs={'inputmode': 'numeric', 'placeholder': '10 digit operator mobile'}))
+    service = forms.CharField(label='Service', initial='FASAL RIN', disabled=True)
+    work_type_name = forms.CharField(label='Upload Type', disabled=True)
+    financial_year = forms.ChoiceField(label='Financial Year', choices=[])
+
+    def __init__(self, *args, financial_years=None, work_type_name='', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['work_type_name'].initial = work_type_name
+        self.fields['financial_year'].choices = [('', '-- Select Financial Year --')] + [
+            (year, year) for year in (financial_years or [])
+        ]
+
+    @staticmethod
+    def _clean_mobile(value):
+        digits = ''.join(filter(str.isdigit, value))
+        if len(digits) != 10 or digits[0] not in '6789':
+            raise forms.ValidationError('Valid 10 digit Indian mobile required hai.')
+        return digits
+
+    def clean_mobile(self):
+        return self._clean_mobile(self.cleaned_data['mobile'])
+
+    def clean_operator_mobile(self):
+        return self._clean_mobile(self.cleaned_data['operator_mobile'])
