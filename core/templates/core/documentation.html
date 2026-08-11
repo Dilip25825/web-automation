@@ -153,6 +153,81 @@
   </section>
 
   {% if request.user.is_superuser %}
+  <section id="superuser-userinfo-guide" class="overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-800 text-white shadow-xl">
+    <div class="border-b border-white/10 px-6 py-7 sm:px-8">
+      <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+        <div>
+          <p class="text-xs font-extrabold uppercase tracking-[.2em] text-blue-200"><i class="fa-solid fa-user-shield mr-2"></i>केवल Superuser के लिए</p>
+          <h2 class="mt-2 text-3xl font-extrabold">UserInfo Administration Guide</h2>
+          <p class="mt-3 max-w-3xl text-sm leading-7 text-blue-100">नया user record बनाने से लेकर activation, payment verification, reports और corrective actions तक User Licenses module को सुरक्षित तरीके से manage करने की guide।</p>
+        </div>
+        <a href="{% url 'licensing:userinfo_dashboard' %}" class="btn w-fit border border-white/20 bg-white text-blue-800 shadow-lg hover:bg-blue-50"><i class="fa-solid fa-arrow-up-right-from-square"></i>User Licenses खोलें</a>
+      </div>
+    </div>
+
+    <div class="grid gap-4 p-6 sm:p-8 lg:grid-cols-3">
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-cyan-400 font-extrabold text-slate-950">1</span>
+        <h3 class="mt-4 text-lg font-extrabold">सही record खोजें</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Login ID, Mobile या PACS Name के लिए मुख्य search box इस्तेमाल करें।</li>
+          <li>Database Record ID पता हो तो अलग Record ID box में exact ID डालें।</li>
+          <li>एक जैसे mobile वाले records में service, financial year और status अवश्य मिलाएँ।</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400 font-extrabold text-slate-950">2</span>
+        <h3 class="mt-4 text-lg font-extrabold">नया record बनाएँ</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Add New Record से पहले mobile और service search करके duplicate जाँचें।</li>
+          <li>Mobile, PACS/Bank, Branch, District, State और Operator Mobile सही भरें।</li>
+          <li>For Whys चुनने के बाद उसी service से संबंधित Financial Year चुनें।</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-violet-400 font-extrabold text-slate-950">3</span>
+        <h3 class="mt-4 text-lg font-extrabold">Details verify करें</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Row के ⋮ menu से View खोलकर पूरी जानकारी पढ़ें।</li>
+          <li>Update से पहले service, year, amount, payment status और activation status मिलाएँ।</li>
+          <li>Razorpay से भरी payment fields केवल वास्तविक payment evidence देखकर बदलें।</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-amber-300 font-extrabold text-slate-950">4</span>
+        <h3 class="mt-4 text-lg font-extrabold">Activation करें</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Activate से पहले record, plan, financial year और activation amount दोबारा देखें।</li>
+          <li>UTR/transaction number उपलब्ध हो तो सही value भरें और Activated By चुनें।</li>
+          <li>Khata effect केवल तभी चुनें जब amount वास्तव में customer ledger में बाकी जोड़ना हो।</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-400 font-extrabold text-slate-950">5</span>
+        <h3 class="mt-4 text-lg font-extrabold">Status और correction</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Activation के बाद Active status, Activation Date और Accepted By table/View में जाँचें।</li>
+          <li>Deactivate केवल access रोकने के स्पष्ट कारण पर करें; दोबारा Activate से पहले payment स्थिति देखें।</li>
+          <li>Delete अंतिम विकल्प है। गलत record confirm किए बिना delete action न चलाएँ।</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-white/10 bg-white/10 p-5">
+        <span class="grid h-10 w-10 place-items-center rounded-xl bg-sky-300 font-extrabold text-slate-950">6</span>
+        <h3 class="mt-4 text-lg font-extrabold">Reports से audit करें</h3>
+        <ul class="mt-3 space-y-2 text-sm leading-6 text-blue-100">
+          <li>Daily, Monthly या Date Range चुनकर activation report देखें।</li>
+          <li>Total Collection हमेशा selected report period के अनुसार verify करें।</li>
+          <li>Operator card पर click करके उसी व्यक्ति द्वारा activate किए records की जाँच करें।</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="mx-6 mb-7 grid gap-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5 sm:mx-8 lg:grid-cols-[auto_1fr] lg:items-start">
+      <span class="grid h-11 w-11 place-items-center rounded-xl bg-amber-300 text-lg text-slate-950"><i class="fa-solid fa-triangle-exclamation"></i></span>
+      <div><h3 class="font-extrabold text-amber-100">Superuser safety checklist</h3><p class="mt-2 text-sm leading-6 text-amber-50">हर sensitive action से पहले Record ID, Mobile, Service, Financial Year, Amount और current Status मिलाएँ। Success message के बाद table को दोबारा देखें। Payment या activation में संदेह हो तो record बदलने के बजाय पहले payment evidence और client details verify करें।</p></div>
+    </div>
+  </section>
+
   <section class="grid gap-5 lg:grid-cols-2">
     <article class="app-card border-t-4 border-t-amber-500 p-6 sm:p-8">
       <span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-50 text-amber-700"><i class="fa-solid fa-copy"></i></span>
@@ -177,7 +252,9 @@
       </ul>
     </article>
   </section>
-  {% endif %}  {% if request.user.is_superuser %}
+  {% endif %}
+
+  {% if request.user.is_superuser %}
   <article class="overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 shadow-sm p-6 sm:p-8">
     <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">केवल Superuser के लिए</p>
     <h2 class="mt-2 text-2xl font-extrabold text-violet-950"><i class="fa-solid fa-user-shield mr-2"></i>Admin याद रखने योग्य बातें</h2>
