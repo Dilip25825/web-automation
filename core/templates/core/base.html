@@ -821,8 +821,19 @@
             '#coupon-search'
         ].join(','));
 
+        const databaseFreePath = pathname => {
+            const path = pathname.replace(/\/+$/, '') || '/';
+            return path === '/' ||
+                path === '/pricing' ||
+                path === '/contact' ||
+                path === '/dashboard' ||
+                path === '/documentation' ||
+                path === '/client-guide' ||
+                path.startsWith('/solutions/');
+        };
+
         const excludedLink = link => {
-            if (!link || link.hasAttribute('data-no-loader') || link.hasAttribute('download')) return true;
+            if (!link || link.hasAttribute('data-no-loader') || link.hasAttribute('data-file-download') || link.hasAttribute('download')) return true;
             if (link.target && link.target.toLowerCase() === '_blank') return true;
             const raw = link.getAttribute('href') || '';
             if (!raw || raw.startsWith('#') || /^(javascript:|mailto:|tel:|upi:)/i.test(raw)) return true;
@@ -830,7 +841,8 @@
             let url;
             try { url = new URL(link.href, window.location.href); } catch (_) { return true; }
             if (url.origin !== window.location.origin) return true;
-            return url.searchParams.has('export') ||
+            return databaseFreePath(url.pathname) ||
+                url.searchParams.has('export') ||
                 /\/(download|download-pdf|attachment)(\/|$)/i.test(url.pathname);
         };
 
@@ -852,8 +864,19 @@
             queueMicrotask(() => {
                 if (event.defaultPrevented) return;
                 if (excludedLink(link)) {
+                    if (link.hasAttribute('data-file-download')) {
+                        skipUnloadUntil = Date.now() + 60000;
+                        hide();
+                        window.setTimeout(hide, 1500);
+                        return;
+                    }
                     let url;
                     try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+                    if (databaseFreePath(url.pathname)) {
+                        skipUnloadUntil = Date.now() + 5000;
+                        hide();
+                        return;
+                    }
                     if (url.searchParams.has('export') || /\/(download-pdf|attachment)(\/|$)/i.test(url.pathname)) {
                         skipUnloadUntil = Date.now() + 5000;
                     }
@@ -863,7 +886,9 @@
             });
         });
 
-        window.addEventListener('beforeunload', () => { if (Date.now() >= skipUnloadUntil) show('Loading...', 0); });
+        window.addEventListener('beforeunload', () => {
+            if (!databaseFreePath(window.location.pathname) && Date.now() >= skipUnloadUntil) show('Loading...', 0);
+        });
         window.addEventListener('pageshow', hide);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') hide();

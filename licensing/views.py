@@ -168,6 +168,7 @@ def _common_activation_summaries(queryset, user):
 @login_required(login_url='accounts:login')
 def userinfo_dashboard(request):
     search_query = request.GET.get('search_id', '').strip()
+    record_id_query = request.GET.get('record_id', '').strip()
     partial_results = request.GET.get('partial') == '1'
 
     try:
@@ -189,6 +190,9 @@ def userinfo_dashboard(request):
                 numeric_query = int(search_query)
                 search_filter |= models.Q(mobile=numeric_query) | models.Q(operator_mobile=numeric_query)
             clients = clients.filter(search_filter).distinct()
+
+        if record_id_query:
+            clients = clients.filter(pk=int(record_id_query)) if record_id_query.isdigit() else clients.none()
 
         report_period = _activation_report_period(request)
         month_start = report_period['period_start']
@@ -265,6 +269,7 @@ def userinfo_dashboard(request):
     context = {
         'clients': clients,
         'search_query': search_query,
+        'record_id_query': record_id_query,
         'partial_results': partial_results,
         'farmer_form': None if partial_results else UserInfoForm(),
         'monthly_activation_report': monthly_activation_report,

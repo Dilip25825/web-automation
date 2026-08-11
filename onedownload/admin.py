@@ -1,15 +1,15 @@
 from django.contrib import admin
-from .models import Category, DownloadLink
+
+from .models import DownloadCatalogSnapshot
 
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at')
-    search_fields = ('name',)
+@admin.register(DownloadCatalogSnapshot)
+class DownloadCatalogSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('file_count', 'category_count', 'synced_at', 'synced_by')
+    readonly_fields = ('singleton_key', 'catalog', 'file_count', 'category_count', 'synced_at', 'synced_by')
 
+    def has_add_permission(self, request):
+        return False
 
-@admin.register(DownloadLink)
-class DownloadLinkAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'drive_link', 'is_active', 'updated_at')
-    search_fields = ('name', 'description', 'category')
-    list_filter = ('category', 'is_active')
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -47,7 +47,7 @@ def ajax_action(view_func):
 
 
 def build_transaction_whatsapp_url(customer, latest_transaction, net_balance):
-    """Build a click-to-chat URL for one saved ledger transaction."""
+    """Build a Hindi click-to-chat message for one saved ledger transaction."""
     phone_number = ''.join(filter(str.isdigit, customer.phone or ''))
     if len(phone_number) == 10:
         phone_number = "91" + phone_number
@@ -55,30 +55,56 @@ def build_transaction_whatsapp_url(customer, latest_transaction, net_balance):
         return ""
 
     transaction_label = (
-        "Aapke khate mein udhaar joda gaya"
+        "उधार जोड़ा गया"
         if latest_transaction.trans_type == 'GIVEN'
-        else "Aapse payment prapt hua"
+        else "भुगतान प्राप्त हुआ"
     )
     if net_balance > 0:
-        balance_status = "Aapko dena hai"
+        balance_status = "आपको देना है"
     elif net_balance < 0:
-        balance_status = "Aapko lena hai"
+        balance_status = "आपको लेना है"
     else:
-        balance_status = "Hisaab barabar hai"
+        balance_status = "हिसाब बराबर है"
 
-    remarks = (latest_transaction.remarks or "Koi vivaran nahi").strip()
+    remarks = (latest_transaction.remarks or "कोई विवरण नहीं").strip()
     message = (
-        f"Namaste {customer.name} ji,\n\n"
-        "Aapke khate mein nayi transaction darj hui hai.\n"
-        f"Date: {latest_transaction.date.strftime('%d %b %Y')}\n"
-        f"Type: {transaction_label}\n"
-        f"Amount: Rs. {latest_transaction.amount:.2f}\n"
-        f"Description: {remarks}\n\n"
-        f"Updated Balance: Rs. {abs(net_balance):.2f} ({balance_status})\n\n"
-        "Dhanyavaad!"
+        f"नमस्ते {customer.name} जी,\n\n"
+        "आपके खाते में नया लेन-देन दर्ज किया गया है।\n"
+        f"दिनांक: {latest_transaction.date.strftime('%d-%m-%Y')}\n"
+        f"लेन-देन: {transaction_label}\n"
+        f"राशि: ₹{latest_transaction.amount:.2f}\n"
+        f"विवरण: {remarks}\n\n"
+        f"नया बकाया: ₹{abs(net_balance):.2f} ({balance_status})\n\n"
+        "धन्यवाद!"
     )
     return f"https://wa.me/{phone_number}?text={urllib.parse.quote(message)}"
 
+
+def build_reminder_whatsapp_url(customer, net_balance):
+    """Build a Hindi click-to-chat reminder for the current ledger balance."""
+    phone_number = ''.join(filter(str.isdigit, customer.phone or ''))
+    if len(phone_number) == 10:
+        phone_number = "91" + phone_number
+    if not 11 <= len(phone_number) <= 15:
+        return ""
+
+    if net_balance > 0:
+        balance_message = (
+            f"आपके खाते में ₹{abs(net_balance):.2f} का भुगतान बाकी है।\n"
+            "कृपया जल्द से जल्द भुगतान करे।"
+        )
+    elif net_balance < 0:
+        balance_message = f"हमारी ओर से आपको ₹{abs(net_balance):.2f} देना बाकी है।"
+    else:
+        balance_message = "आपका हिसाब बराबर है। कोई भुगतान बाकी नहीं है।"
+
+    message = (
+        f"नमस्ते {customer.name} जी,\n\n"
+        "यह आपके खाते की वर्तमान स्थिति की याद दिलाने हेतु संदेश है।\n"
+        f"{balance_message}\n\n"
+        "धन्यवाद!"
+    )
+    return f"https://wa.me/{phone_number}?text={urllib.parse.quote(message)}"
 @login_required
 def dashboard(request):
     try:
@@ -135,6 +161,7 @@ def dashboard(request):
             cust.b64_id = base64.b64encode(str(cust.id).encode('utf-8')).decode('utf-8')
             cust.balance = cust.net_balance 
             cust.abs_balance = abs(cust.net_balance)
+            cust.whatsapp_reminder_url = build_reminder_whatsapp_url(cust, cust.net_balance)
         
         profile, _ = ShopProfile.objects.get_or_create(user=request.user)
 
@@ -409,8 +436,8 @@ def customer_detail(request, customer_id):
             if days_passed > 0:
                 auto_months = round(days_passed / 30.0, 1)
 
-        # 7. WhatsApp click-to-chat message for the latest visible transaction
-        whatsapp_url = build_transaction_whatsapp_url(customer, last_trans, net_balance)
+        # 7. WhatsApp click-to-chat reminder for the current balance
+        whatsapp_url = build_reminder_whatsapp_url(customer, net_balance)
 
         transaction_page = Paginator(transaction_list, 10).get_page(request.GET.get('page', 1))
 

@@ -57,7 +57,7 @@
     .userinfo-monthly-card-stats { align-items: center; color: #dbeafe; display: flex; flex-wrap: wrap; font-size: .68rem; gap: .25rem .7rem; margin-top: .2rem; }
     .userinfo-monthly-card-stats b { color: #fff; font-size: .8rem; }
     .userinfo-monthly-empty { border: 1px dashed rgba(255,255,255,.25); border-radius: .75rem; color: #cbd5e1; font-size: .75rem; padding: .75rem; text-align: center; }
-    .userinfo-control-form { align-items: end; display: grid; gap: .75rem; grid-template-columns: minmax(260px,1fr) minmax(155px,220px) auto auto; position: relative; z-index: 1; }
+    .userinfo-control-form { align-items: end; display: grid; gap: .75rem; grid-template-columns: minmax(260px,1fr) minmax(125px,165px) minmax(155px,200px) auto auto; position: relative; z-index: 1; }
     .userinfo-control-field { display: block; margin: 0; }
     .userinfo-control-field > span:first-child { color: #dbeafe; display: block; font-size: .7rem; font-weight: 750; margin-bottom: .35rem; }
     .userinfo-input-wrap { align-items: center; background: #fff; border: 1px solid rgba(255,255,255,.4); border-radius: .65rem; display: flex; min-height: 2.75rem; overflow: hidden; }
@@ -69,7 +69,7 @@
     .userinfo-hero-reset-button { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); color: #fff; }
     .userinfo-hero-reset-button:hover { background: rgba(255,255,255,.18); color: #fff; }
     @media (max-width: 900px) { .userinfo-control-form { grid-template-columns: minmax(220px,1fr) minmax(150px,.45fr); } .userinfo-hero-search-button,.userinfo-hero-reset-button { width: 100%; } }
-    @media (max-width: 600px) { .userinfo-control-hero { padding: 1rem; } .userinfo-control-heading { align-items: flex-start; flex-direction: column; } .userinfo-control-actions { width: 100%; } .userinfo-total-badge { flex: 0 0 92px; text-align: left; } .userinfo-add-record-button { flex: 1; } .userinfo-control-heading h2 { font-size: 1.15rem; } .userinfo-control-heading p { display: none; } .userinfo-total-badge { min-width: 92px; } .userinfo-control-form { grid-template-columns: 1fr 1fr; } .userinfo-search-field { grid-column: 1 / -1; } .userinfo-amount-field { grid-column: 1 / -1; } }
+    @media (max-width: 600px) { .userinfo-control-hero { padding: 1rem; } .userinfo-control-heading { align-items: flex-start; flex-direction: column; } .userinfo-control-actions { width: 100%; } .userinfo-total-badge { flex: 0 0 92px; text-align: left; } .userinfo-add-record-button { flex: 1; } .userinfo-control-heading h2 { font-size: 1.15rem; } .userinfo-control-heading p { display: none; } .userinfo-total-badge { min-width: 92px; } .userinfo-control-form { grid-template-columns: 1fr 1fr; } .userinfo-search-field,.userinfo-record-id-field,.userinfo-amount-field { grid-column: 1 / -1; } }
     .userinfo-search-hero { align-items: center; background: linear-gradient(135deg,#312e81 0%,#6d28d9 52%,#2563eb 100%); border-radius: 1rem; box-shadow: 0 14px 35px rgba(67,56,202,.2); color: #fff; display: flex; gap: 1rem; margin: 0 0 1rem; overflow: hidden; padding: 1.15rem 1.35rem; position: relative; }
     .userinfo-search-hero::after { background: rgba(255,255,255,.08); border-radius: 999px; content: ''; height: 9rem; position: absolute; right: -2.5rem; top: -4rem; width: 9rem; }
     .userinfo-search-hero-icon { align-items: center; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.24); border-radius: .9rem; display: flex; flex: 0 0 3.25rem; font-size: 1.35rem; height: 3.25rem; justify-content: center; }
@@ -203,7 +203,10 @@
                         <span>Login ID / Mobile / PACS Name</span>
                         <span class="userinfo-input-wrap"><i class="fas fa-search"></i><input type="text" name="search_id" value="{{ search_query }}" placeholder="Enter Login ID, mobile or PACS name..."></span>
                     </label>
-                    <label class="userinfo-control-field userinfo-amount-field">
+                    <label class="userinfo-control-field userinfo-record-id-field">
+                        <span>Record ID</span>
+                        <span class="userinfo-input-wrap"><i class="fas fa-hashtag"></i><input type="number" name="record_id" value="{{ record_id_query }}" min="1" step="1" placeholder="Exact ID"></span>
+                    </label>                    <label class="userinfo-control-field userinfo-amount-field">
                         <span>Invoice Amount</span>
                         <span class="userinfo-input-wrap"><i class="fas fa-indian-rupee-sign"></i><input type="number" name="customAmount" min="0" placeholder="Amount"></span>
                     </label>
@@ -305,7 +308,7 @@
                 </div>
             </div>
             <div id="userinfo-results">
-            {% if search_query and clients %}
+            {% if search_query or record_id_query %}{% if clients %}
             {% with primary_client=clients.0 %}
             <section class="userinfo-search-hero" aria-label="PACS search summary">
                 <div class="userinfo-search-hero-icon"><i class="fas fa-building-columns"></i></div>
@@ -320,13 +323,13 @@
                 <span class="userinfo-first-match"><i class="fas fa-check-circle"></i> First matched PACS</span>
             </section>
             {% endwith %}
-            {% endif %}
+            {% endif %}{% endif %}
             <div class="table-responsive">
                 <table class="app-table userinfo-professional-table">
                     <thead class="table-dark border-secondary">
                         <tr>
                             <th class="text-center">Actions</th>
-                            <th>{% if search_query %}Record{% else %}PACS Details{% endif %}</th>
+                            <th>{% if search_query or record_id_query %}Record{% else %}PACS Details{% endif %}</th>
                             <th>Plan</th>
                             <th>Payment</th>
                             <th class="text-center">Entries</th>
@@ -354,7 +357,7 @@
                                 </button>
                             </td>
                             <td class="userinfo-pacs-cell">
-                                {% if search_query %}
+                                {% if search_query or record_id_query %}
                                 <strong class="userinfo-primary">Record #{{ client.id }}</strong>
                                 <span class="userinfo-secondary"><i class="fas fa-id-card"></i> {{ client.mobile|default:"-" }}</span>
                                 {% else %}
@@ -470,7 +473,7 @@
                     {% if clients.has_previous %}
                     <li class="page-item">
                         <a class="page-link"
-                            href="?page={{ clients.previous_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Prev</a>
+                            href="?page={{ clients.previous_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}{% if record_id_query %}&record_id={{ record_id_query }}{% endif %}">Prev</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
@@ -487,7 +490,7 @@
 
                     {% elif num > clients.number|add:'-4' and num < clients.number|add:'4' %} <li class="page-item">
                         <a class="page-link"
-                            href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}">{{ num }}</a>
+                            href="?page={{ num }}{% if search_query %}&search_id={{ search_query }}{% endif %}{% if record_id_query %}&record_id={{ record_id_query }}{% endif %}">{{ num }}</a>
                         </li>
                         {% endif %}
 
@@ -496,7 +499,7 @@
                         {% if clients.has_next %}
                         <li class="page-item">
                             <a class="page-link"
-                                href="?page={{ clients.next_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}">Next</a>
+                                href="?page={{ clients.next_page_number }}{% if search_query %}&search_id={{ search_query }}{% endif %}{% if record_id_query %}&record_id={{ record_id_query }}{% endif %}">Next</a>
                         </li>
                         {% else %}
                         <li class="page-item disabled">

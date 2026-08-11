@@ -1,9 +1,48 @@
+from datetime import date
+from decimal import Decimal
+from types import SimpleNamespace
+from urllib.parse import parse_qs, urlparse
+
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from .models import Customer, Transaction
+from .views import build_reminder_whatsapp_url, build_transaction_whatsapp_url
 
+
+
+
+class WhatsAppMessageTests(SimpleTestCase):
+    def whatsapp_message(self, url):
+        return parse_qs(urlparse(url).query)['text'][0]
+
+    def test_transaction_message_contains_saved_entry_in_hindi(self):
+        customer = SimpleNamespace(name='मोहन', phone='9876543210')
+        entry = SimpleNamespace(
+            trans_type='GIVEN', amount=Decimal('1250'),
+            date=date(2026, 8, 11), remarks='सॉफ्टवेयर सेवा',
+        )
+
+        message = self.whatsapp_message(
+            build_transaction_whatsapp_url(customer, entry, Decimal('1250'))
+        )
+
+        self.assertIn('नया लेन-देन दर्ज किया गया है', message)
+        self.assertIn('उधार जोड़ा गया', message)
+        self.assertIn('₹1250.00', message)
+        self.assertNotIn('याद दिलाने', message)
+
+    def test_reminder_message_contains_current_balance_not_transaction(self):
+        customer = SimpleNamespace(name='मोहन', phone='9876543210')
+
+        message = self.whatsapp_message(
+            build_reminder_whatsapp_url(customer, Decimal('900'))
+        )
+
+        self.assertIn('याद दिलाने हेतु संदेश', message)
+        self.assertIn('₹900.00 का भुगतान बाकी है', message)
+        self.assertNotIn('नया लेन-देन', message)
 
 class TransferVoucherTests(TestCase):
     def setUp(self):

@@ -1,33 +1,24 @@
+from django.conf import settings
 from django.db import models
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-
-class DownloadLink(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    category = models.CharField(max_length=50, default='General')
-    categories = models.ManyToManyField(Category, related_name='download_links', blank=True)
-    is_required = models.BooleanField(
-        default=False,
-        help_text='Show this file first and include it with every software category.',
+class DownloadCatalogSnapshot(models.Model):
+    singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    catalog = models.JSONField(default=dict)
+    file_count = models.PositiveIntegerField(default=0)
+    category_count = models.PositiveIntegerField(default=0)
+    synced_at = models.DateTimeField(null=True, blank=True)
+    synced_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='download_catalog_syncs',
     )
-    drive_link = models.URLField(max_length=500)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-is_required', 'name']
+        verbose_name = 'Download catalog snapshot'
+        verbose_name_plural = 'Download catalog snapshot'
 
     def __str__(self):
-        return self.name
+        return f'Download catalog ({self.file_count} files)'
