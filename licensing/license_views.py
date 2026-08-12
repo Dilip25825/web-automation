@@ -581,6 +581,17 @@ def create_erp_invoice(request):
             {'success': False, 'status': 'ERP_NOT_FOUND', 'message': 'Di gayi ERP ID ka record nahi mila.'},
             status=404,
         )
+    stored_amount = int(record.amount or 0)
+    payment_status = int(record.payment_status or 0)
+    if stored_amount <= 0 or stored_amount != payment_status:
+        return JsonResponse(
+            {
+                'success': False,
+                'status': 'PAYMENT_REQUIRED',
+                'message': 'Invoice sirf complete payment wale ERP record ke liye ban sakta hai.',
+            },
+            status=403,
+        )
 
     token = signing.dumps(
         {'record_id': record.pk, 'amount': format(invoice_amount, '.2f')},
@@ -613,6 +624,13 @@ def erp_online_invoice(request, token):
     record = tblPacsErp.objects.filter(pk=record_id).first()
     if not record:
         return JsonResponse({'success': False, 'status': 'ERP_NOT_FOUND'}, status=404)
+    stored_amount = int(record.amount or 0)
+    payment_status = int(record.payment_status or 0)
+    if stored_amount <= 0 or stored_amount != payment_status:
+        return JsonResponse(
+            {'success': False, 'status': 'PAYMENT_REQUIRED', 'message': 'Is ERP record ka complete payment nahi mila.'},
+            status=403,
+        )
     pdf_buffer = generate_erp_invoice_pdf(request, record, invoice_amount=invoice_amount)
     return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
 

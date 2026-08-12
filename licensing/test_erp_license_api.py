@@ -145,7 +145,7 @@ class ErpInvoiceApiTests(SimpleTestCase):
 
     @patch('licensing.license_views.tblPacsErp.objects')
     def test_custom_invoice_url_does_not_expose_stored_amount(self, objects):
-        record = SimpleNamespace(pk=73)
+        record = SimpleNamespace(pk=73, amount=4500, payment_status=4500)
         objects.filter.return_value.exclude.return_value.order_by.return_value.first.return_value = record
         request = self.factory.post(
             self.url,
@@ -160,6 +160,19 @@ class ErpInvoiceApiTests(SimpleTestCase):
         self.assertNotIn('2750', data['invoice_url'])
         self.assertNotIn('amount', data)
 
+    @patch('licensing.license_views.tblPacsErp.objects')
+    def test_unpaid_record_cannot_generate_invoice(self, objects):
+        record = SimpleNamespace(pk=74, amount=4500, payment_status=0)
+        objects.filter.return_value.exclude.return_value.order_by.return_value.first.return_value = record
+        request = self.factory.post(
+            self.url,
+            data=json.dumps({'operator_mobile': '9876543210', 'erp_id': 'CEO-UNPAID', 'amount': '2750'}),
+            content_type='application/json',
+            HTTP_X_LICENSE_API_KEY='test-api-key',
+        )
+        response = license_views.create_erp_invoice(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(json.loads(response.content)['status'], 'PAYMENT_REQUIRED')
     def test_invalid_invoice_amount_is_rejected(self):
         request = self.factory.post(
             self.url,
