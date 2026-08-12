@@ -114,7 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || 'Drive sync failed.');
       window.AppLoader?.hide();
-      await Swal.fire({icon:'success',title:'Drive Sync Complete',text:result.message,confirmButtonColor:'#4f46e5'});
+      await Swal.fire({
+        icon:'success',
+        title:'Drive Sync Complete',
+        html:`<div class="text-left leading-7"><strong>नई files:</strong> ${result.added_count}<br><strong>हटाई गई files:</strong> ${result.removed_count}<br><strong>वर्तमान कुल files:</strong> ${result.file_count}</div>`,
+        confirmButtonColor:'#4f46e5'
+      });
       window.location.reload();
     } catch (error) {
       window.AppLoader?.hide();

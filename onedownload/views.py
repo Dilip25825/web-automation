@@ -135,6 +135,17 @@ def public_downloads(request):
         'download_snapshot': snapshot,
     })
 
+def _catalog_file_ids(catalog):
+    if not isinstance(catalog, dict):
+        return set()
+    files = catalog.get('files')
+    if not isinstance(files, list):
+        return set()
+    return {
+        str(item.get('id')).strip()
+        for item in files
+        if isinstance(item, dict) and str(item.get('id') or '').strip()
+    }
 
 @require_POST
 def sync_drive_catalog(request):
@@ -144,6 +155,10 @@ def sync_drive_catalog(request):
             'message': 'Only superuser can sync Google Drive files.',
         }, status=403)
     try:
+        previous_snapshot = DownloadCatalogSnapshot.objects.filter(singleton_key=1).first()
+        previous_file_ids = _catalog_file_ids(
+            previous_snapshot.catalog if previous_snapshot else None
+        )
         drive_data = refresh_catalog()
         if not isinstance(drive_data, dict):
             raise ValueError('Drive catalog response is invalid.')
@@ -151,6 +166,9 @@ def sync_drive_catalog(request):
         files = drive_data.get('files')
         if not isinstance(categories, list) or not isinstance(files, list):
             raise ValueError('Drive catalog categories or files are invalid.')
+        current_file_ids = _catalog_file_ids(drive_data)
+        added_count = len(current_file_ids - previous_file_ids)
+        removed_count = len(previous_file_ids - current_file_ids)
         synced_at = timezone.now()
         with transaction.atomic():
             snapshot, _ = DownloadCatalogSnapshot.objects.update_or_create(
@@ -171,7 +189,13 @@ def sync_drive_catalog(request):
         }, None)
         return JsonResponse({
             'success': True,
-            'message': f'{snapshot.file_count} Drive files successfully synced.',
+            'message': (
+                f'New files added: {added_count}. '
+                f'Files removed: {removed_count}. '
+                f'Current total files: {snapshot.file_count}.'
+            ),
+            'added_count': added_count,
+            'removed_count': removed_count,
             'file_count': snapshot.file_count,
             'category_count': snapshot.category_count,
         })

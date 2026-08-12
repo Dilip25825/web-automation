@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -104,17 +105,53 @@ class DownloadSnapshotTests(SimpleTestCase):
     @patch('onedownload.views.refresh_catalog')
     def test_superuser_sync_saves_snapshot(self, refresh_catalog, objects, _atomic):
         refresh_catalog.return_value = self.catalog
+        objects.filter.return_value.first.return_value = None
         snapshot = SimpleNamespace(file_count=1, category_count=1, synced_at=None)
         objects.update_or_create.return_value = (snapshot, True)
         request = self.factory.post('/downloads/sync/')
         request.user = self.superuser
         response = sync_drive_catalog(request)
         self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertEqual(data['added_count'], 1)
+        self.assertEqual(data['removed_count'], 0)
+        self.assertEqual(data['file_count'], 1)
         objects.update_or_create.assert_called_once()
         defaults = objects.update_or_create.call_args.kwargs['defaults']
         self.assertEqual(defaults['catalog'], self.catalog)
         self.assertIs(defaults['synced_by'], self.superuser)
 
+    @patch('onedownload.views.transaction.atomic')
+    @patch('onedownload.views.DownloadCatalogSnapshot.objects')
+    @patch('onedownload.views.refresh_catalog')
+    def test_sync_reports_added_removed_and_current_counts(self, refresh_catalog, objects, _atomic):
+        previous_catalog = {
+            'categories': [],
+            'files': [{'id': 'keep'}, {'id': 'remove-1'}, {'id': 'remove-2'}],
+        }
+        current_catalog = {
+            'categories': [],
+            'files': [{'id': 'keep'}, {'id': 'add-1'}],
+        }
+        objects.filter.return_value.first.return_value = SimpleNamespace(catalog=previous_catalog)
+        refresh_catalog.return_value = current_catalog
+        objects.update_or_create.return_value = (
+            SimpleNamespace(file_count=2, category_count=0, synced_at=None),
+            False,
+        )
+        request = self.factory.post('/downloads/sync/')
+        request.user = self.superuser
+
+        response = sync_drive_catalog(request)
+        data = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['added_count'], 1)
+        self.assertEqual(data['removed_count'], 2)
+        self.assertEqual(data['file_count'], 2)
+        self.assertIn('New files added: 1', data['message'])
+        self.assertIn('Files removed: 2', data['message'])
+        self.assertIn('Current total files: 2', data['message'])
     @patch('onedownload.views.DownloadCatalogSnapshot.objects')
     @patch('onedownload.views.refresh_catalog', side_effect=RuntimeError('Drive unavailable'))
     def test_failed_sync_does_not_replace_snapshot(self, _refresh_catalog, objects):
