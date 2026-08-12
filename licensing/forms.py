@@ -170,8 +170,9 @@ class PublicPmfbyRegistrationForm(forms.Form):
     financial_year = forms.ChoiceField(label='Financial Year', choices=[])
 
 
-    def __init__(self, *args, financial_years=None, **kwargs):
+    def __init__(self, *args, financial_years=None, service_name='PMFBY', **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['service'].initial = service_name
         self.fields['financial_year'].choices = [('', '-- Select Financial Year --')] + [
             (year, year) for year in (financial_years or [])
         ]

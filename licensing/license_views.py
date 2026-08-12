@@ -635,36 +635,75 @@ def erp_online_invoice(request, token):
     return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
 
 PMFBY_PURPOSE = 'PMFBY'
+OPTOUT_FORM_PURPOSE = 'OptOutForm'
+PMFBY_ALLOWED_SERVICES = {
+    PMFBY_PURPOSE.upper(): PMFBY_PURPOSE,
+    OPTOUT_FORM_PURPOSE.upper(): OPTOUT_FORM_PURPOSE,
+}
 PMFBY_ENTRY_LIMIT = 10
 PMFBY_TOKEN_SALT = 'licensing.pmfby-session.v1'
 PMFBY_TOKEN_MAX_AGE = 12 * 60 * 60
 
-def _pmfby_queryset(mobile, financial_year):
-    return UserInfoData.objects.filter(mobile=int(mobile), for_whys__iexact=PMFBY_PURPOSE, f_year__iexact=financial_year.strip())
 
-def _select_pmfby_record(mobile, financial_year):
-    active_records = list(_pmfby_queryset(mobile, financial_year).filter(is_active=1).order_by('-id')[:2])
+def _pmfby_service(value=None):
+    """Keep old clients on PMFBY while allowing the approved OptOutForm service."""
+    normalized = str(value or PMFBY_PURPOSE).strip().upper()
+    return PMFBY_ALLOWED_SERVICES.get(normalized, '')
+
+
+def _pmfby_queryset(mobile, financial_year, service=PMFBY_PURPOSE):
+    return UserInfoData.objects.filter(
+        mobile=int(mobile),
+        for_whys__iexact=service,
+        f_year__iexact=financial_year.strip(),
+    )
+
+
+def _select_pmfby_record(mobile, financial_year, service=PMFBY_PURPOSE):
+    service_queryset = _pmfby_queryset(mobile, financial_year, service)
+    active_records = list(service_queryset.filter(is_active=1).order_by('-id')[:2])
     if len(active_records) > 1:
         return None, True
     if active_records:
         return active_records[0], False
-    return _pmfby_queryset(mobile, financial_year).order_by('-id').first(), False
+    return service_queryset.order_by('-id').first(), False
+
 
 def _pmfby_request_identity(body):
     mobile = _operator_mobile(body.get('mobile') or body.get('user_id'))
     financial_year = str(body.get('financial_year') or body.get('fYear') or '').strip()
-    return mobile, financial_year
+    service = _pmfby_service(body.get('service') or body.get('for_whys') or body.get('forWhys'))
+    return mobile, financial_year, service
 
-def _pmfby_years():
-    values = Perpous.objects.filter(forWhy__iexact=PMFBY_PURPOSE).exclude(fyear__isnull=True).exclude(fyear='').order_by('-fyear').values_list('fyear', flat=True).distinct()
+
+def _pmfby_years(service=PMFBY_PURPOSE):
+    values = list(
+        Perpous.objects.filter(forWhy__iexact=service)
+        .exclude(fyear__isnull=True)
+        .exclude(fyear='')
+        .order_by('-fyear')
+        .values_list('fyear', flat=True)
+        .distinct()
+    )
+    if not values and service == OPTOUT_FORM_PURPOSE:
+        values = list(
+            Perpous.objects.filter(forWhy__iexact=PMFBY_PURPOSE)
+            .exclude(fyear__isnull=True)
+            .exclude(fyear='')
+            .order_by('-fyear')
+            .values_list('fyear', flat=True)
+            .distinct()
+        )
     return [str(year).strip() for year in values if str(year).strip()]
 
-def _pmfby_registration_url(request, mobile):
-    token = signing.dumps({'mobile': mobile}, salt=PMFBY_TOKEN_SALT, compress=True)
+
+def _pmfby_registration_url(request, mobile, service=PMFBY_PURPOSE):
+    token = signing.dumps({'mobile': mobile, 'service': service}, salt=PMFBY_TOKEN_SALT, compress=True)
     return request.build_absolute_uri(f"{reverse('licensing:pmfby_self_register')}?token={token}")
 
-def _pmfby_registration_initial(mobile):
-    initial = {'mobile': mobile, 'operator_mobile': mobile}
+
+def _pmfby_registration_initial(mobile, service=PMFBY_PURPOSE):
+    initial = {'mobile': mobile, 'operator_mobile': mobile, 'service': service}
     previous = UserInfoData.objects.filter(mobile=int(mobile)).order_by('-id').first()
     if not previous:
         return initial
@@ -677,8 +716,20 @@ def _pmfby_registration_initial(mobile):
         initial['operator_mobile'] = operator_mobile
     return initial
 
-def _pmfby_session_token(record):
-    return signing.dumps({'record_id': record.pk, 'mobile': str(record.mobile), 'financial_year': record.f_year}, salt=PMFBY_TOKEN_SALT, compress=True)
+
+def _pmfby_session_token(record, service=None):
+    service = _pmfby_service(service or record.for_whys)
+    return signing.dumps(
+        {
+            'record_id': record.pk,
+            'mobile': str(record.mobile),
+            'financial_year': record.f_year,
+            'service': service,
+        },
+        salt=PMFBY_TOKEN_SALT,
+        compress=True,
+    )
+
 
 def _pmfby_entry_limit(record):
     configured_limit = getattr(record, 'limit_of_entrys', None)
@@ -686,13 +737,27 @@ def _pmfby_entry_limit(record):
         return PMFBY_ENTRY_LIMIT
     return max(0, _integer(configured_limit))
 
+
 @csrf_exempt
 @require_POST
 @never_cache
 def pmfby_options(request):
     if _rate_limited(request, 'pmfby-options', '', settings.ERP_API_IP_RATE_LIMIT):
         return _too_many_requests()
-    return JsonResponse({'success': True, 'status': 'OK', 'app_code': 'PMFBY', 'for_whys': PMFBY_PURPOSE, 'financial_years': _pmfby_years()})
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+    service = _pmfby_service(body.get('service') or body.get('for_whys') or body.get('forWhys'))
+    if not service:
+        return JsonResponse({'success': False, 'status': 'INVALID_SERVICE', 'message': 'Selected service valid nahi hai.'}, status=400)
+    return JsonResponse({
+        'success': True,
+        'status': 'OK',
+        'app_code': 'PMFBY',
+        'for_whys': service,
+        'financial_years': _pmfby_years(service),
+    })
+
 
 @csrf_exempt
 @require_POST
@@ -703,16 +768,24 @@ def pmfby_subscription(request):
     body = _json_body(request)
     if body is None:
         return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_JSON'}, status=400)
-    mobile, financial_year = _pmfby_request_identity(body)
+    mobile, financial_year, service = _pmfby_request_identity(body)
     if not mobile or not financial_year:
         return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_REQUEST', 'message': 'Kripya valid 10 digit mobile number aur sahi season/year select karein.'}, status=400)
+    if not service:
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'INVALID_SERVICE', 'message': 'Selected service valid nahi hai.'}, status=400)
     if _rate_limited(request, 'pmfby-login-mobile', mobile, settings.ERP_API_MOBILE_RATE_LIMIT):
         return _too_many_requests()
-    record, multiple_active = _select_pmfby_record(mobile, financial_year)
+    record, multiple_active = _select_pmfby_record(mobile, financial_year, service)
     if multiple_active:
-        return JsonResponse({'success': False, 'authorized': False, 'status': 'MULTIPLE_ACTIVE_RECORDS', 'message': 'Is mobile aur season ke liye ek se adhik active accounts mile hain. Kripya support se sampark karein.'}, status=409)
+        return JsonResponse({'success': False, 'authorized': False, 'status': 'MULTIPLE_ACTIVE_RECORDS', 'message': 'Is mobile, service aur season ke liye ek se adhik active accounts mile hain. Kripya support se sampark karein.'}, status=409)
     if not record:
-        return JsonResponse({'success': True, 'authorized': False, 'status': 'LICENSE_NOT_FOUND', 'message': 'Is mobile aur season ka account abhi bana nahi hai. Kripya registration complete karein.', 'registration_url': _pmfby_registration_url(request, mobile)})
+        return JsonResponse({
+            'success': True,
+            'authorized': False,
+            'status': 'LICENSE_NOT_FOUND',
+            'message': 'Is mobile, service aur season ka account abhi bana nahi hai. Kripya registration complete karein.',
+            'registration_url': _pmfby_registration_url(request, mobile, service),
+        })
 
     authorized = _integer(record.is_active) == 1
     if authorized:
@@ -723,24 +796,25 @@ def pmfby_subscription(request):
     return JsonResponse({
         'success': True, 'authorized': authorized, 'status': status, 'message': message,
         'record_id': record.pk, 'mobile': str(record.mobile or mobile), 'pacs_name': record.pacs_name or '',
-        'for_whys': PMFBY_PURPOSE, 'financial_year': record.f_year or financial_year,
-
-        'record_token': _pmfby_session_token(record) if authorized else '',
+        'for_whys': service, 'financial_year': record.f_year or financial_year,
+        'record_token': _pmfby_session_token(record, service) if authorized else '',
     })
+
 
 def _pmfby_record_from_token(record_token, lock=False):
     try:
         token_data = signing.loads(record_token, salt=PMFBY_TOKEN_SALT, max_age=PMFBY_TOKEN_MAX_AGE)
         mobile = _operator_mobile(token_data.get('mobile'))
         financial_year = str(token_data.get('financial_year') or '').strip()
+        service = _pmfby_service(token_data.get('service'))
         record_id = _integer(token_data.get('record_id'))
     except signing.SignatureExpired:
         return None, JsonResponse({'success': False, 'status': 'TOKEN_EXPIRED', 'message': 'Aapka login session samapt ho gaya hai. Kripya dobara login karein.'}, status=401)
     except signing.BadSignature:
         return None, JsonResponse({'success': False, 'status': 'INVALID_TOKEN', 'message': 'Login verification nahi ho saki. Kripya dobara login karein.'}, status=401)
-    if not mobile or not financial_year or record_id <= 0:
+    if not mobile or not financial_year or not service or record_id <= 0:
         return None, JsonResponse({'success': False, 'status': 'INVALID_REQUEST'}, status=400)
-    queryset = _pmfby_queryset(mobile, financial_year)
+    queryset = _pmfby_queryset(mobile, financial_year, service)
     if lock:
         queryset = queryset.select_for_update()
     record = queryset.filter(pk=record_id).first()
@@ -772,10 +846,7 @@ def check_pmfby_entry(request):
     elif allowed:
         message = 'Aap free upload suvidha ka upyog kar rahe hain.'
     else:
-        message = (
-            f'Aapne {entry_count} free entries successfully upload kar li hain. '
-            'Aage upload karne ke liye payment karna hoga.'
-        )
+        message = f'Aapne {entry_count} free entries successfully upload kar li hain. Aage upload karne ke liye payment karna hoga.'
     return JsonResponse({
         'success': True,
         'allowed': allowed,
@@ -783,6 +854,7 @@ def check_pmfby_entry(request):
         'message': message,
         'access_type': 'PAID' if paid else 'FREE_TRIAL',
     })
+
 
 @csrf_exempt
 @require_POST
@@ -802,6 +874,7 @@ def get_pmfby_upi(request):
     if not upi_record:
         return JsonResponse({'success': False, 'status': 'UPI_NOT_CONFIGURED', 'message': 'Payment service abhi uplabdh nahi hai. Kripya support se sampark karein.'}, status=503)
     return JsonResponse({'success': True, 'status': 'OK', 'upi_id': str(upi_record.upiID).strip()})
+
 
 @csrf_exempt
 @require_POST
@@ -835,6 +908,7 @@ def consume_pmfby_entries(request):
         record.save(update_fields=['entry_count'])
     return JsonResponse({'success': True, 'status': 'UPLOAD_RECORDED'})
 
+
 @require_http_methods(['GET', 'POST'])
 @never_cache
 def pmfby_self_register(request):
@@ -842,29 +916,35 @@ def pmfby_self_register(request):
     try:
         payload = signing.loads(token, salt=PMFBY_TOKEN_SALT, max_age=PMFBY_TOKEN_MAX_AGE)
         mobile = _operator_mobile(payload.get('mobile'))
-        if not mobile:
+        service = _pmfby_service(payload.get('service'))
+        if not mobile or not service:
             raise signing.BadSignature
     except signing.SignatureExpired:
         return render(request, 'licensing/pmfby_self_register.html', {'error': 'Registration link expire ho gaya. Excel se dobara login karein.'}, status=410)
     except signing.BadSignature:
         return render(request, 'licensing/pmfby_self_register.html', {'error': 'Registration link valid nahi hai.'}, status=400)
 
-    years = _pmfby_years()
+    years = _pmfby_years(service)
+    context = {'token': token, 'mobile': mobile, 'service_name': service}
     form = PublicPmfbyRegistrationForm(
         request.POST or None,
         financial_years=years,
-        initial=_pmfby_registration_initial(mobile),
+        service_name=service,
+        initial=_pmfby_registration_initial(mobile, service),
     )
     if request.method == 'POST' and form.is_valid():
         if form.cleaned_data['mobile'] != mobile:
             form.add_error('mobile', 'Signed mobile number change nahi kiya ja sakta.')
-            return render(request, 'licensing/pmfby_self_register.html', {'form': form, 'token': token, 'mobile': mobile})
+            context['form'] = form
+            return render(request, 'licensing/pmfby_self_register.html', context)
         year = form.cleaned_data['financial_year']
-        if _pmfby_queryset(mobile, year).exists():
-            return render(request, 'licensing/pmfby_self_register.html', {'already_exists': True, 'mobile': mobile})
+        if _pmfby_queryset(mobile, year, service).exists():
+            context['already_exists'] = True
+            return render(request, 'licensing/pmfby_self_register.html', context)
         with transaction.atomic():
-            if _pmfby_queryset(mobile, year).exists():
-                return render(request, 'licensing/pmfby_self_register.html', {'already_exists': True, 'mobile': mobile})
+            if _pmfby_queryset(mobile, year, service).exists():
+                context['already_exists'] = True
+                return render(request, 'licensing/pmfby_self_register.html', context)
             record = UserInfoData.objects.create(
                 mobile=int(mobile),
                 pacs_name=form.cleaned_data['pacs_name'],
@@ -873,7 +953,7 @@ def pmfby_self_register(request):
                 state=form.cleaned_data['state'],
                 operator_mobile=int(form.cleaned_data['operator_mobile']),
                 f_year=year,
-                for_whys=PMFBY_PURPOSE,
+                for_whys=service,
                 is_pri=None,
                 u_pass=None,
                 amount=2500,
@@ -889,11 +969,12 @@ def pmfby_self_register(request):
                 razorpay_payment_id=None,
                 razorpay_reference_id=None,
                 razorpay_payment_status=None,
-                system_id='PMFBY Web Registration',
+                system_id=f'{service} Web Registration',
             )
-        return render(request, 'licensing/pmfby_self_register.html', {'created': True, 'record': record})
-    return render(request, 'licensing/pmfby_self_register.html', {'form': form, 'token': token, 'mobile': mobile})
-
+        context.update({'created': True, 'record': record})
+        return render(request, 'licensing/pmfby_self_register.html', context)
+    context['form'] = form
+    return render(request, 'licensing/pmfby_self_register.html', context)
 
 FASAL_RIN_PURPOSE = 'FASAL RIN'
 FASAL_RIN_DEFAULT_AMOUNT = 2500

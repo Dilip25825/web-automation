@@ -1,5 +1,5 @@
 {% extends 'core/base.html' %}
-{% block title %}PMFBY Farmer Registration{% endblock %}
+{% block title %}{{ service_name|default:"PMFBY" }} Registration{% endblock %}
 {% block content %}
 <section class="pmfby-register mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-10">
   <div class="overflow-hidden rounded-[1.75rem] border border-indigo-100 bg-white shadow-2xl shadow-slate-950/15">
@@ -7,11 +7,11 @@
       <div class="absolute -right-10 -top-20 h-48 w-48 rounded-full bg-white/10"></div>
       <div class="relative flex items-start justify-between gap-4">
         <div>
-          <p class="text-xs font-extrabold uppercase tracking-[.18em] text-indigo-200">PMFBY registration</p>
+          <p class="text-xs font-extrabold uppercase tracking-[.18em] text-indigo-200">{{ service_name|default:"PMFBY" }} registration</p>
           <h1 class="mt-2 flex items-center gap-3 text-2xl font-extrabold sm:text-3xl">
             <i class="fa-solid fa-user-plus"></i>Welcome to User Creation
           </h1>
-          <p class="mt-2 text-sm text-indigo-100">Enter your PACS/Bank and operator details to create a PMFBY account.</p>
+          <p class="mt-2 text-sm text-indigo-100">Enter your PACS/Bank and operator details to create a {{ service_name|default:"PMFBY" }} account.</p>
         </div>
         <span class="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold backdrop-blur">Secure form</span>
       </div>
@@ -34,7 +34,7 @@
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
           <i class="fa-solid fa-circle-info text-5xl text-amber-600"></i>
           <h2 class="mt-4 text-2xl font-extrabold text-amber-900">Record already exists</h2>
-          <p class="mt-2 text-sm text-amber-800">Mobile {{ mobile }} aur selected year ka PMFBY record pahle se maujood hai.</p>
+          <p class="mt-2 text-sm text-amber-800">Mobile {{ mobile }} aur selected year ka {{ service_name|default:"PMFBY" }} record pahle se maujood hai.</p>
         </div>
       {% else %}
         <form method="post">
