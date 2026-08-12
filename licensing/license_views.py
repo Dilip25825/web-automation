@@ -635,7 +635,7 @@ def erp_online_invoice(request, token):
     return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
 
 PMFBY_PURPOSE = 'PMFBY'
-OPTOUT_FORM_PURPOSE = 'OptOutForm'
+OPTOUT_FORM_PURPOSE = 'OptedOutForm'
 PMFBY_ALLOWED_SERVICES = {
     PMFBY_PURPOSE.upper(): PMFBY_PURPOSE,
     OPTOUT_FORM_PURPOSE.upper(): OPTOUT_FORM_PURPOSE,
@@ -646,7 +646,7 @@ PMFBY_TOKEN_MAX_AGE = 12 * 60 * 60
 
 
 def _pmfby_service(value=None):
-    """Keep old clients on PMFBY while allowing the approved OptOutForm service."""
+    """Keep old clients on PMFBY while allowing the approved OptedOutForm service."""
     normalized = str(value or PMFBY_PURPOSE).strip().upper()
     return PMFBY_ALLOWED_SERVICES.get(normalized, '')
 

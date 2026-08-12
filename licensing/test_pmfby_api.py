@@ -131,17 +131,17 @@ class PmfbyApiTests(SimpleTestCase):
     def test_optout_request_uses_only_optout_service(self, select_record):
         select_record.return_value = (SimpleNamespace(
             pk=32, mobile=9876543210, pacs_name='Opt Out', f_year='Kharif 2026',
-            for_whys='OptOutForm', amount=2500, payment_status=0, is_active=1, entry_count=0,
+            for_whys='OptedOutForm', amount=2500, payment_status=0, is_active=1, entry_count=0,
         ), False)
         response = license_views.pmfby_subscription(self.post('pmfby_subscription', {
-            'mobile': '9876543210', 'service': 'OptOutForm', 'financial_year': 'Kharif 2026',
+            'mobile': '9876543210', 'service': 'OptedOutForm', 'financial_year': 'Kharif 2026',
         }))
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['for_whys'], 'OptOutForm')
-        select_record.assert_called_once_with('9876543210', 'Kharif 2026', 'OptOutForm')
+        self.assertEqual(data['for_whys'], 'OptedOutForm')
+        select_record.assert_called_once_with('9876543210', 'Kharif 2026', 'OptedOutForm')
         token_data = signing.loads(data['record_token'], salt=license_views.PMFBY_TOKEN_SALT)
-        self.assertEqual(token_data['service'], 'OptOutForm')
+        self.assertEqual(token_data['service'], 'OptedOutForm')
 
     def test_unknown_service_is_rejected(self):
         response = license_views.pmfby_subscription(self.post('pmfby_subscription', {
@@ -157,25 +157,25 @@ class PmfbyApiTests(SimpleTestCase):
         objects.filter.side_effect = [optout_query, pmfby_query]
         optout_query.exclude.return_value.exclude.return_value.order_by.return_value.values_list.return_value.distinct.return_value = []
         pmfby_query.exclude.return_value.exclude.return_value.order_by.return_value.values_list.return_value.distinct.return_value = ['Kharif 2026']
-        self.assertEqual(license_views._pmfby_years('OptOutForm'), ['Kharif 2026'])
-        self.assertEqual(objects.filter.call_args_list[0].kwargs['forWhy__iexact'], 'OptOutForm')
+        self.assertEqual(license_views._pmfby_years('OptedOutForm'), ['Kharif 2026'])
+        self.assertEqual(objects.filter.call_args_list[0].kwargs['forWhy__iexact'], 'OptedOutForm')
         self.assertEqual(objects.filter.call_args_list[1].kwargs['forWhy__iexact'], 'PMFBY')
     @patch('licensing.license_views._pmfby_years', return_value=['Kharif 2026'])
     def test_optout_options_use_optout_years(self, years):
-        response = license_views.pmfby_options(self.post('pmfby_options', {'service': 'OptOutForm'}))
+        response = license_views.pmfby_options(self.post('pmfby_options', {'service': 'OptedOutForm'}))
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['for_whys'], 'OptOutForm')
-        years.assert_called_once_with('OptOutForm')
+        self.assertEqual(data['for_whys'], 'OptedOutForm')
+        years.assert_called_once_with('OptedOutForm')
     @patch('licensing.license_views._select_pmfby_record', return_value=(None, False))
     def test_optout_missing_record_returns_service_bound_registration_url(self, _select):
         response = license_views.pmfby_subscription(self.post('pmfby_subscription', {
-            'mobile': '9876543210', 'service': 'OptOutForm', 'financial_year': 'Kharif 2026',
+            'mobile': '9876543210', 'service': 'OptedOutForm', 'financial_year': 'Kharif 2026',
         }))
         data = json.loads(response.content)
         token = data['registration_url'].split('token=', 1)[1]
         token_data = signing.loads(token, salt=license_views.PMFBY_TOKEN_SALT)
-        self.assertEqual(token_data['service'], 'OptOutForm')
+        self.assertEqual(token_data['service'], 'OptedOutForm')
 
     @patch('licensing.license_views.transaction.atomic', return_value=nullcontext())
     @patch('licensing.license_views.UserInfoData.objects')
@@ -183,11 +183,11 @@ class PmfbyApiTests(SimpleTestCase):
     @patch('licensing.license_views._pmfby_registration_initial')
     @patch('licensing.license_views._pmfby_years', return_value=['Kharif 2026'])
     def test_optout_registration_creates_optout_record(self, _years, initial, service_queryset, objects, _atomic):
-        initial.return_value = {'mobile': '9876543210', 'operator_mobile': '9876543210', 'service': 'OptOutForm'}
+        initial.return_value = {'mobile': '9876543210', 'operator_mobile': '9876543210', 'service': 'OptedOutForm'}
         service_queryset.return_value.exists.return_value = False
         objects.create.return_value = SimpleNamespace(id=88)
         token = signing.dumps(
-            {'mobile': '9876543210', 'service': 'OptOutForm'},
+            {'mobile': '9876543210', 'service': 'OptedOutForm'},
             salt=license_views.PMFBY_TOKEN_SALT,
             compress=True,
         )
@@ -203,9 +203,9 @@ class PmfbyApiTests(SimpleTestCase):
         })
         self.assertEqual(response.status_code, 200)
         kwargs = objects.create.call_args.kwargs
-        self.assertEqual(kwargs['for_whys'], 'OptOutForm')
+        self.assertEqual(kwargs['for_whys'], 'OptedOutForm')
         self.assertEqual(kwargs['f_year'], 'Kharif 2026')
-        self.assertEqual(kwargs['system_id'], 'OptOutForm Web Registration')
+        self.assertEqual(kwargs['system_id'], 'OptedOutForm Web Registration')
     @patch('licensing.license_views._pmfby_record_from_token')
     def test_entry_button_blocks_free_record_after_ten(self, record_from_token):
         record_from_token.return_value = (SimpleNamespace(
