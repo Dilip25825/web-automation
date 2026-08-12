@@ -20,4 +20,5 @@ urlpatterns = [
     path("erp/subscription/", license_views.check_erp_subscription, name="erp_subscription"),
     path("erp/version/", license_views.check_erp_version, name="erp_version"),
     path("erp/upi/", license_views.get_erp_upi, name="erp_upi"),
+    path("erp/invoice/create/", license_views.create_erp_invoice, name="erp_invoice_create"),
 ]

@@ -136,6 +136,41 @@ class ErpVersionApiTests(SimpleTestCase):
     def test_numeric_version_comparison_does_not_treat_older_server_as_update(self):
         self.assertGreater(license_views._version_parts('5.10.0'), license_views._version_parts('5.9.9'))
 
+@override_settings(LICENSE_VALIDATION_API_KEY='test-api-key', ALLOWED_HOSTS=['testserver'], ERP_API_IP_RATE_LIMIT=100)
+class ErpInvoiceApiTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+        self.factory = RequestFactory()
+        self.url = reverse('license_api:erp_invoice_create')
+
+    @patch('licensing.license_views.tblPacsErp.objects')
+    def test_custom_invoice_url_does_not_expose_stored_amount(self, objects):
+        record = SimpleNamespace(pk=73)
+        objects.filter.return_value.exclude.return_value.order_by.return_value.first.return_value = record
+        request = self.factory.post(
+            self.url,
+            data=json.dumps({'operator_mobile': '9876543210', 'erp_id': 'CEO123456', 'amount': '2750'}),
+            content_type='application/json',
+            HTTP_X_LICENSE_API_KEY='test-api-key',
+        )
+        response = license_views.create_erp_invoice(request)
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(data), {'success', 'status', 'invoice_url'})
+        self.assertNotIn('2750', data['invoice_url'])
+        self.assertNotIn('amount', data)
+
+    def test_invalid_invoice_amount_is_rejected(self):
+        request = self.factory.post(
+            self.url,
+            data=json.dumps({'operator_mobile': '9876543210', 'erp_id': 'CEO123456', 'amount': '0'}),
+            content_type='application/json',
+            HTTP_X_LICENSE_API_KEY='test-api-key',
+        )
+        response = license_views.create_erp_invoice(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(json.loads(response.content)['status'], 'INVALID_AMOUNT')
+
 @override_settings(ALLOWED_HOSTS=['testserver'])
 class ErpSelfRegistrationTests(SimpleTestCase):
     def registration_token(self):

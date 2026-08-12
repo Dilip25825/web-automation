@@ -6,13 +6,14 @@ import hashlib
 import re
 import secrets
 import time
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core import signing
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import F, Q
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -22,10 +23,13 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import PublicFasalRinRegistrationForm, PublicPacsErpRegistrationForm, PublicPmfbyRegistrationForm
 from .models import ErpApiClientToken, Perpous, UserInfoData, VersionInfo, tblPacsErp, tblUPI
+from .utils import generate_erp_invoice_pdf
 
 
 ERP_REGISTRATION_SALT = 'licensing.erp-registration.v1'
 ERP_REGISTRATION_MAX_AGE = 30 * 60
+ERP_INVOICE_SALT = 'licensing.erp-invoice.v1'
+ERP_INVOICE_MAX_AGE = 10 * 60
 
 
 def _json_body(request):
@@ -532,6 +536,85 @@ def get_erp_upi(request):
             'upi_id': str(upi_record.upiID).strip(),
         }
     )
+
+@csrf_exempt
+@require_POST
+@never_cache
+def create_erp_invoice(request):
+    """Create a short-lived invoice URL without exposing the stored ERP price."""
+    if _rate_limited(request, 'invoice-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+
+    operator_mobile = _operator_mobile(body.get('operator_mobile'))
+    erp_id = str(body.get('erp_id') or '').strip()
+    if not operator_mobile or not erp_id or len(erp_id) > 255:
+        return JsonResponse(
+            {'success': False, 'status': 'INVALID_REQUEST', 'message': 'Valid Operator Mobile aur ERP ID required hain.'},
+            status=400,
+        )
+
+    try:
+        invoice_amount = Decimal(str(body.get('amount') or '').strip())
+    except (InvalidOperation, TypeError, ValueError):
+        invoice_amount = Decimal('0')
+    if not invoice_amount.is_finite() or invoice_amount <= 0 or invoice_amount > Decimal('1000000') or invoice_amount.as_tuple().exponent < -2:
+        return JsonResponse(
+            {'success': False, 'status': 'INVALID_AMOUNT', 'message': 'Invoice amount 0 se zyada aur maximum 10,00,000 hona chahiye.'},
+            status=400,
+        )
+
+    if not (_api_key_is_valid(request) or _client_token_is_valid(request, operator_mobile)):
+        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED'}, status=401)
+
+    record = (
+        tblPacsErp.objects.filter(erp_id__iexact=erp_id)
+        .exclude(erp_id__iendswith=' Expired')
+        .order_by('-is_active', '-expiry_date', '-id')
+        .first()
+    )
+    if not record:
+        return JsonResponse(
+            {'success': False, 'status': 'ERP_NOT_FOUND', 'message': 'Di gayi ERP ID ka record nahi mila.'},
+            status=404,
+        )
+
+    token = signing.dumps(
+        {'record_id': record.pk, 'amount': format(invoice_amount, '.2f')},
+        salt=ERP_INVOICE_SALT,
+        compress=True,
+    )
+    invoice_path = reverse('licensing:erp_online_invoice', kwargs={'token': token})
+    return JsonResponse(
+        {'success': True, 'status': 'INVOICE_READY', 'invoice_url': request.build_absolute_uri(invoice_path)}
+    )
+
+
+@require_http_methods(['GET'])
+@never_cache
+def erp_online_invoice(request, token):
+    try:
+        payload = signing.loads(token, salt=ERP_INVOICE_SALT, max_age=ERP_INVOICE_MAX_AGE)
+        record_id = int(payload.get('record_id'))
+        invoice_amount = Decimal(str(payload.get('amount')))
+        if not invoice_amount.is_finite() or invoice_amount <= 0 or invoice_amount > Decimal('1000000'):
+            raise signing.BadSignature
+    except signing.SignatureExpired:
+        return JsonResponse(
+            {'success': False, 'status': 'INVOICE_LINK_EXPIRED', 'message': 'Invoice link expire ho gaya. Excel se naya invoice banayein.'},
+            status=410,
+        )
+    except (signing.BadSignature, InvalidOperation, TypeError, ValueError):
+        return JsonResponse({'success': False, 'status': 'INVALID_INVOICE_LINK'}, status=400)
+
+    record = tblPacsErp.objects.filter(pk=record_id).first()
+    if not record:
+        return JsonResponse({'success': False, 'status': 'ERP_NOT_FOUND'}, status=404)
+    pdf_buffer = generate_erp_invoice_pdf(request, record, invoice_amount=invoice_amount)
+    return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
 
 PMFBY_PURPOSE = 'PMFBY'
 PMFBY_ENTRY_LIMIT = 10

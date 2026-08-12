@@ -167,7 +167,7 @@ def generate_pacs_invoice_pdf(request, client,customAmount):
 
 # licensing/utils.py ke andar ye dusra function add karein
 
-def generate_erp_invoice_pdf(request, record):
+def generate_erp_invoice_pdf(request, record, invoice_amount=None):
     """
     NCL ERP INVOICE ENGINE: Copying the exact green branding layout (#094d25) 
     from userinfo but customized for tblPacsErp database models.
@@ -249,8 +249,10 @@ def generate_erp_invoice_pdf(request, record):
 
         # Calculations (Backwards GST Breakdown Engine)
         total_paid = float(record.amount if record.amount else 0.0)
-        custom_amount = request.GET.get('customAmount', '').strip()
-        if custom_amount:
+        custom_amount = invoice_amount
+        if custom_amount is None:
+            custom_amount = request.GET.get('customAmount', '').strip()
+        if custom_amount not in (None, ''):
             try:
                 total_paid = float(custom_amount)
             except (TypeError, ValueError):

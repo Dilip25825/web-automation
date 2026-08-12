@@ -14,6 +14,7 @@ urlpatterns = [
     path('userinfo/add/', views.create_userinfo, name='create_userinfo'),
     path('pacserp/add/', views.create_pacserp, name='create_pacserp'),
     path('erp/register/', license_views.erp_self_register, name='erp_self_register'),
+    path('erp/invoice/online/<str:token>/', license_views.erp_online_invoice, name='erp_online_invoice'),
     path('pmfby/register/', license_views.pmfby_self_register, name='pmfby_self_register'),
     path('fasal-rin/register/', license_views.fasal_rin_self_register, name='fasal_rin_self_register'),
     path('delete-record/<int:record_id>/', views.delete_record_view, name='delete_record'),
