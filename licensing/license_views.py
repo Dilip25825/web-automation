@@ -640,6 +640,8 @@ PMFBY_ALLOWED_SERVICES = {
     PMFBY_PURPOSE.upper(): PMFBY_PURPOSE,
     OPTOUT_FORM_PURPOSE.upper(): OPTOUT_FORM_PURPOSE,
 }
+PMFBY_DEFAULT_AMOUNT = 2500
+OPTOUT_FORM_DEFAULT_AMOUNT = 1000
 PMFBY_ENTRY_LIMIT = 10
 PMFBY_TOKEN_SALT = 'licensing.pmfby-session.v1'
 PMFBY_TOKEN_MAX_AGE = 12 * 60 * 60
@@ -649,6 +651,12 @@ def _pmfby_service(value=None):
     """Keep old clients on PMFBY while allowing the approved OptedOutForm service."""
     normalized = str(value or PMFBY_PURPOSE).strip().upper()
     return PMFBY_ALLOWED_SERVICES.get(normalized, '')
+
+
+def _pmfby_default_amount(service):
+    if service == OPTOUT_FORM_PURPOSE:
+        return OPTOUT_FORM_DEFAULT_AMOUNT
+    return PMFBY_DEFAULT_AMOUNT
 
 
 def _pmfby_queryset(mobile, financial_year, service=PMFBY_PURPOSE):
@@ -956,7 +964,7 @@ def pmfby_self_register(request):
                 for_whys=service,
                 is_pri=None,
                 u_pass=None,
-                amount=2500,
+                amount=_pmfby_default_amount(service),
                 payment_status=0,
                 utr_number=None,
                 is_active=1,

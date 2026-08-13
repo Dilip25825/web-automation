@@ -23,7 +23,7 @@ class DriveCatalogTests(SimpleTestCase):
         children.side_effect = lambda folder_id: iter({
             'root-folder': [
                 {'id': 'folder-1', 'name': 'PMFBY', 'mimeType': 'application/vnd.google-apps.folder'},
-                {'id': 'root-file', 'name': 'Setup.exe', 'mimeType': 'application/octet-stream', 'size': '100'},
+                {'id': 'root-file', 'name': 'Setup.exe', 'mimeType': 'application/octet-stream', 'size': '100', 'createdTime': '2026-08-10T12:00:00Z', 'modifiedTime': '2026-08-12T15:51:57Z'},
             ],
             'folder-1': [
                 {'id': 'file-1', 'name': 'PMFBY.zip', 'mimeType': 'application/zip', 'size': '2048'},
@@ -36,6 +36,9 @@ class DriveCatalogTests(SimpleTestCase):
             [(item['name'], item['category_name']) for item in result['files']],
             [('Setup.exe', 'General'), ('PMFBY.zip', 'PMFBY')],
         )
+        setup_file = result['files'][0]
+        self.assertEqual(setup_file['created_time'], '2026-08-10T12:00:00Z')
+        self.assertEqual(setup_file['modified_time'], '2026-08-12T15:51:57Z')
 
     @patch('onedownload.views.drive_catalog')
     def test_permanent_file_link_rejects_file_outside_download_root(self, drive_catalog):
@@ -71,6 +74,8 @@ class DownloadSnapshotTests(SimpleTestCase):
                 'size': 1024,
                 'category_name': 'ERP',
                 'parent_id': 'folder-1',
+                'created_time': '2026-08-10T12:00:00Z',
+                'modified_time': '2026-08-12T15:51:57Z',
             }],
         }
         self.superuser = SimpleNamespace(is_authenticated=True, is_superuser=True)
@@ -90,6 +95,10 @@ class DownloadSnapshotTests(SimpleTestCase):
             b'https://drive.google.com/open?id=drive-file-123&amp;usp=drive_fs',
             response.content,
         )
+        self.assertContains(response, 'Updated:')
+        self.assertContains(response, '12 Aug 2026, 09:21 PM IST')
+        self.assertContains(response, 'Added:')
+        self.assertContains(response, '10 Aug 2026, 05:30 PM IST')
         drive_catalog.assert_not_called()
 
     @patch('onedownload.views.DownloadCatalogSnapshot.objects')

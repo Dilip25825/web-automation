@@ -1,3 +1,4 @@
+from datetime import timezone as datetime_timezone
 from types import SimpleNamespace
 
 from django.core import signing
@@ -6,6 +7,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_GET, require_POST
 
 from .drive_catalog import catalog as drive_catalog
@@ -50,6 +52,13 @@ def _human_file_size(size):
             return f'{value:.0f} {unit}' if unit == 'B' else f'{value:.1f} {unit}'
         value /= 1024
 
+def _drive_date_label(value):
+    parsed = parse_datetime(str(value or '').strip())
+    if parsed is None:
+        return ''
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, datetime_timezone.utc)
+    return timezone.localtime(parsed).strftime('%d %b %Y, %I:%M %p')
 
 def _drive_resources(drive_data):
     category_map = {}
@@ -89,6 +98,8 @@ def _drive_resources(drive_data):
         links.append(SimpleNamespace(
             name=drive_file['name'],
             description=f"Google Drive • {_human_file_size(drive_file['size'])}",
+            created_label=_drive_date_label(drive_file.get('created_time')),
+            modified_label=_drive_date_label(drive_file.get('modified_time')),
             category_name=category_name,
             filter_category_id=category.filter_id,
             drive_link=f"https://drive.google.com/open?id={drive_file['id']}&usp=drive_fs",

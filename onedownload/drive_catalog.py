@@ -30,7 +30,7 @@ def _children(folder_id):
     while True:
         response = service.files().list(
             q=f"'{folder_id}' in parents and trashed = false",
-            fields='nextPageToken,files(id,name,mimeType,size,modifiedTime,parents)',
+            fields='nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,parents)',
             supportsAllDrives=True,
             includeItemsFromAllDrives=True,
             pageSize=1000,
@@ -67,6 +67,7 @@ def _load_catalog():
                 'name': item['name'],
                 'mime_type': item.get('mimeType') or 'application/octet-stream',
                 'size': int(item.get('size') or 0),
+                'created_time': item.get('createdTime') or '',
                 'modified_time': item.get('modifiedTime') or '',
                 'category_name': category_name,
                 'parent_id': folder_id,

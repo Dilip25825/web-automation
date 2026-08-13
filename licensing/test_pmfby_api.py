@@ -204,8 +204,12 @@ class PmfbyApiTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         kwargs = objects.create.call_args.kwargs
         self.assertEqual(kwargs['for_whys'], 'OptedOutForm')
+        self.assertEqual(kwargs['amount'], 1000)
         self.assertEqual(kwargs['f_year'], 'Kharif 2026')
         self.assertEqual(kwargs['system_id'], 'OptedOutForm Web Registration')
+    def test_service_specific_default_amounts(self):
+        self.assertEqual(license_views._pmfby_default_amount('PMFBY'), 2500)
+        self.assertEqual(license_views._pmfby_default_amount('OptedOutForm'), 1000)
     @patch('licensing.license_views._pmfby_record_from_token')
     def test_entry_button_blocks_free_record_after_ten(self, record_from_token):
         record_from_token.return_value = (SimpleNamespace(
