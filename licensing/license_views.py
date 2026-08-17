@@ -237,45 +237,19 @@ def register_erp_device(request):
         )
 
     device_hash = hashlib.sha256(device_id.encode('utf-8')).hexdigest()
-    credential = ErpApiClientToken.objects.filter(operator_mobile=operator_mobile).first()
-    if credential and credential.device_hash and not hmac.compare_digest(credential.device_hash, device_hash):
-        return JsonResponse(
-            {
-                'success': False,
-                'registered': False,
-                'status': 'DEVICE_ALREADY_REGISTERED',
-                'message': 'Ye mobile kisi doosre device par registered hai. Admin se device reset karwayein.',
-            },
-            status=409,
-        )
-    if credential and not credential.device_hash:
-        return JsonResponse(
-            {
-                'success': False,
-                'registered': False,
-                'status': 'MANUAL_TOKEN_EXISTS',
-                'message': 'Is mobile ka purana manual token active hai. Admin se ek baar token record reset karwayein.',
-            },
-            status=409,
-        )
-
     raw_token = secrets.token_urlsafe(48)
     token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
-    if credential:
-        credential.token_hash = token_hash
-        credential.token_prefix = raw_token[:12]
-        credential.device_hash = device_hash
-        credential.is_active = True
-        credential.expires_at = None
-        credential.save(update_fields=['token_hash', 'token_prefix', 'device_hash', 'is_active', 'expires_at', 'updated_at'])
-    else:
-        ErpApiClientToken.objects.create(
-            operator_mobile=operator_mobile,
-            token_hash=token_hash,
-            token_prefix=raw_token[:12],
-            device_hash=device_hash,
-            is_active=True,
-        )
+    credential, created = ErpApiClientToken.objects.update_or_create(
+        operator_mobile=operator_mobile,
+        device_hash=device_hash,
+        defaults={
+            'token_hash': token_hash,
+            'token_prefix': raw_token[:12],
+            'is_active': True,
+            'expires_at': None,
+            'last_used_at': None,
+        },
+    )
 
     return JsonResponse(
         {
@@ -284,6 +258,7 @@ def register_erp_device(request):
             'status': 'DEVICE_REGISTERED',
             'operator_mobile': operator_mobile,
             'client_token': raw_token,
+            'new_device': created,
         }
     )
 

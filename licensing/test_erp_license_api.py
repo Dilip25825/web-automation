@@ -240,7 +240,7 @@ class ErpDeviceRegistrationApiTests(SimpleTestCase):
     def test_first_device_receives_token(self, erp_objects, token_objects):
         record = SimpleNamespace(id=7)
         erp_objects.filter.return_value.exclude.return_value.order_by.return_value.__getitem__.return_value = [record]
-        token_objects.filter.return_value.first.return_value = None
+        token_objects.update_or_create.return_value = (SimpleNamespace(), True)
         request = self.factory.post(
             self.url,
             data='{"operator_mobile":"9876543210","device_id":"PC01|DOMAIN|USER"}',
@@ -250,18 +250,16 @@ class ErpDeviceRegistrationApiTests(SimpleTestCase):
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['registered'])
+        self.assertTrue(data['new_device'])
         self.assertGreaterEqual(len(data['client_token']), 32)
-        token_objects.create.assert_called_once()
+        token_objects.update_or_create.assert_called_once()
 
     @patch('licensing.license_views.ErpApiClientToken.objects')
     @patch('licensing.license_views.tblPacsErp.objects')
-    def test_second_device_is_rejected(self, erp_objects, token_objects):
-        import hashlib
+    def test_second_device_receives_its_own_token(self, erp_objects, token_objects):
         record = SimpleNamespace(id=7)
         erp_objects.filter.return_value.exclude.return_value.order_by.return_value.__getitem__.return_value = [record]
-        token_objects.filter.return_value.first.return_value = SimpleNamespace(
-            device_hash=hashlib.sha256(b'PC01|DOMAIN|USER').hexdigest()
-        )
+        token_objects.update_or_create.return_value = (SimpleNamespace(), True)
         request = self.factory.post(
             self.url,
             data='{"operator_mobile":"9876543210","device_id":"PC02|DOMAIN|USER"}',
@@ -269,8 +267,13 @@ class ErpDeviceRegistrationApiTests(SimpleTestCase):
         )
         response = license_views.register_erp_device(request)
         data = json.loads(response.content)
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(data['status'], 'DEVICE_ALREADY_REGISTERED')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data['registered'])
+        self.assertEqual(data['status'], 'DEVICE_REGISTERED')
+        self.assertTrue(data['new_device'])
+        kwargs = token_objects.update_or_create.call_args.kwargs
+        self.assertEqual(kwargs['operator_mobile'], '9876543210')
+        self.assertEqual(len(kwargs['device_hash']), 64)
 class ErpRecordSelectionTests(SimpleTestCase):
     @patch('licensing.license_views.tblPacsErp.objects')
     def test_active_valid_record_has_priority(self, objects):

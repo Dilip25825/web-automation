@@ -209,7 +209,7 @@ def __str__(self):
     return f"{self.id} - {self.pacs_name if self.pacs_name else 'No Name'}"
 
 class ErpApiClientToken(models.Model):
-    operator_mobile = models.CharField(max_length=10, unique=True, db_index=True)
+    operator_mobile = models.CharField(max_length=10, db_index=True)
     token_hash = models.CharField(max_length=64, unique=True, editable=False)
     token_prefix = models.CharField(max_length=12, editable=False)
     device_hash = models.CharField(max_length=64, blank=True, editable=False)
@@ -221,6 +221,12 @@ class ErpApiClientToken(models.Model):
 
     class Meta:
         ordering = ['operator_mobile']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['operator_mobile', 'device_hash'],
+                name='uniq_erp_token_mobile_device',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.operator_mobile} ({self.token_prefix}...)'

@@ -26,6 +26,16 @@ def userinfo_ajax_action(view_func):
     def wrapped(request, *args, **kwargs):
         response = view_func(request, *args, **kwargs)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            duplicate_warning = getattr(request, '_duplicate_utr_confirmation', '')
+            if duplicate_warning:
+                return JsonResponse(
+                    {
+                        'success': False,
+                        'requires_confirmation': True,
+                        'message': duplicate_warning,
+                    },
+                    status=409,
+                )
             queued = list(messages.get_messages(request))
             failed = any(message.level >= messages.ERROR for message in queued)
             text = ' '.join(str(message) for message in queued)
@@ -41,6 +51,19 @@ def userinfo_ajax_action(view_func):
             )
         return response
     return wrapped
+
+
+def _utr_used_elsewhere(utr_number, userinfo_pk=None, erp_pk=None):
+    normalized_utr = (utr_number or '').strip()
+    if not normalized_utr:
+        return False
+    userinfo_matches = UserInfoData.objects.filter(utr_number__iexact=normalized_utr)
+    if userinfo_pk is not None:
+        userinfo_matches = userinfo_matches.exclude(pk=userinfo_pk)
+    erp_matches = tblPacsErp.objects.filter(utr_number__iexact=normalized_utr)
+    if erp_pk is not None:
+        erp_matches = erp_matches.exclude(pk=erp_pk)
+    return userinfo_matches.exists() or erp_matches.exists()
 
 
 def _activation_whatsapp_url(ledger_entry):
@@ -320,6 +343,16 @@ def toggle_activation(request, pk):
         else:
             input_amount = request.POST.get('amount', '0').strip()
             input_utr_number = request.POST.get('utr_number', '').strip()
+            duplicate_utr = _utr_used_elsewhere(input_utr_number, userinfo_pk=pk)
+            if duplicate_utr:
+                if not request.user.is_superuser:
+                    raise ValueError('Ye UTR / Transaction Number pehle use ho chuka hai.')
+                if request.POST.get('confirm_duplicate_utr') != '1':
+                    request._duplicate_utr_confirmation = (
+                        'Ye UTR / Transaction Number pehle use ho chuka hai. '
+                        'Kya aap ise phir se use karna chahte hain?'
+                    )
+                    return redirect('licensing:userinfo_dashboard')
             if not input_amount.isdigit():
                 input_amount = '0'
             activation_amount = int(input_amount)
@@ -531,16 +564,22 @@ def toggle_erp_activation(request, pk):
                 input_amount = '0'
             activation_amount = int(input_amount)
 
+            duplicate_utr = _utr_used_elsewhere(input_utr_number, erp_pk=pk)
+            if duplicate_utr:
+                if not request.user.is_superuser:
+                    raise ValueError('Ye UTR / Transaction Number pehle use ho chuka hai.')
+                if request.POST.get('confirm_duplicate_utr') != '1':
+                    request._duplicate_utr_confirmation = (
+                        'Ye UTR / Transaction Number pehle use ho chuka hai. '
+                        'Kya aap ise phir se use karna chahte hain?'
+                    )
+                    return redirect('licensing:pacserp_dashboard')
+
             if not request.user.is_superuser:
                 if activation_amount <= 0:
                     raise ValueError('Activation amount zero se bada hona chahiye.')
                 if not input_utr_number:
                     raise ValueError('UTR / Transaction Number required hai.')
-                duplicate_utr = tblPacsErp.objects.filter(
-                    utr_number__iexact=input_utr_number
-                ).exists()
-                if duplicate_utr:
-                    raise ValueError('Ye UTR / Transaction Number pehle use ho chuka hai.')
                 currently_active = (
                     int(record.is_active or 0) == 1
                     and record.expiry_date

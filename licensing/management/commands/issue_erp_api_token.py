@@ -23,6 +23,7 @@ class Command(BaseCommand):
         token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
         credential, created = ErpApiClientToken.objects.update_or_create(
             operator_mobile=mobile,
+            device_hash='',
             defaults={
                 'token_hash': token_hash,
                 'token_prefix': raw_token[:12],
