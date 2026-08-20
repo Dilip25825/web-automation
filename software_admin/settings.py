@@ -209,15 +209,22 @@ LICENSE_VALIDATION_API_KEY = os.getenv('LICENSE_VALIDATION_API_KEY', '').strip()
 ERP_API_IP_RATE_LIMIT = int(os.getenv('ERP_API_IP_RATE_LIMIT', '60'))
 ERP_API_MOBILE_RATE_LIMIT = int(os.getenv('ERP_API_MOBILE_RATE_LIMIT', '20'))
 
-CACHES = {
-    'default': {
-        'BACKEND': os.getenv(
-            'DJANGO_CACHE_BACKEND',
-            'django.core.cache.backends.locmem.LocMemCache',
-        ),
-        'LOCATION': os.getenv('DJANGO_CACHE_LOCATION', 'software-admin-cache'),
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {'socket_connect_timeout': 3, 'socket_timeout': 3},
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'software-admin-cache',
+        }
+    }
 
 # Khata attachments are stored privately in Google Drive.
 GOOGLE_DRIVE_FOLDER_ID = os.getenv('GOOGLE_DRIVE_FOLDER_ID', '').strip()

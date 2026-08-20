@@ -301,7 +301,7 @@ def check_erp_subscription(request):
         client_authenticated = _client_token_is_valid(request, operator_mobile)
     if not master_authenticated and not client_authenticated:
         return JsonResponse(
-            {"success": False, "authorized": False, "status": "UNAUTHORIZED"},
+            {"success": False, "authorized": False, "status": "UNAUTHORIZED", "message": "Secure login verify nahi ho saka. Kripya dobara login karein."},
             status=401,
         )
 
@@ -436,7 +436,7 @@ def check_erp_version(request):
     if not master_authenticated:
         client_authenticated = _client_token_is_valid(request, operator_mobile)
     if not master_authenticated and not client_authenticated:
-        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED'}, status=401)
+        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED', 'message': 'Secure login verify nahi ho saka. Kripya dobara login karein.'}, status=401)
 
     version_record = VersionInfo.objects.filter(pk=4).first()
     if not version_record or not str(version_record.Version or '').strip():
@@ -491,7 +491,7 @@ def get_erp_upi(request):
     if not master_authenticated:
         client_authenticated = _client_token_is_valid(request, operator_mobile)
     if not master_authenticated and not client_authenticated:
-        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED'}, status=401)
+        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED', 'message': 'Secure login verify nahi ho saka. Kripya dobara login karein.'}, status=401)
 
     upi_record = tblUPI.objects.filter(isActive=1).exclude(upiID__isnull=True).exclude(upiID='').order_by('-ID').first()
     if not upi_record:
@@ -543,7 +543,7 @@ def create_erp_invoice(request):
         )
 
     if not (_api_key_is_valid(request) or _client_token_is_valid(request, operator_mobile)):
-        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED'}, status=401)
+        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED', 'message': 'Secure login verify nahi ho saka. Kripya dobara login karein.'}, status=401)
 
     record = (
         tblPacsErp.objects.filter(erp_id__iexact=erp_id)
@@ -1295,12 +1295,12 @@ def check_activation(request):
     """Check the exact zero-payment activation condition for external software."""
     if not settings.LICENSE_VALIDATION_API_KEY:
         return JsonResponse(
-            {"success": False, "activated": False, "status": "API_NOT_CONFIGURED"},
+            {"success": False, "activated": False, "status": "API_NOT_CONFIGURED", "message": "Service abhi available nahi hai. Kripya support se sampark karein."},
             status=503,
         )
     if not _api_key_is_valid(request):
         return JsonResponse(
-            {"success": False, "activated": False, "status": "UNAUTHORIZED"},
+            {"success": False, "activated": False, "status": "UNAUTHORIZED", "message": "Secure verification fail hui. Kripya valid access ke saath dobara prayas karein."},
             status=401,
         )
 
@@ -1374,7 +1374,12 @@ def check_activation(request):
 
 @require_POST
 def validate_license(request):
-    """Validate a paid or explicitly enabled complimentary UserInfo row."""
+    """Legacy endpoint disabled; service-specific APIs remain available."""
+    return JsonResponse({"success": False, "authorized": False, "status": "ENDPOINT_DISABLED", "message": "This legacy validation service is no longer available."}, status=410)
+
+
+def _disabled_validate_license_legacy(request):
+    """Retained temporarily for rollback/reference; not routed."""
     body = _json_body(request)
     if body is None:
         return JsonResponse(

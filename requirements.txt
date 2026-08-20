@@ -37,6 +37,7 @@ python-dotenv==1.2.2
 PyYAML==6.0.3
 reportlab==4.5.1
 requests==2.33.0
+redis>=5.2,<7
 setuptools==82.0.1
 six==1.17.0
 soupsieve==2.8.3

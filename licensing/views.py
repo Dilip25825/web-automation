@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404, get_object_or_404
 from django.contrib import messages
 from django.db import models, transaction
@@ -265,7 +267,7 @@ def userinfo_dashboard(request):
         range_start_value = report_period['range_start_value']
         range_end_value = report_period['range_end_value']
     except Exception as error:
-        messages.error(request, f'Database Fetch Error: {error}')
+        logger.exception('UserInfo dashboard fetch failed'); messages.error(request, 'Records load nahi ho sake. Kripya dobara prayas karein.')
         clients = []
         monthly_activation_report = []
         monthly_activation_count = 0
@@ -387,7 +389,7 @@ def toggle_activation(request, pk):
             request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, f'PACS ID {client.id} Activated successfully by {accepted_username}!')
     except Exception as error:
-        messages.error(request, f'Status Update Failed: {error}')
+        logger.exception('UserInfo status update failed'); messages.error(request, 'Status update nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:userinfo_dashboard')
 
     if current_search:
@@ -475,7 +477,7 @@ def pacserp_dashboard(request):
         range_start_value = report_period['range_start_value']
         range_end_value = report_period['range_end_value']
     except Exception as error:
-        messages.error(request, f'NCL Database Fetch Error: {error}')
+        logger.exception('ERP dashboard fetch failed'); messages.error(request, 'ERP records load nahi ho sake. Kripya dobara prayas karein.')
         erp_records = []
         monthly_activation_report = []
         monthly_activation_count = 0
@@ -671,7 +673,7 @@ def toggle_erp_activation(request, pk):
             request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, success_message)
     except Exception as error:
-        messages.error(request, f'ERP Status Update Failed: {error}')
+        logger.exception('ERP status update failed'); messages.error(request, 'ERP status update nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:pacserp_dashboard')
 
     if current_search:
@@ -694,7 +696,7 @@ def generate_invoice(request, pk):
         return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
         
     except Exception as e:
-        messages.error(request, f"Invoice Engine Execution Failed: {str(e)}")
+        logger.exception('UserInfo invoice generation failed'); messages.error(request, 'Invoice generate nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:userinfo_dashboard')
     
 @login_required
@@ -712,7 +714,7 @@ def generate_erp_invoice(request, pk):
         return FileResponse(pdf_buffer, as_attachment=False, content_type='application/pdf')
         
     except Exception as e:
-        messages.error(request, f"NCL ERP Invoice Engine Mismatch: {str(e)}")
+        logger.exception('ERP invoice generation failed'); messages.error(request, 'ERP invoice generate nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:pacserp_dashboard')
     
 
@@ -768,7 +770,7 @@ def create_userinfo(request):
             else:
                 messages.error(request, "Validation Error: Kripya saare fields ko sahi se bharein.")
         except Exception as e:
-            messages.error(request, f"System Operational Error: {str(e)}")
+            logger.exception('Licensing create operation failed'); messages.error(request, 'Record save nahi ho saka. Kripya details check karke dobara prayas karein.')
     else:
         # Copy Row Data Fetch Logic
         copy_id = request.GET.get('copy_id')
@@ -845,7 +847,7 @@ def create_pacserp(request):
             else:
                 messages.error(request, "Validation Error: Input parameters completely format match nahi kar rahe.")
         except Exception as e:
-            messages.error(request, f"System Operational Error: {str(e)}")
+            logger.exception('Licensing create operation failed'); messages.error(request, 'Record save nahi ho saka. Kripya details check karke dobara prayas karein.')
     else:
         form = PacsErpForm()
         
@@ -876,7 +878,7 @@ def delete_record_view(request, record_id):
         
     except Exception as e:
         # On Error GoTo block jaisa behavior handle karne ke liye
-        messages.error(request, f"System Error: Record delete nahi ho paya. Details: {str(e)}")
+        logger.exception('ERP record deletion failed'); messages.error(request, 'Record delete nahi ho saka. Kripya dobara prayas karein.')
         
     return redirect('licensing:pacserp_dashboard')
 
@@ -907,7 +909,7 @@ def delete_userinfo_view(request, user_id):
         
     except Exception as e:
         # Database fallback check agar delete operation me koi constraint issue aaye
-        messages.error(request, f"Database Error: Deletion fail ho gaya. Details: {str(e)}")
+        logger.exception('UserInfo record deletion failed'); messages.error(request, 'Record delete nahi ho saka. Kripya dobara prayas karein.')
         
     # Action complete hone ke baad dashboard page par wapas redirect karein
     return redirect('licensing:userinfo_dashboard')
@@ -941,7 +943,7 @@ def update_userinfo_view(request, client_id):
         
         except Exception as e:
             # Operational Error Handling block
-            messages.error(request, f"Database Error: Record update karne me samasya aayi. Details: {str(e)}")
+            logger.exception('Licensing record update failed'); messages.error(request, 'Record update nahi ho saka. Kripya dobara prayas karein.')
             
     else:
         # GET request hone par purana data automatic fields me load ho jayega (instance ki wajah se)
@@ -985,7 +987,7 @@ def update_pacserp_view(request, record_id):
         
         except Exception as e:
             # Error Handling Block (System crash hone se bachaega)
-            messages.error(request, f"Database Error: Record update karne me samasya aayi. Details: {str(e)}")
+            logger.exception('Licensing record update failed'); messages.error(request, 'Record update nahi ho saka. Kripya dobara prayas karein.')
             
     else:
         # GET Request aane par purana data form fields me pre-fill (auto-populate) ho jayega
