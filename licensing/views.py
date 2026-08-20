@@ -334,6 +334,8 @@ def toggle_activation(request, pk):
                 client = UserInfoData.objects.select_for_update().get(pk=pk)
                 client.payment_status = 0
                 client.amount = 2000
+                if str(client.for_whys or '').strip().upper() == 'FASAL RIN':
+                    client.limit_of_entrys = 20
                 client.is_active = 0
                 client.accepte_by = ''
                 client.save()

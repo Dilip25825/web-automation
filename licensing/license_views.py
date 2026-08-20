@@ -960,7 +960,7 @@ def pmfby_self_register(request):
     return render(request, 'licensing/pmfby_self_register.html', context)
 
 FASAL_RIN_PURPOSE = 'FASAL RIN'
-FASAL_RIN_DEFAULT_AMOUNT = 2500
+FASAL_RIN_DEFAULT_AMOUNT = 2000
 FASAL_RIN_ENTRY_LIMIT = 20
 FASAL_RIN_PAID_ENTRY_LIMIT = 3000
 FASAL_RIN_TOKEN_SALT = 'licensing.fasal-rin-session.v1'

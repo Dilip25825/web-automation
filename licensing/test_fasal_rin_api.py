@@ -28,6 +28,10 @@ class FasalRinApiTests(SimpleTestCase):
         self.assertEqual(license_views._fasal_work_type('3'), 3)
         self.assertEqual(license_views._fasal_work_type('4'), 0)
 
+    def test_registration_defaults_keep_amount_and_paid_limit_separate(self):
+        self.assertEqual(license_views.FASAL_RIN_DEFAULT_AMOUNT, 2000)
+        self.assertEqual(license_views.FASAL_RIN_PAID_ENTRY_LIMIT, 3000)
+
     @patch('licensing.license_views._fasal_years', return_value=['2025-2026ISSClaim'])
     def test_options_returns_work_type_and_fasal_years(self, years):
         response = license_views.fasal_rin_options(self.post('fasal_rin_options', {'work_type': 3}))
