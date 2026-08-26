@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Customer, Transaction
+from .models import Customer, Transaction, TransferVoucher
 import base64
 from decimal import Decimal, InvalidOperation
 from django.db.models.functions import Coalesce
@@ -38,6 +38,8 @@ def ajax_action(view_func):
             }
             if getattr(request, '_khata_whatsapp_url', ''):
                 payload['whatsapp_url'] = request._khata_whatsapp_url
+            if getattr(request, '_khata_whatsapp_actions', None):
+                payload['whatsapp_actions'] = request._khata_whatsapp_actions
             return JsonResponse(
                 payload,
                 status=400 if failed else 200,
@@ -185,45 +187,81 @@ def dashboard(request):
 @require_POST
 def transfer_voucher(request):
     return_customer_id = request.POST.get('return_customer')
+    uploaded_drive_id = None
     try:
         from_id = request.POST.get('from_customer')
         to_id = request.POST.get('to_customer')
         transfer_date = parse_date(request.POST.get('date', ''))
         note = request.POST.get('remarks', '').strip()
+        attachment = request.FILES.get('attachment')
         if not from_id or not to_id or from_id == to_id:
             raise ValueError('Do alag heads select karein.')
         amount = Decimal(request.POST.get('amount', ''))
         if amount <= 0 or not transfer_date:
             raise ValueError('Positive amount aur valid date zaroori hai.')
-        heads = Customer.objects.filter(
-            user=request.user, id__in=[from_id, to_id]
-        ).in_bulk()
+        validate_attachment(attachment)
+        heads = Customer.objects.filter(user=request.user, id__in=[from_id, to_id]).in_bulk()
         from_customer = heads[int(from_id)]
         to_customer = heads[int(to_id)]
-        remarks = (
-            f'Transfer Voucher: {from_customer.name} se liye, '
-            f'{to_customer.name} ko diye'
-        )
+        remarks = f'Transfer Voucher: {from_customer.name} se liye, {to_customer.name} ko diye'
         if note:
             remarks = f'{remarks} - {note}'
+        remarks = remarks[:200]
+
         with db_transaction.atomic():
-            Transaction.objects.create(
-                customer=from_customer, amount=amount, trans_type='GOT',
-                date=transfer_date, remarks=remarks[:200])
-            Transaction.objects.create(
-                customer=to_customer, amount=amount, trans_type='GIVEN',
-                date=transfer_date, remarks=remarks[:200])
+            voucher = TransferVoucher.objects.create(
+                owner=request.user, from_customer=from_customer, to_customer=to_customer,
+                amount=amount, date=transfer_date, remarks=remarks,
+            )
+            from_entry = Transaction.objects.create(
+                customer=from_customer, transfer_voucher=voucher, amount=amount,
+                trans_type='GOT', date=transfer_date, remarks=remarks,
+            )
+            to_entry = Transaction.objects.create(
+                customer=to_customer, transfer_voucher=voucher, amount=amount,
+                trans_type='GIVEN', date=transfer_date, remarks=remarks,
+            )
+            if attachment:
+                metadata = upload_attachment(attachment, from_entry)
+                uploaded_drive_id = metadata['attachment_drive_id']
+                for field, value in metadata.items():
+                    setattr(voucher, field, value)
+                voucher.attachment_uploaded_at = timezone.now()
+                voucher.save(update_fields=[
+                    'attachment_drive_id', 'attachment_name', 'attachment_mime_type',
+                    'attachment_size', 'attachment_uploaded_at',
+                ])
+
+        whatsapp_actions = []
+        try:
+            for role, customer, entry in (
+                ('Source', from_customer, from_entry), ('Destination', to_customer, to_entry),
+            ):
+                totals = Transaction.objects.filter(customer=customer).aggregate(
+                    total_given=Coalesce(Sum('amount', filter=Q(trans_type='GIVEN')), Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))),
+                    total_got=Coalesce(Sum('amount', filter=Q(trans_type='GOT')), Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))),
+                )
+                whatsapp_url = build_transaction_whatsapp_url(customer, entry, totals['total_given'] - totals['total_got'])
+                if whatsapp_url:
+                    whatsapp_actions.append({'role': role, 'customer': customer.name, 'url': whatsapp_url})
+        except Exception:
+            whatsapp_actions = []
+        request._khata_whatsapp_actions = whatsapp_actions
         messages.success(request, 'Transfer Voucher successfully saved.')
+    except ValidationError as error:
+        messages.error(request, ' '.join(error.messages))
     except (ValueError, InvalidOperation, KeyError, TypeError) as error:
         messages.error(request, str(error) or 'Voucher details valid nahi hain.')
     except Exception as error:
+        if uploaded_drive_id:
+            try:
+                delete_attachment(uploaded_drive_id)
+            except Exception:
+                pass
         messages.error(request, f'Transfer Voucher save error: {error}')
-    if return_customer_id and Customer.objects.filter(
-        id=return_customer_id, user=request.user
-    ).exists():
+    if return_customer_id and Customer.objects.filter(id=return_customer_id, user=request.user).exists():
         return redirect('khata:customer_detail', customer_id=return_customer_id)
     return redirect('khata:dashboard')
-
 @login_required
 @ajax_action
 def add_customer(request):
@@ -326,7 +364,7 @@ def customer_detail(request, customer_id):
         end_date = request.GET.get('end_date')
         
         # 2. Transactions fetch karna (Order by date)
-        transactions = Transaction.objects.filter(customer=customer).select_related('customer').order_by('date', 'id')
+        transactions = Transaction.objects.filter(customer=customer).select_related('customer', 'transfer_voucher').order_by('date', 'id')
         
         # 3. Filter apply karna (Ab ye sahi jagah par hai)
         if start_date and end_date:
@@ -480,21 +518,30 @@ def update_transaction(request, b64_trans_id):
         attachment = request.FILES.get('attachment')
         remove_attachment = request.POST.get('remove_attachment') == '1'
         validate_attachment(attachment)
-        old_drive_id = trans.attachment_drive_id
+        attachment_target = trans.transfer_voucher if trans.transfer_voucher_id else trans
+        old_drive_id = attachment_target.attachment_drive_id
         new_drive_id = None
         try:
             if attachment:
                 metadata = upload_attachment(attachment, trans)
                 new_drive_id = metadata['attachment_drive_id']
                 for field, value in metadata.items():
-                    setattr(trans, field, value)
-                trans.attachment_uploaded_at = timezone.now()
+                    setattr(attachment_target, field, value)
+                attachment_target.attachment_uploaded_at = timezone.now()
+                attachment_target.save(update_fields=[
+                    'attachment_drive_id', 'attachment_name', 'attachment_mime_type',
+                    'attachment_size', 'attachment_uploaded_at',
+                ])
             elif remove_attachment:
-                trans.attachment_drive_id = None
-                trans.attachment_name = None
-                trans.attachment_mime_type = None
-                trans.attachment_size = None
-                trans.attachment_uploaded_at = None
+                attachment_target.attachment_drive_id = None
+                attachment_target.attachment_name = None
+                attachment_target.attachment_mime_type = None
+                attachment_target.attachment_size = None
+                attachment_target.attachment_uploaded_at = None
+                attachment_target.save(update_fields=[
+                    'attachment_drive_id', 'attachment_name', 'attachment_mime_type',
+                    'attachment_size', 'attachment_uploaded_at',
+                ])
             trans.amount = amount_value
             trans.trans_type = trans_type
             trans.remarks = request.POST.get('remarks', '').strip()
@@ -522,9 +569,15 @@ def delete_transaction(request, b64_trans_id):
         actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
         trans = get_object_or_404(Transaction, id=actual_trans_id, customer__user=request.user)
         customer_id = trans.customer_id
+        voucher_id = trans.transfer_voucher_id
+        voucher_drive_id = trans.transfer_voucher.attachment_drive_id if voucher_id else None
         result = delete_transaction_with_activation_links(trans, request.user)
         for drive_id in result['attachment_ids']:
             delete_attachment(drive_id)
+        if voucher_id and not Transaction.objects.filter(transfer_voucher_id=voucher_id).exists():
+            TransferVoucher.objects.filter(pk=voucher_id, owner=request.user).delete()
+            if voucher_drive_id:
+                delete_attachment(voucher_drive_id)
         if result['linked']:
             messages.success(request, 'Activation se linked original aur reversal ledger entries delete kar di gayi hain.')
         else:
@@ -592,14 +645,14 @@ def view_transaction_attachment(request, b64_trans_id):
         actual_trans_id = int(base64.b64decode(b64_trans_id).decode('utf-8'))
         trans = get_object_or_404(
             Transaction, id=actual_trans_id, customer__user=request.user)
-        if not trans.attachment_drive_id:
+        if not trans.effective_attachment_drive_id:
             messages.warning(request, 'Is entry ke saath koi attachment nahi hai.')
             return redirect('khata:customer_detail', customer_id=trans.customer_id)
         response = FileResponse(
-            download_attachment(trans.attachment_drive_id),
-            content_type=trans.attachment_mime_type or 'application/octet-stream',
+            download_attachment(trans.effective_attachment_drive_id),
+            content_type=trans.effective_attachment_mime_type or 'application/octet-stream',
             as_attachment=False,
-            filename=trans.attachment_name or 'attachment',
+            filename=trans.effective_attachment_name or 'attachment',
         )
         response['Cache-Control'] = 'private, no-store'
         response['X-Content-Type-Options'] = 'nosniff'
@@ -622,7 +675,7 @@ def download_ledger_pdf(request, b64_id):
         customer = get_object_or_404(Customer, id=actual_customer_id, user=request.user)
         
         # Transactions ko filter ke sath fetch karein
-        transactions = Transaction.objects.filter(customer=customer).select_related('customer').order_by('date')
+        transactions = Transaction.objects.filter(customer=customer).select_related('customer', 'transfer_voucher').order_by('date')
         
         if start_date and end_date:
             transactions = transactions.filter(date__range=[start_date, end_date])
@@ -698,7 +751,7 @@ def report_page(request):
     end_date = request.GET.get('end_date', '').strip()
     search = request.GET.get('search', '').strip()
     trans_type = request.GET.get('trans_type', '').strip().upper()
-    transactions = Transaction.objects.filter(customer__user=request.user).select_related('customer').order_by('-date', '-id')
+    transactions = Transaction.objects.filter(customer__user=request.user).select_related('customer', 'transfer_voucher').order_by('-date', '-id')
     if start_date: transactions = transactions.filter(date__gte=start_date)
     if end_date: transactions = transactions.filter(date__lte=end_date)
     if search: transactions = transactions.filter(Q(customer__name__icontains=search) | Q(customer__phone__icontains=search) | Q(remarks__icontains=search))

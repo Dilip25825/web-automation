@@ -2,7 +2,7 @@ Attribute VB_Name = "ErpApiLogin"
 Option Explicit
 
 ' True = localhost testing, False = Render production.
-Private Const USE_LOCAL_SERVER As Boolean = True
+Private Const USE_LOCAL_SERVER As Boolean = False
 Private Const LOCAL_BASE_URL As String = "http://127.0.0.1:8000"
 Private Const PRODUCTION_BASE_URL As String = "https://web-automation-maar.onrender.com"
 Private Const TOKEN_SETTINGS_APP As String = "WebAutomationWithExcel"
@@ -14,7 +14,7 @@ Private Const RECORD_ID_CELL As String = "B4"
 Private Const PACS_NAME_CELL As String = "D2"
 Private Const REGISTRATION_DATE_CELL As String = "D3"
 Private Const EXPIRY_DATE_CELL As String = "D4"
-Private Const HTTP_TIMEOUT_MS As Long = 30000
+Private Const HTTP_TIMEOUT_MS As Long = 90000
 Private Const API_PROMPT_TITLE As String = "@DilipDelwash"
 
 Public Type ErpApiSubscriptionInfo
@@ -34,6 +34,117 @@ End Type
 Public currentVersion As String
 Public newVersion As String
 
+Public Sub GenerateErpOnlineInvoice()
+    Dim operatorMobile As String
+    Dim clientToken As String
+    Dim erpID As String
+    Dim amountText As String
+    Dim normalizedAmount As String
+    Dim invoiceAmount As Double
+    Dim http As Object
+    Dim endpoint As String
+    Dim requestBody As String
+    Dim responseText As String
+    Dim invoiceUrl As String
+    Dim apiStatus As String
+    Dim apiMessage As String
+    Dim errorMessage As String
+    Dim retriedAuthentication As Boolean
+
+    On Error GoTo InvoiceError
+
+    erpID = Trim$(InputBox("Invoice ke liye ERP ID dalein:", "Generate ERP Invoice"))
+    If Len(erpID) = 0 Then Exit Sub
+
+    amountText = Trim$(InputBox("Invoice amount dalein (Rs.):", "Generate ERP Invoice"))
+    If Len(amountText) = 0 Then Exit Sub
+
+    normalizedAmount = Replace(amountText, ",", vbNullString)
+    If Not IsNumeric(normalizedAmount) Then
+        MsgBox "Kripya valid invoice amount dalein.", vbExclamation, "Generate ERP Invoice"
+        Exit Sub
+    End If
+
+    invoiceAmount = CDbl(normalizedAmount)
+    If invoiceAmount <= 2000 Or invoiceAmount > 10000 Then
+        MsgBox "Invoice amount 2,000 se zyada aur maximum Rs. 10,000 hona chahiye.", vbExclamation, "Generate ERP Invoice"
+        Exit Sub
+    End If
+
+    If Not TryGetOperatorMobile(operatorMobile) Then
+        MsgBox "User sheet ke B1 me valid 10 digit Operator Mobile dalein.", vbExclamation, API_PROMPT_TITLE
+        Exit Sub
+    End If
+
+    If Not EnsureErpClientToken(operatorMobile, clientToken, errorMessage) Then
+        MsgBox errorMessage, vbExclamation, "Generate ERP Invoice"
+        Exit Sub
+    End If
+
+    normalizedAmount = Replace(Format$(invoiceAmount, "0.00"), ",", ".")
+    endpoint = ApiBaseUrl() & "/api/licensing/erp/invoice/create/"
+    requestBody = "{""operator_mobile"":""" & JsonEscape(operatorMobile) & """,""erp_id"":""" & JsonEscape(erpID) & """,""amount"":" & normalizedAmount & "}"
+
+SendAuthenticatedRequest:
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    http.SetTimeouts HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS
+    http.Open "POST", endpoint, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.SetRequestHeader "Accept", "application/json"
+    http.SetRequestHeader "Authorization", "Bearer " & clientToken
+    http.Send requestBody
+
+    responseText = CStr(http.ResponseText)
+    If CLng(http.Status) = 401 And Not retriedAuthentication Then
+        DeleteStoredErpToken operatorMobile
+        clientToken = vbNullString
+        If Not EnsureErpClientToken(operatorMobile, clientToken, errorMessage) Then
+            MsgBox errorMessage, vbExclamation, "Generate ERP Invoice"
+            Exit Sub
+        End If
+        retriedAuthentication = True
+        GoTo SendAuthenticatedRequest
+    End If
+
+    If CLng(http.Status) < 200 Or CLng(http.Status) >= 300 Or Not JsonBoolean(responseText, "success", False) Then
+        apiStatus = UCase$(Trim$(JsonString(responseText, "status")))
+        apiMessage = Trim$(JsonString(responseText, "message"))
+
+        Select Case apiStatus
+            Case "PAYMENT_REQUIRED"
+                errorMessage = "Is ERP ID ka payment abhi complete nahi hua hai." & vbCrLf & "Payment complete hone ke baad invoice banaya ja sakta hai."
+            Case "ERP_NOT_FOUND"
+                errorMessage = "Di gayi ERP ID nahi mili." & vbCrLf & "Kripya ERP ID check karke dobara try karein."
+            Case "INVALID_AMOUNT"
+                errorMessage = "Kripya sahi invoice amount dalein."
+            Case "UNAUTHORIZED"
+                errorMessage = "Invoice service verify nahi ho saki." & vbCrLf & "Kripya Excel dobara open karke try karein."
+            Case "RATE_LIMITED"
+                errorMessage = "Bahut zyada requests bheji gayi hain." & vbCrLf & "Kripya ek minute baad dobara try karein."
+            Case Else
+                If Len(apiMessage) > 0 Then
+                    errorMessage = apiMessage
+                Else
+                    errorMessage = "Invoice abhi generate nahi ho saka." & vbCrLf & "Kripya thodi der baad dobara try karein."
+                End If
+        End Select
+
+        MsgBox errorMessage, vbExclamation, "Generate ERP Invoice"
+        Exit Sub
+    End If
+
+    invoiceUrl = Trim$(JsonString(responseText, "invoice_url"))
+    If Len(invoiceUrl) = 0 Then
+        MsgBox "Server ne invoice link return nahi ki.", vbExclamation, "Generate ERP Invoice"
+        Exit Sub
+    End If
+
+    ThisWorkbook.FollowHyperlink invoiceUrl
+    Exit Sub
+
+InvoiceError:
+    MsgBox "ERP invoice generate nahi ho saka." & vbCrLf & Err.Description, vbExclamation, "Generate ERP Invoice"
+End Sub
 Public Sub CheckVersion()
     Dim operatorMobile As String
     Dim responseText As String
@@ -80,6 +191,7 @@ Private Function SendVersionRequest(ByVal operatorMobile As String, ByVal curren
     Dim apiStatus As String
     Dim apiMessage As String
     Dim clientToken As String
+    Dim retriedAuthentication As Boolean
 
     On Error GoTo RequestError
 
@@ -88,6 +200,7 @@ Private Function SendVersionRequest(ByVal operatorMobile As String, ByVal curren
     endpoint = ApiBaseUrl() & "/api/licensing/erp/version/"
     requestBody = "{""operator_mobile"":""" & JsonEscape(operatorMobile) & """,""current_version"":""" & JsonEscape(currentVersion) & """}"
 
+SendAuthenticatedRequest:
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     http.SetTimeouts HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS
     http.Open "POST", endpoint, False
@@ -98,6 +211,13 @@ Private Function SendVersionRequest(ByVal operatorMobile As String, ByVal curren
 
     httpStatus = CLng(http.Status)
     responseText = CStr(http.ResponseText)
+    If httpStatus = 401 And Not retriedAuthentication Then
+        DeleteStoredErpToken operatorMobile
+        clientToken = vbNullString
+        If Not EnsureErpClientToken(operatorMobile, clientToken, errorMessage) Then Exit Function
+        retriedAuthentication = True
+        GoTo SendAuthenticatedRequest
+    End If
     If httpStatus < 200 Or httpStatus >= 300 Or Not JsonBoolean(responseText, "success", False) Then
         apiStatus = JsonString(responseText, "status")
         apiMessage = JsonString(responseText, "message")
@@ -156,7 +276,7 @@ Public Sub Login()
                 ThisWorkbook.Worksheets(USER_SHEET).Range(RECORD_ID_CELL).Value2 = subscription.RecordID
             End If
             If MsgBox(subscription.StatusMessage & vbCrLf & vbCrLf & "Payment/renewal start karna chahte hain?", vbQuestion + vbYesNo, API_PROMPT_TITLE) = vbYes Then
-                StartPaymentFlow
+                MakePayment
             End If
 
         Case Else
@@ -212,6 +332,7 @@ Private Function FetchErpSubscription(ByVal operatorMobile As String, ByRef info
     Dim httpStatus As Long
     Dim successValue As Boolean
     Dim clientToken As String
+    Dim retriedAuthentication As Boolean
 
     On Error GoTo RequestError
 
@@ -220,6 +341,7 @@ Private Function FetchErpSubscription(ByVal operatorMobile As String, ByRef info
     endpoint = ApiBaseUrl() & "/api/licensing/erp/subscription/"
     requestBody = "{""operator_mobile"":""" & JsonEscape(operatorMobile) & """}"
 
+SendAuthenticatedRequest:
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     http.SetTimeouts HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS
     http.Open "POST", endpoint, False
@@ -230,6 +352,13 @@ Private Function FetchErpSubscription(ByVal operatorMobile As String, ByRef info
 
     httpStatus = CLng(http.Status)
     responseText = CStr(http.ResponseText)
+    If httpStatus = 401 And Not retriedAuthentication Then
+        DeleteStoredErpToken operatorMobile
+        clientToken = vbNullString
+        If Not EnsureErpClientToken(operatorMobile, clientToken, errorMessage) Then Exit Function
+        retriedAuthentication = True
+        GoTo SendAuthenticatedRequest
+    End If
     successValue = JsonBoolean(responseText, "success", False)
 
     info.Status = JsonString(responseText, "status")
@@ -267,6 +396,7 @@ Public Function getUpiID() As String
     Dim responseText As String
     Dim apiMessage As String
     Dim clientToken As String
+    Dim retriedAuthentication As Boolean
 
     On Error GoTo UpiError
 
@@ -281,6 +411,7 @@ Public Function getUpiID() As String
     endpoint = ApiBaseUrl() & "/api/licensing/erp/upi/"
     requestBody = "{""operator_mobile"":""" & JsonEscape(operatorMobile) & """}"
 
+SendAuthenticatedRequest:
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     http.SetTimeouts HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS, HTTP_TIMEOUT_MS
     http.Open "POST", endpoint, False
@@ -290,6 +421,15 @@ Public Function getUpiID() As String
     http.Send requestBody
 
     responseText = CStr(http.ResponseText)
+    If CLng(http.Status) = 401 And Not retriedAuthentication Then
+        DeleteStoredErpToken operatorMobile
+        clientToken = vbNullString
+        If Not EnsureErpClientToken(operatorMobile, clientToken, apiMessage) Then
+            Err.Raise vbObjectError + 2102, "getUpiID", apiMessage
+        End If
+        retriedAuthentication = True
+        GoTo SendAuthenticatedRequest
+    End If
     If CLng(http.Status) < 200 Or CLng(http.Status) >= 300 Or Not JsonBoolean(responseText, "success", False) Then
         apiMessage = JsonString(responseText, "message")
         If Len(apiMessage) = 0 Then apiMessage = JsonString(responseText, "status")
@@ -377,6 +517,12 @@ RegistrationError:
     errorMessage = "Automatic device registration complete nahi ho saka." & vbCrLf & Err.Description
 End Function
 
+Private Sub DeleteStoredErpToken(ByVal operatorMobile As String)
+    On Error Resume Next
+    DeleteSetting TOKEN_SETTINGS_APP, TOKEN_SETTINGS_SECTION, operatorMobile
+    On Error GoTo 0
+End Sub
+
 Public Sub ResetStoredErpDeviceToken()
     Dim operatorMobile As String
 
@@ -385,7 +531,7 @@ Public Sub ResetStoredErpDeviceToken()
         Exit Sub
     End If
 
-    DeleteSetting TOKEN_SETTINGS_APP, TOKEN_SETTINGS_SECTION, operatorMobile
+    DeleteStoredErpToken operatorMobile
     MsgBox "Is Windows user ka saved ERP device token remove kar diya gaya hai.", vbInformation, API_PROMPT_TITLE
 End Sub
 Private Function ApiBaseUrl() As String

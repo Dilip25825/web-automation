@@ -144,7 +144,7 @@ class UserInfoForm(forms.ModelForm):
                 .exclude(fyear__isnull=True)
                 .exclude(fyear='')
                 .values_list('forWhy', 'fyear')
-                .order_by('forWhy', 'id')
+                .order_by('forWhy', 'pk')
             )
             purpose_years = {}
             for purpose, financial_year in purpose_rows:

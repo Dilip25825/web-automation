@@ -2,12 +2,14 @@ from datetime import date
 from decimal import Decimal
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from .models import Customer, Transaction
+from .models import Customer, Transaction, TransferVoucher
 from .views import build_reminder_whatsapp_url, build_transaction_whatsapp_url
 
 
@@ -47,8 +49,8 @@ class WhatsAppMessageTests(SimpleTestCase):
 class TransferVoucherTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='shop', password='test-pass')
-        self.from_customer = Customer.objects.create(user=self.user, name='Lilit', phone='1111111')
-        self.to_customer = Customer.objects.create(user=self.user, name='Sodan', phone='2222222')
+        self.from_customer = Customer.objects.create(user=self.user, name='Lilit', phone='9876543210')
+        self.to_customer = Customer.objects.create(user=self.user, name='Sodan', phone='9876543211')
         self.client.force_login(self.user)
 
     def test_transfer_creates_matching_entries(self):
@@ -88,3 +90,28 @@ class TransferVoucherTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['success'])
         self.assertEqual(Transaction.objects.count(), 2)
+        voucher = TransferVoucher.objects.get()
+        self.assertEqual(set(Transaction.objects.values_list('transfer_voucher_id', flat=True)), {voucher.pk})
+        self.assertEqual(len(response.json()['whatsapp_actions']), 2)
+
+    @patch('khata.views.upload_attachment')
+    def test_transfer_uploads_one_shared_attachment(self, upload_attachment_mock):
+        upload_attachment_mock.return_value = {
+            'attachment_drive_id': 'drive-file-1',
+            'attachment_name': 'voucher.pdf',
+            'attachment_mime_type': 'application/pdf',
+            'attachment_size': 25,
+        }
+        attachment = SimpleUploadedFile('voucher.pdf', b'%PDF-1.4 shared voucher', content_type='application/pdf')
+        response = self.client.post(
+            reverse('khata:transfer_voucher'),
+            {'from_customer': self.from_customer.id, 'to_customer': self.to_customer.id,
+             'amount': '1500', 'date': '2026-07-18', 'attachment': attachment},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        voucher = TransferVoucher.objects.get()
+        self.assertEqual(voucher.attachment_drive_id, 'drive-file-1')
+        self.assertEqual(Transaction.objects.filter(transfer_voucher=voucher).count(), 2)
+        self.assertEqual(Transaction.objects.exclude(attachment_drive_id__isnull=True).count(), 0)
+        upload_attachment_mock.assert_called_once()

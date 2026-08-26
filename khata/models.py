@@ -13,12 +13,31 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
+class TransferVoucher(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='khata_transfer_vouchers')
+    from_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, related_name='outgoing_transfer_vouchers')
+    to_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, related_name='incoming_transfer_vouchers')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(default=timezone.now)
+    remarks = models.CharField(max_length=200, blank=True, null=True)
+    attachment_drive_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    attachment_name = models.CharField(max_length=255, blank=True, null=True)
+    attachment_mime_type = models.CharField(max_length=100, blank=True, null=True)
+    attachment_size = models.PositiveBigIntegerField(blank=True, null=True)
+    attachment_uploaded_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['owner', '-date'])]
+        constraints = [models.CheckConstraint(condition=models.Q(amount__gt=0), name='transfer_voucher_amount_positive')]
+
 class Transaction(models.Model):
     TRANSACTION_TYPES = (
         ('GIVEN', 'Maine Diye'), # Udhaar
         ('GOT', 'Mujhe Mile'),   # Jama
     )
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    transfer_voucher = models.ForeignKey('TransferVoucher', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     trans_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     date = models.DateField(default=timezone.now)
@@ -35,6 +54,18 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.customer.name} - {self.amount} ({self.trans_type})"
+
+    @property
+    def effective_attachment_drive_id(self):
+        return self.attachment_drive_id or (self.transfer_voucher.attachment_drive_id if self.transfer_voucher_id else None)
+
+    @property
+    def effective_attachment_name(self):
+        return self.attachment_name or (self.transfer_voucher.attachment_name if self.transfer_voucher_id else None)
+
+    @property
+    def effective_attachment_mime_type(self):
+        return self.attachment_mime_type or (self.transfer_voucher.attachment_mime_type if self.transfer_voucher_id else None)
 
 # khata/models.py
 
