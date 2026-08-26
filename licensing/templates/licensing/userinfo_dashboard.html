@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const farmerForm = document.getElementById('farmer-modal-form');
     const farmerTitle = document.getElementById('farmer-form-title');
     const farmerSubmit = document.getElementById('farmer-form-submit');
-    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','for_whys','f_year','is_pri','limit_of_entrys','accepte_by','razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'];
+    const fieldNames = ['mobile','pacs_name','brach','dist','state','operator_mobile','payment_status','amount','utr_number','for_whys','f_year','is_pri','entry_count','limit_of_entrys','accepte_by','razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'];
     const purposeField = document.getElementById('id_for_whys');
     const financialYearField = document.getElementById('id_f_year');
     let purposeYears = {};
@@ -726,7 +726,7 @@ document.addEventListener('DOMContentLoaded', function () {
         farmerTitle.innerHTML = isUpdate ? '<i class="fas fa-edit me-2"></i>Update Farmer' : (isCopy ? '<i class="fas fa-copy me-2"></i>Copy Farmer Record' : '<i class="fas fa-user-plus me-2"></i>Add New Farmer');
         farmerSubmit.innerHTML = isUpdate ? '<i class="fas fa-save me-1"></i>Update Record' : (isCopy ? '<i class="fas fa-save me-1"></i>Save Copied Record' : '<i class="fas fa-save me-1"></i>Save Record');
         if (client) {
-            const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, razorpay_payment_link_id: client.dataset.razorpayLinkId, razorpay_payment_id: client.dataset.razorpayPaymentId, razorpay_reference_id: client.dataset.razorpayReferenceId, razorpay_payment_status: client.dataset.razorpayStatus, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
+            const values = { mobile: client.dataset.mobile, pacs_name: client.dataset.pacsName, brach: client.dataset.branch, dist: client.dataset.dist, state: client.dataset.state, operator_mobile: client.dataset.operator, payment_status: client.dataset.paymentStatus, amount: client.dataset.amount, utr_number: client.dataset.utr, razorpay_payment_link_id: client.dataset.razorpayLinkId, razorpay_payment_id: client.dataset.razorpayPaymentId, razorpay_reference_id: client.dataset.razorpayReferenceId, razorpay_payment_status: client.dataset.razorpayStatus, for_whys: client.dataset.purpose, f_year: client.dataset.year, is_pri: client.dataset.isPri, entry_count: client.dataset.entryCount, limit_of_entrys: client.dataset.limit, accepte_by: client.dataset.acceptedField };
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = values[name] || ''; });
             syncFinancialYears(values.for_whys, values.f_year);
             if (isCopy) { const mobile = document.getElementById('id_mobile'); if (mobile) mobile.value = ''; ['razorpay_payment_link_id','razorpay_payment_id','razorpay_reference_id','razorpay_payment_status'].forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; }); }
@@ -734,6 +734,8 @@ document.addEventListener('DOMContentLoaded', function () {
             fieldNames.forEach(function (name) { const input = document.getElementById('id_' + name); if (input) input.value = ''; });
             syncFinancialYears('', '');
         }
+        const entryCountInput = document.getElementById('id_entry_count');
+        if (entryCountInput) entryCountInput.closest('.farmer-field').style.display = client ? '' : 'none';
         farmerModal.classList.add('is-open'); farmerModal.setAttribute('aria-hidden', 'false');
     }    document.getElementById('open-add-farmer').addEventListener('click', function () { openFarmerModal(null); });
     farmerModal.querySelectorAll('.farmer-form-close, .farmer-form-cancel').forEach(function (button) { button.addEventListener('click', function () { farmerModal.classList.remove('is-open'); farmerModal.setAttribute('aria-hidden', 'true'); }); });

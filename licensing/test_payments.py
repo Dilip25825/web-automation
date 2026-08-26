@@ -179,14 +179,14 @@ class RazorpayPaymentTests(SimpleTestCase):
         self.assertEqual(item.limit_of_entrys, 3000)
         self.assertIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
 
-    def test_first_fasal_rin_payment_sets_entry_limit_to_3000(self):
+    def test_first_fasal_rin_payment_keeps_existing_entry_limit(self):
         item = record(
             for_whys='FASAL RIN', is_pri='1',
             limit_of_entrys=20, activation_date=None,
         )
         services._apply_paid_entities(item, link(), payment())
-        self.assertEqual(item.limit_of_entrys, 3000)
-        self.assertIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
+        self.assertEqual(item.limit_of_entrys, 20)
+        self.assertNotIn('limit_of_entrys', item.save.call_args.kwargs['update_fields'])
     def test_later_payment_does_not_overwrite_admin_entry_limit(self):
         item = record(limit_of_entrys=4250, activation_date=datetime(2025, 1, 1, tzinfo=datetime_timezone.utc))
         services._apply_paid_entities(item, link(), payment(id='pay_new'))

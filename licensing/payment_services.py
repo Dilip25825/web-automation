@@ -208,8 +208,8 @@ def _apply_paid_entities(record, link, payment):
         record.utr_number = bank_rrn
         update_fields.append('utr_number')
     if not duplicate:
-        first_paid_activation = (
-            str(record.for_whys or '').strip().upper() in {'PMFBY', 'FASAL RIN'}
+        first_paid_pmfby_activation = (
+            str(record.for_whys or '').strip().upper() == 'PMFBY'
             and record.activation_date is None
             and int(record.amount or 0) > 0
         )
@@ -226,7 +226,7 @@ def _apply_paid_entities(record, link, payment):
         record.is_active = 1
         record.activation_date = activation_date
         update_fields.extend(['razorpay_payment_id', 'razorpay_payment_status', 'payment_status', 'is_active', 'activation_date'])
-        if first_paid_activation:
+        if first_paid_pmfby_activation:
             record.limit_of_entrys = 3000
             update_fields.append('limit_of_entrys')
     if update_fields:

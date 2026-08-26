@@ -85,7 +85,7 @@ class UserInfoForm(forms.ModelForm):
         fields = [
             'mobile', 'pacs_name', 'brach', 'dist', 'state', 'operator_mobile',
             'payment_status', 'amount', 'utr_number', 'for_whys', 'f_year',
-            'is_pri', 'limit_of_entrys', 'accepte_by',
+            'is_pri', 'entry_count', 'limit_of_entrys', 'accepte_by',
             'razorpay_payment_link_id', 'razorpay_payment_id',
             'razorpay_reference_id', 'razorpay_payment_status',
         ]
@@ -94,6 +94,7 @@ class UserInfoForm(forms.ModelForm):
             'razorpay_payment_id': 'Razorpay Payment ID',
             'razorpay_reference_id': 'Razorpay Reference ID',
             'razorpay_payment_status': 'Razorpay Payment Status',
+            'entry_count': 'Uploaded Entries',
         }
         widgets = {
             'mobile': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
@@ -110,9 +111,16 @@ class UserInfoForm(forms.ModelForm):
             'razorpay_reference_id': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'razorpay_payment_status': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'is_pri': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
+            'entry_count': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'min': '0'}),
             'limit_of_entrys': forms.NumberInput(attrs={'class': 'form-control bg-dark text-light border-secondary'}),
             'accepte_by': forms.TextInput(attrs={'class': 'form-control bg-dark text-light border-secondary', 'placeholder': 'e.g. Admin'}),
         }
+
+    def clean_entry_count(self):
+        value = self.cleaned_data.get('entry_count')
+        if value is not None and value < 0:
+            raise forms.ValidationError('Uploaded Entries cannot be negative.')
+        return value or 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

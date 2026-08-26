@@ -384,14 +384,14 @@ def toggle_activation(request, pk):
 
             with transaction.atomic():
                 client = UserInfoData.objects.select_for_update().get(pk=pk)
-                first_paid_activation = (
-                    str(client.for_whys or '').strip().upper() in {'PMFBY', 'FASAL RIN'}
+                first_paid_pmfby_activation = (
+                    str(client.for_whys or '').strip().upper() == 'PMFBY'
                     and client.activation_date is None
                     and activation_amount > 0
                 )
                 client.amount = activation_amount
                 client.payment_status = activation_amount
-                if first_paid_activation:
+                if first_paid_pmfby_activation:
                     client.limit_of_entrys = 3000
                 client.accepte_by = accepted_username
                 client.utr_number = input_utr_number
@@ -782,7 +782,6 @@ def create_userinfo(request):
                 new_record.branch_approve = 0
                 new_record.is_animal = 0
                 new_record.is_active = 1
-                new_record.entry_count = 0
                 new_record.save()
                 messages.success(request, f"Success: PACS '{pacs_name}' Safely Save Ho Gaya.")
                 return redirect('licensing:userinfo_dashboard')
@@ -808,7 +807,7 @@ def create_userinfo(request):
                     'for_whys': old_record.for_whys,
                     'f_year': old_record.f_year,
                     'is_pri': old_record.is_pri,
-                    'entry_count': 0,
+                    'entry_count': old_record.entry_count or 0,
                     'is_active': old_record.is_active,
                     'limit_of_entrys': old_record.limit_of_entrys,
                 }
