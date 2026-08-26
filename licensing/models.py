@@ -159,20 +159,18 @@ class tblUPI(models.Model):
 
 
 class Perpous(models.Model):
-    # ID automatic Django create karta hai, agar aapko custom rakhni hai to primary_key=True use karein
-    ID = models.CharField(max_length=255, verbose_name="ID") 
-    forWhy = models.TextField(max_length=255, null=True, blank=True, verbose_name="forWhy")
-    fyear = models.TextField(null=True, blank=True, verbose_name="fyear")
+    ID = models.AutoField(primary_key=True, db_column='ID')
+    forWhy = models.CharField(max_length=30, null=True, blank=True, db_column='forWhy', verbose_name='Purpose')
+    fyear = models.TextField(null=True, blank=True, db_column='fyear', verbose_name='Financial Year')
 
     class Meta:
-        # Database table ka sahi naam ensure karne ke liye
         db_table = 'perpous'
+        managed = False
         verbose_name = 'Perpous'
         verbose_name_plural = 'Perpous'
 
     def __str__(self):
-        # Admin panel mein list view mein jo name dikhega, wahi return karein
-        return self.forWhy
+        return f'{self.forWhy or "Purpose"} - {self.fyear or "No year"}'
 
 class VersionInfo(models.Model):
     # id = models.CharField(max_length=255, verbose_name="id") 

@@ -1,0 +1,16 @@
+<div class="settings-table-wrap">
+  <table class="settings-table">
+    <thead><tr><th>ID</th><th>Purpose</th><th>Financial Year</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for purpose in purposes %}
+      <tr>
+        <td>#{{ purpose.pk }}</td><td><strong>{{ purpose.forWhy }}</strong></td><td>{{ purpose.fyear }}</td>
+        <td class="settings-actions">
+          <button type="button" class="settings-edit" data-kind="purpose" data-id="{{ purpose.pk }}" data-purpose="{{ purpose.forWhy|escape }}" data-year="{{ purpose.fyear|escape }}" data-update-url="{% url 'licensing:update_purpose' purpose.pk %}"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" class="settings-delete" data-kind="purpose" data-label="{{ purpose.forWhy|escape }} - {{ purpose.fyear|escape }}" data-delete-url="{% url 'licensing:delete_purpose' purpose.pk %}"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="settings-empty">No Purpose or Financial Year configured.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>

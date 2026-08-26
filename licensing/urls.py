@@ -21,4 +21,11 @@ urlpatterns = [
     path('userinfo/delete/<int:user_id>/', views.delete_userinfo_view, name='delete_userinfo'),
     path('userinfo/update/<int:client_id>/', views.update_userinfo_view, name='update_userinfo'),
     path('pacserp/update/<int:record_id>/', views.update_pacserp_view, name='update_pacserp'),
+    path('system-settings/', views.system_settings, name='system_settings'),
+    path('system-settings/purposes/add/', views.create_purpose, name='create_purpose'),
+    path('system-settings/purposes/<int:pk>/update/', views.update_purpose, name='update_purpose'),
+    path('system-settings/purposes/<int:pk>/delete/', views.delete_purpose, name='delete_purpose'),
+    path('system-settings/upi/add/', views.create_upi, name='create_upi'),
+    path('system-settings/upi/<int:pk>/update/', views.update_upi, name='update_upi'),
+    path('system-settings/upi/<int:pk>/delete/', views.delete_upi, name='delete_upi'),
 ]

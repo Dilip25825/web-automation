@@ -3,15 +3,15 @@ logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404, get_object_or_404
 from django.contrib import messages
 from django.db import models, transaction
-from .models import UserInfoData
-from .models import tblPacsErp,tblUPI
+from .models import Perpous, UserInfoData
+from .models import tblPacsErp, tblUPI
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, HttpResponseForbidden, JsonResponse
 from .utils import generate_pacs_invoice_pdf
 from .utils import generate_erp_invoice_pdf  # Naya function import kiya
 from django.utils import timezone
-from .forms import UserInfoForm, PacsErpForm
+from .forms import PacsErpForm, PurposeSettingsForm, UpiSettingsForm, UserInfoForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
@@ -21,6 +21,25 @@ from .activation_ledger import activation_ledger_context, create_activation_ledg
 from khata.models import Transaction
 from khata.views import build_transaction_whatsapp_url
 
+
+
+def superuser_settings_required(view_func):
+    @login_required(login_url='accounts:login')
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Superuser access is required.'}, status=403)
+            return HttpResponseForbidden('Superuser access is required.')
+        return view_func(request, *args, **kwargs)
+    return wrapped
+
+
+def _settings_form_error(form):
+    return JsonResponse(
+        {'success': False, 'message': 'Please correct the highlighted fields.', 'errors': form.errors.get_json_data()},
+        status=400,
+    )
 
 
 def userinfo_ajax_action(view_func):
@@ -999,3 +1018,92 @@ def update_pacserp_view(request, record_id):
         'is_update': True  # Template ko batane ke liye ki ye Edit mode chal raha hai
     }
     return render(request, 'licensing/create_pacserp.html', context)
+
+
+@superuser_settings_required
+def system_settings(request):
+    purposes = Perpous.objects.all().order_by('forWhy', 'fyear', 'pk')
+    upi_records = tblUPI.objects.all().order_by('-isActive', '-ID')
+    section = request.GET.get('section', '').strip().lower()
+    context = {
+        'purposes': purposes,
+        'upi_records': upi_records,
+        'purpose_form': PurposeSettingsForm(),
+        'upi_form': UpiSettingsForm(),
+    }
+    if section == 'purposes':
+        return render(request, 'licensing/_settings_purposes.html', context)
+    if section == 'upi':
+        return render(request, 'licensing/_settings_upis.html', context)
+    return render(request, 'licensing/system_settings.html', context)
+
+
+@superuser_settings_required
+@require_POST
+def create_purpose(request):
+    form = PurposeSettingsForm(request.POST)
+    if not form.is_valid():
+        return _settings_form_error(form)
+    purpose = form.save()
+    return JsonResponse({'success': True, 'message': f'{purpose} added successfully.'})
+
+
+@superuser_settings_required
+@require_POST
+def update_purpose(request, pk):
+    purpose = get_object_or_404(Perpous, pk=pk)
+    form = PurposeSettingsForm(request.POST, instance=purpose)
+    if not form.is_valid():
+        return _settings_form_error(form)
+    purpose = form.save()
+    return JsonResponse({'success': True, 'message': f'{purpose} updated successfully.'})
+
+
+@superuser_settings_required
+@require_POST
+def delete_purpose(request, pk):
+    purpose = get_object_or_404(Perpous, pk=pk)
+    label = str(purpose)
+    purpose.delete()
+    return JsonResponse({'success': True, 'message': f'{label} deleted successfully.'})
+
+
+def _save_upi_form(form):
+    with transaction.atomic():
+        upi = form.save(commit=False)
+        upi.isActive = 1 if form.cleaned_data.get('isActive') else 0
+        if upi.isActive:
+            list(tblUPI.objects.select_for_update().values_list('pk', flat=True))
+            tblUPI.objects.exclude(pk=upi.pk).update(isActive=0)
+        upi.save()
+    return upi
+
+
+@superuser_settings_required
+@require_POST
+def create_upi(request):
+    form = UpiSettingsForm(request.POST)
+    if not form.is_valid():
+        return _settings_form_error(form)
+    upi = _save_upi_form(form)
+    return JsonResponse({'success': True, 'message': f'UPI {upi.upiID} added successfully.'})
+
+
+@superuser_settings_required
+@require_POST
+def update_upi(request, pk):
+    upi = get_object_or_404(tblUPI, pk=pk)
+    form = UpiSettingsForm(request.POST, instance=upi)
+    if not form.is_valid():
+        return _settings_form_error(form)
+    upi = _save_upi_form(form)
+    return JsonResponse({'success': True, 'message': f'UPI {upi.upiID} updated successfully.'})
+
+
+@superuser_settings_required
+@require_POST
+def delete_upi(request, pk):
+    upi = get_object_or_404(tblUPI, pk=pk)
+    label = upi.upiID or f'#{upi.pk}'
+    upi.delete()
+    return JsonResponse({'success': True, 'message': f'UPI {label} deleted successfully.'})

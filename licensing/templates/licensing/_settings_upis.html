@@ -1,0 +1,17 @@
+<div class="settings-table-wrap">
+  <table class="settings-table">
+    <thead><tr><th>ID</th><th>UPI ID</th><th>Remark</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for upi in upi_records %}
+      <tr>
+        <td>#{{ upi.pk }}</td><td><strong>{{ upi.upiID }}</strong></td><td>{{ upi.Remark|default:'-' }}</td>
+        <td>{% if upi.isActive %}<span class="settings-status active"><i class="fa-solid fa-circle-check"></i> Active</span>{% else %}<span class="settings-status inactive">Inactive</span>{% endif %}</td>
+        <td class="settings-actions">
+          <button type="button" class="settings-edit" data-kind="upi" data-id="{{ upi.pk }}" data-upi="{{ upi.upiID|escape }}" data-remark="{{ upi.Remark|default:''|escape }}" data-active="{% if upi.isActive %}true{% else %}false{% endif %}" data-update-url="{% url 'licensing:update_upi' upi.pk %}"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" class="settings-delete" data-kind="upi" data-label="{{ upi.upiID|escape }}" data-active="{% if upi.isActive %}true{% else %}false{% endif %}" data-delete-url="{% url 'licensing:delete_upi' upi.pk %}"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="settings-empty">No UPI account configured.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>

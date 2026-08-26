@@ -1,7 +1,72 @@
 import json
+import re
 
 from django import forms
 from .models import UserInfoData, tblPacsErp,Perpous,tblUPI
+
+
+class PurposeSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Perpous
+        fields = ['forWhy', 'fyear']
+        widgets = {
+            'forWhy': forms.TextInput(attrs={'placeholder': 'Example: PMFBY', 'maxlength': '30'}),
+            'fyear': forms.TextInput(attrs={'placeholder': 'Example: Kharif 2026'}),
+        }
+
+    def clean_forWhy(self):
+        value = ' '.join((self.cleaned_data.get('forWhy') or '').split())
+        if not value:
+            raise forms.ValidationError('Purpose is required.')
+        if len(value) > 30:
+            raise forms.ValidationError('Purpose cannot exceed 30 characters.')
+        return value
+
+    def clean_fyear(self):
+        value = ' '.join((self.cleaned_data.get('fyear') or '').split())
+        if not value:
+            raise forms.ValidationError('Financial year is required.')
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        purpose = cleaned.get('forWhy')
+        year = cleaned.get('fyear')
+        if purpose and year:
+            duplicate = Perpous.objects.filter(forWhy__iexact=purpose, fyear__iexact=year)
+            if self.instance and self.instance.pk:
+                duplicate = duplicate.exclude(pk=self.instance.pk)
+            if duplicate.exists():
+                raise forms.ValidationError('This Purpose and Financial Year already exists.')
+        return cleaned
+
+
+class UpiSettingsForm(forms.ModelForm):
+    isActive = forms.BooleanField(label='Active UPI', required=False)
+
+    class Meta:
+        model = tblUPI
+        fields = ['upiID', 'Remark', 'isActive']
+        widgets = {
+            'upiID': forms.TextInput(attrs={'placeholder': 'Example: business@bank', 'maxlength': '100'}),
+            'Remark': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Optional note', 'maxlength': '255'}),
+        }
+
+    def clean_upiID(self):
+        value = (self.cleaned_data.get('upiID') or '').strip()
+        if not value:
+            raise forms.ValidationError('UPI ID is required.')
+        if len(value) > 100 or not re.fullmatch(r'[A-Za-z0-9._-]{2,}@[A-Za-z0-9.-]{2,}', value):
+            raise forms.ValidationError('Enter a valid UPI ID, for example business@bank.')
+        duplicate = tblUPI.objects.filter(upiID__iexact=value)
+        if self.instance and self.instance.pk:
+            duplicate = duplicate.exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise forms.ValidationError('This UPI ID already exists.')
+        return value
+
+    def clean_Remark(self):
+        return (self.cleaned_data.get('Remark') or '').strip()
 
 class UserInfoForm(forms.ModelForm):
     for_whys = forms.ChoiceField(
