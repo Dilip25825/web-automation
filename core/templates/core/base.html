@@ -591,6 +591,8 @@
                         <a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'downloads:public_downloads' %}">
                             <i class="fa-solid fa-download"></i> Download
                         </a>
+                        {% if request.user.is_superuser %}<button type="button" data-qr-modal-open class="flex items-center gap-2 rounded-xl px-3 py-2 text-indigo-100 transition hover:bg-white/10 hover:text-white"><i class="fa-solid fa-qrcode"></i> QR</button>{% endif %}
+
                         {% if request.user.is_superuser %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.url_name == 'system_settings' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'licensing:system_settings' %}">
                             <i class="fa-solid fa-gear"></i> Settings
                         </a>{% endif %}
@@ -628,13 +630,30 @@
         <div style="margin-top: 2rem;">
             {% if request.user.is_authenticated %}
             <a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a><a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> User Licenses</a><a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP Licenses</a><a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a><a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a><a class="nav-item" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>
-            {% if request.user.is_superuser %}<a class="nav-item" href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> System Settings</a>{% endif %}
+            {% if request.user.is_superuser %}<button type="button" class="nav-item w-full" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a class="nav-item" href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> System Settings</a>{% endif %}
             {% endif %}
             <a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a><a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> Client Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
             {% if request.user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
         </div>   </div>
 
+    {% if request.user.is_superuser %}
+    <div id="global-qr-modal" class="fixed inset-0 z-[1100] hidden items-center justify-center bg-slate-950/25 p-4" role="dialog" aria-modal="true" aria-labelledby="global-qr-title">
+        <div class="w-full max-w-[500px] overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-2xl">
+            <div class="flex items-center justify-between bg-gradient-to-r from-indigo-900 to-violet-600 px-5 py-4 text-white">
+                <div><p class="text-[10px] font-black uppercase tracking-[.18em] text-indigo-200">Quick Payment</p><h2 id="global-qr-title" class="mt-1 text-lg font-black"><i class="fa-solid fa-qrcode mr-2"></i>UPI QR Generator</h2></div>
+                <button type="button" data-qr-modal-close class="grid h-9 w-9 place-items-center rounded-xl bg-white/15 text-lg hover:bg-white/25" aria-label="Close QR Generator"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="global-qr-form" action="{% url 'licensing:generate_upi_qr' %}" method="post" class="grid gap-3 p-5">{% csrf_token %}
+                <label class="grid gap-1 text-xs font-black text-slate-700">UPI ID<select name="upi_id" required class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-bold text-slate-800"><option value="">Loading UPI accounts...</option></select><small data-global-qr-error="upi_id" class="font-medium text-rose-600"></small></label>
+                <div class="grid grid-cols-[135px_minmax(0,1fr)] gap-3"><label class="grid gap-1 text-xs font-black text-slate-700">Payment Amount<input name="amount" type="number" min="0.01" max="99999" step="0.01" required placeholder="₹ Amount" class="min-w-0 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold"></label><label class="grid gap-1 text-xs font-black text-slate-700">Remark<input name="remark" type="text" maxlength="100" required placeholder="Payment remark" class="min-w-0 rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold"></label></div>
+                <small data-global-qr-error="amount" class="font-medium text-rose-600"></small><small data-global-qr-error="remark" class="font-medium text-rose-600"></small><small data-global-qr-error="__all__" class="font-medium text-rose-600"></small>
+                <button id="global-qr-submit" type="submit" class="rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-indigo-200"><i class="fa-solid fa-qrcode mr-2"></i>Generate Payment QR</button>
+            </form>
+            <div id="global-qr-result" class="hidden border-t border-slate-200 p-5 pt-4 text-center"><img id="global-qr-image" class="mx-auto h-52 w-52 rounded-xl border-8 border-white shadow-lg" alt="UPI payment QR"><p id="global-qr-upi" class="mt-3 break-all text-sm font-black text-indigo-900"></p><p id="global-qr-summary" class="mt-1 text-xs font-semibold text-slate-500"></p></div>
+        </div>
+    </div>
+    {% endif %}
     <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
         {% block content %}{% endblock %}
     </main>
@@ -899,6 +918,11 @@
         });
     })();
     </script>
+    {% if request.user.is_superuser %}
+    <script>
+(()=>{const modal=document.getElementById('global-qr-modal'),form=document.getElementById('global-qr-form'),select=form?.querySelector('[name=upi_id]'),result=document.getElementById('global-qr-result'),submit=document.getElementById('global-qr-submit');if(!modal||!form)return;const close=()=>{modal.classList.add('hidden');modal.classList.remove('flex')};const errors=()=>document.querySelectorAll('[data-global-qr-error]').forEach(el=>el.textContent='');async function openQr(prefill={}){modal.classList.remove('hidden');modal.classList.add('flex');result.classList.add('hidden');errors();form.elements.amount.value=prefill.amount??'';form.elements.remark.value=prefill.remark??'';select.innerHTML='<option value="">Loading UPI accounts...</option>';try{const response=await fetch(form.action,{headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'UPI list load nahi hui.');select.replaceChildren(new Option('-- Select UPI ID --',''));data.upi_accounts.forEach(upi=>{const label=upi.upi_id+(upi.remark?' — '+upi.remark:'')+(upi.is_active?' (Active)':'');select.add(new Option(label,String(upi.id),false,upi.is_active))});if(!data.upi_accounts.length)throw new Error('Koi UPI ID available nahi hai.')}catch(error){select.innerHTML='<option value="">No UPI available</option>';Swal.fire({icon:'error',title:'UPI unavailable',text:error.message})}}window.openGlobalQrGenerator=openQr;document.querySelectorAll('[data-qr-modal-open]').forEach(button=>button.addEventListener('click',()=>{document.getElementById('mobilePanel')?.classList.remove('open');openQr()}));document.querySelectorAll('[data-qr-modal-close]').forEach(button=>button.addEventListener('click',close));modal.addEventListener('click',event=>{if(event.target===modal)close()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.classList.contains('hidden'))close()});form.addEventListener('submit',async event=>{event.preventDefault();errors();submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating...';try{const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success){if(data.errors)Object.entries(data.errors).forEach(([name,items])=>{const el=document.querySelector(`[data-global-qr-error="${name}"]`);if(el)el.textContent=items.map(item=>item.message).join(' ')});throw new Error(data.message||'QR generate nahi hua.')}document.getElementById('global-qr-image').src=data.qr_data_url;document.getElementById('global-qr-upi').textContent=data.upi_id;document.getElementById('global-qr-summary').textContent=`₹${data.amount} · ${data.remark}`;result.classList.remove('hidden')}catch(error){Swal.fire({icon:'error',title:'QR failed',text:error.message})}finally{submit.disabled=false;submit.innerHTML='<i class="fa-solid fa-qrcode mr-2"></i>Generate Payment QR'}})})();
+    </script>
+    {% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 

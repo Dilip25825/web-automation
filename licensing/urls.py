@@ -28,4 +28,5 @@ urlpatterns = [
     path('system-settings/upi/add/', views.create_upi, name='create_upi'),
     path('system-settings/upi/<int:pk>/update/', views.update_upi, name='update_upi'),
     path('system-settings/upi/<int:pk>/delete/', views.delete_upi, name='delete_upi'),
+    path('system-settings/upi/qr/', views.generate_upi_qr, name='generate_upi_qr'),
 ]

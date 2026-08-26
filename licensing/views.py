@@ -1,3 +1,7 @@
+import base64
+from decimal import Decimal
+from urllib.parse import urlencode
+
 import logging
 logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404, get_object_or_404
@@ -11,12 +15,15 @@ from django.http import FileResponse, HttpResponseForbidden, JsonResponse
 from .utils import generate_pacs_invoice_pdf
 from .utils import generate_erp_invoice_pdf  # Naya function import kiya
 from django.utils import timezone
-from .forms import PacsErpForm, PurposeSettingsForm, UpiSettingsForm, UserInfoForm
+from .forms import PacsErpForm, PurposeSettingsForm, UpiQrForm, UpiSettingsForm, UserInfoForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
 from django.db.models import Count, Sum
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
+from reportlab.graphics import renderSVG
+from reportlab.graphics.barcode import qr
+from reportlab.graphics.shapes import Drawing
 from .activation_ledger import activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry
 from khata.models import Transaction
 from khata.views import build_transaction_whatsapp_url
@@ -1106,3 +1113,56 @@ def delete_upi(request, pk):
     label = upi.upiID or f'#{upi.pk}'
     upi.delete()
     return JsonResponse({'success': True, 'message': f'UPI {label} deleted successfully.'})
+
+
+def _upi_qr_svg(upi_url):
+    widget = qr.QrCodeWidget(upi_url)
+    x1, y1, x2, y2 = widget.getBounds()
+    size = 300
+    width = x2 - x1
+    height = y2 - y1
+    drawing = Drawing(size, size)
+    drawing.add(widget)
+    drawing.scale(size / width, size / height)
+    return renderSVG.drawToString(drawing)
+
+
+@superuser_settings_required
+@require_http_methods(['GET', 'POST'])
+def generate_upi_qr(request):
+    if request.method == 'GET':
+        records = (
+            tblUPI.objects.exclude(upiID__isnull=True).exclude(upiID='')
+            .order_by('-isActive', '-ID')
+        )
+        return JsonResponse({'success': True, 'upi_accounts': [
+            {'id': upi.pk, 'upi_id': upi.upiID.strip(), 'remark': (upi.Remark or '').strip(), 'is_active': bool(upi.isActive)}
+            for upi in records
+        ]})
+
+    form = UpiQrForm(request.POST)
+    if not form.is_valid():
+        return _settings_form_error(form)
+    selected_upi = (
+        tblUPI.objects.filter(pk=form.cleaned_data['upi_id'])
+        .exclude(upiID__isnull=True).exclude(upiID='')
+        .first()
+    )
+    if not selected_upi:
+        return JsonResponse(
+            {'success': False, 'message': 'Selected UPI ID available nahi hai. List refresh karke dobara try karein.'},
+            status=404,
+        )
+    amount = form.cleaned_data['amount'].quantize(Decimal('0.01'))
+    remark = form.cleaned_data['remark']
+    upi_url = 'upi://pay?' + urlencode({
+        'pa': selected_upi.upiID.strip(), 'pn': 'Web Automation With Excel',
+        'am': format(amount, '.2f'), 'tn': remark, 'cu': 'INR',
+    })
+    svg = _upi_qr_svg(upi_url)
+    svg_bytes = svg.encode('utf-8') if isinstance(svg, str) else svg
+    return JsonResponse({
+        'success': True, 'upi_id': selected_upi.upiID.strip(),
+        'amount': format(amount, '.2f'), 'remark': remark, 'upi_url': upi_url,
+        'qr_data_url': 'data:image/svg+xml;base64,' + base64.b64encode(svg_bytes).decode('ascii'),
+    })

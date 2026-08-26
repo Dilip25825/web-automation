@@ -234,6 +234,7 @@
                 {% if request.user.is_superuser %}<button type="button" data-row-trigger="bulk-update" role="menuitem"><i class="fas fa-edit text-indigo-600"></i><span>Update</span></button>{% endif %}
                 <button type="button" id="userinfo-row-toggle-action" data-row-trigger="toggle" role="menuitem"><i class="fas fa-check-circle text-emerald-600"></i><span>Activate</span></button>
                 <button type="button" data-row-trigger="bulk-invoice" role="menuitem"><i class="fas fa-file-invoice text-blue-600"></i><span>Invoice</span></button>
+                {% if request.user.is_superuser %}<button type="button" data-row-qr role="menuitem"><i class="fas fa-qrcode text-emerald-600"></i><span>Create QR</span></button>{% endif %}
                 <button type="button" data-row-trigger="bulk-copy" role="menuitem"><i class="fas fa-copy text-violet-600"></i><span>Copy</span></button>
                 {% if request.user.is_superuser %}<div class="userinfo-row-actions-separator"></div>
                 <button type="button" data-row-trigger="bulk-delete" class="userinfo-row-action-danger" role="menuitem"><i class="fas fa-trash-alt"></i><span>Delete</span></button>{% endif %}
@@ -853,6 +854,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const viewAction = event.target.closest('#userinfo-row-actions-menu [data-row-view]');
         if (viewAction) { event.preventDefault(); event.stopPropagation(); closeRowActionsMenu(); if (currentActionClient) openUserinfoDetails(currentActionClient); return; }
+        const qrAction = event.target.closest('#userinfo-row-actions-menu [data-row-qr]');
+        if (qrAction) { event.preventDefault(); event.stopPropagation(); closeRowActionsMenu(); if (currentActionClient && window.openGlobalQrGenerator) window.openGlobalQrGenerator({ amount: currentActionClient.dataset.amount || '', remark: [currentActionClient.dataset.purpose, currentActionClient.dataset.year, currentActionClient.dataset.mobile].filter(Boolean).join(' ') }); return; }
         const action = event.target.closest('#userinfo-row-actions-menu [data-row-trigger]');
         if (action) {
             event.preventDefault(); event.stopPropagation();

@@ -68,6 +68,18 @@ class UpiSettingsForm(forms.ModelForm):
     def clean_Remark(self):
         return (self.cleaned_data.get('Remark') or '').strip()
 
+
+class UpiQrForm(forms.Form):
+    upi_id = forms.IntegerField(label='UPI ID', min_value=1)
+    amount = forms.DecimalField(
+        label='Payment Amount', min_value=0.01, max_value=99999, max_digits=7, decimal_places=2,
+    )
+    remark = forms.CharField(label='Remark', max_length=100, strip=True)
+
+    def clean_remark(self):
+        return ' '.join(self.cleaned_data['remark'].split())
+
+
 class UserInfoForm(forms.ModelForm):
     for_whys = forms.ChoiceField(
         choices=[],
