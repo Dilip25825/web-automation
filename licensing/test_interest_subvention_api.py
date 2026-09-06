@@ -76,7 +76,7 @@ class InterestSubventionApiTests(SimpleTestCase):
         self.assertEqual(token_data["service"], views.PURPOSE)
 
     @patch("licensing.interest_subvention_views._select_record")
-    def test_payment_must_equal_amount(self, select_record):
+    def test_unpaid_record_logs_in_with_free_trial_limit(self, select_record):
         select_record.return_value = (
             self.record(amount=2500, payment_status=0),
             False,
@@ -86,15 +86,16 @@ class InterestSubventionApiTests(SimpleTestCase):
                 "interest_subvention_subscription",
                 {
                     "mobile": "8462012451",
-                    "pacs_name": "21UJJ/UNH/BAR",
                     "forWhys": views.PURPOSE,
                     "fYear": "2025-2026",
                 },
             )
         )
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(json.loads(response.content)["status"], "PAYMENT_REQUIRED")
-
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data["authorized"])
+        self.assertEqual(data["access_type"], "FREE_TRIAL")
+        self.assertEqual(data["remaining_entries"], 16)
     @patch("licensing.interest_subvention_views._select_record")
     def test_zero_amount_is_valid_when_payment_status_is_also_zero(self, select_record):
         select_record.return_value = (

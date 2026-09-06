@@ -217,25 +217,31 @@ def subscription(request):
 
     amount = _integer(record.amount)
     payment_status = _integer(record.payment_status)
-    if payment_status != amount:
-        return JsonResponse(
-            {"success": False, "authorized": False, "status": "PAYMENT_REQUIRED", "message": "Complete payment verify nahi hua."},
-            status=403,
-        )
+    paid = amount > 0 and payment_status == amount
+    entry_count = max(0, _integer(record.entry_count))
+    entry_limit = max(0, _integer(getattr(record, "limit_of_entrys", 20), 20))
+    remaining_entries = max(0, entry_limit - entry_count)
 
     return JsonResponse(
         {
             "success": True,
             "authorized": True,
             "status": "ACTIVE",
-            "message": "Software login verification successful.",
+            "message": (
+                "Software login verification successful."
+                if paid or remaining_entries > 0
+                else "Login successful, lekin free entry limit poori ho chuki hai."
+            ),
             "record_id": record.pk,
             "mobile": str(record.mobile),
             "pacs_name": record.pacs_name or "",
             "portal_user_id": record.pacs_name or "",
             "for_whys": PURPOSE,
             "financial_year": record.f_year or financial_year,
-            "access_type": "PAID",
+            "access_type": "PAID" if paid else "FREE_TRIAL",
+            "entry_limit": entry_limit,
+            "entry_count": entry_count,
+            "remaining_entries": remaining_entries,
             "record_token": _token(record),
         }
     )
@@ -264,8 +270,28 @@ def consume_entries(request):
         amount = _integer(locked.amount)
         if _integer(locked.is_active) != 1:
             return JsonResponse({"success": False, "status": "INACTIVE"}, status=403)
-        if _integer(locked.payment_status) != amount:
-            return JsonResponse({"success": False, "status": "PAYMENT_REQUIRED"}, status=403)
-        locked.entry_count = max(0, _integer(locked.entry_count)) + uploaded_count
+        paid = amount > 0 and _integer(locked.payment_status) == amount
+        entry_count = max(0, _integer(locked.entry_count))
+        entry_limit = max(0, _integer(getattr(locked, "limit_of_entrys", 20), 20))
+        new_count = entry_count + uploaded_count
+        if not paid and new_count > entry_limit:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "status": "ENTRY_LIMIT_EXCEEDED",
+                    "message": "Free entry limit poori ho chuki hai.",
+                },
+                status=409,
+            )
+        locked.entry_count = new_count
         locked.save(update_fields=["entry_count"])
-    return JsonResponse({"success": True, "status": "UPLOAD_RECORDED"})
+    return JsonResponse(
+        {
+            "success": True,
+            "status": "UPLOAD_RECORDED",
+            "entry_count": new_count,
+            "entry_limit": entry_limit,
+            "remaining_entries": max(0, entry_limit - new_count),
+            "access_type": "PAID" if paid else "FREE_TRIAL",
+        }
+    )
