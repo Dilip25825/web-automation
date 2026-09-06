@@ -1,10 +1,25 @@
 from django.urls import path
 
-from . import license_views
+from . import interest_subvention_views, license_views
 
 app_name = "license_api"
 
 urlpatterns = [
+    path(
+        "userinfo/interest-subvention/options/",
+        interest_subvention_views.options,
+        name="interest_subvention_options",
+    ),
+    path(
+        "userinfo/interest-subvention/subscription/",
+        interest_subvention_views.subscription,
+        name="interest_subvention_subscription",
+    ),
+    path(
+        "userinfo/interest-subvention/entries/consume/",
+        interest_subvention_views.consume_entries,
+        name="interest_subvention_entries_consume",
+    ),
     path("userinfo/fasal-rin/options/", license_views.fasal_rin_options, name="fasal_rin_options"),
     path("userinfo/fasal-rin/subscription/", license_views.fasal_rin_subscription, name="fasal_rin_subscription"),
     path("userinfo/fasal-rin/entries/check/", license_views.check_fasal_rin_entry, name="fasal_rin_entry_check"),
