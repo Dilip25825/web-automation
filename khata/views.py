@@ -583,8 +583,8 @@ def delete_transaction(request, b64_trans_id):
         else:
             messages.success(request, 'Len-den ki entry delete kar di gayi hai.')
         return redirect('khata:customer_detail', customer_id=customer_id)
-    except Exception as error:
-        messages.error(request, f'Entry delete karne mein samasya: {error}')
+    except Exception:
+        messages.error(request, 'Entry delete karne mein samasya aayi. Kripya dobara try karein.')
         return redirect('khata:dashboard')
 
 

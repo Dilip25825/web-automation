@@ -1,10 +1,21 @@
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from khata.models import ActivationLedgerEntry, ActivationLedgerMapping, Customer, Transaction
+from khata.models import ActivationLedgerEntry, ActivationLedgerMapping, ActivationOperatorSettings, Customer, Transaction
+
+
+def operator_settings(user):
+    if user.is_superuser:
+        return None
+    return ActivationOperatorSettings.objects.select_related('customer__user').filter(user=user).first()
+
+
+def search_only_operator(user):
+    settings = operator_settings(user)
+    return bool(settings and settings.search_only)
 
 
 class ActivationLedgerError(ValueError):
@@ -33,6 +44,21 @@ def activation_ledger_context(user):
 
 def prepare_manual_activation(request, amount):
     if not request.user.is_superuser:
+        settings = operator_settings(request.user)
+        if settings and settings.automatic_ledger:
+            if not settings.customer.user.is_superuser or not settings.customer.user.is_active:
+                raise ActivationLedgerError('Khata setting valid nahi hai. Admin se sampark karein.')
+            if int(amount or 0) <= 0:
+                raise ActivationLedgerError('Activation amount zero se bada hona chahiye.')
+            return {
+                'accepted_user': request.user,
+                'accepted_username': request.user.username,
+                'ledger_enabled': True,
+                'automatic': True,
+                'customer': settings.customer,
+                'amount': Decimal(str(amount)),
+                'activation_token': uuid4(),
+            }
         return {
             'accepted_user': request.user,
             'accepted_username': request.user.username,
@@ -102,7 +128,7 @@ def create_activation_ledger_entry(prepared, *, request_user, source_type, sourc
         remarks=transaction_remark,
     )
     ActivationLedgerMapping.objects.update_or_create(
-        owner=request_user,
+        owner=customer.user,
         accepted_user=accepted_user,
         defaults={'customer': customer},
     )

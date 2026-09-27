@@ -382,7 +382,7 @@
                                 <span class="userinfo-secondary">Operator mobile</span>
                                 <span class="userinfo-secondary"><i class="far fa-calendar-plus"></i> Created: {{ client.date_time|timezone:"UTC"|date:"d M Y, h:i A"|default:"-" }}</span>
                             </td>                            <td>
-                                {% if client.payment_status == client.amount %}
+                                {% if client.is_active and client.amount > 0 and client.payment_status == client.amount %}
                                 <span class="status-pill status-active bg-green-100 text-green-800"><i class="fas fa-circle-check"></i> Active</span>
                                 {% else %}
                                 <span class="status-pill status-inactive"><i class="fas fa-circle-xmark"></i> Inactive</span>

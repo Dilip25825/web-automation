@@ -127,3 +127,23 @@ class ActivationKhataIntegrationTests(TestCase):
         self.assertEqual(result['deleted_count'], 2)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(ActivationLedgerEntry.objects.count(), 0)
+
+    def test_ledger_owner_can_delete_entry_created_by_selected_operator(self):
+        request = self.factory.post('/licensing/toggle/7/', {})
+        request.user = self.operator
+        plan = {
+            'ledger_enabled': True,
+            'accepted_user': self.operator,
+            'customer': self.customer,
+            'amount': 1500,
+            'activation_token': uuid4(),
+        }
+        entry = create_activation_ledger_entry(
+            plan, request_user=self.operator, source_type='USERINFO',
+            source_record_id=11584, source_label='Selected operator activation',
+        )
+        result = delete_transaction_with_activation_links(entry.transaction, self.owner)
+        self.assertTrue(result['linked'])
+        self.assertEqual(result['deleted_count'], 1)
+        self.assertFalse(Transaction.objects.exists())
+        self.assertFalse(ActivationLedgerEntry.objects.exists())

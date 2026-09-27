@@ -12,7 +12,7 @@ def delete_transaction_with_activation_links(transaction, owner):
         )
         ledger_entry = (
             ActivationLedgerEntry.objects.select_for_update()
-            .filter(activated_by=owner)
+            .filter(customer__user=owner)
             .filter(Q(transaction=locked_transaction) | Q(reversal_transaction=locked_transaction))
             .first()
         )

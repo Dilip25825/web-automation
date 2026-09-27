@@ -24,7 +24,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from reportlab.graphics import renderSVG
 from reportlab.graphics.barcode import qr
 from reportlab.graphics.shapes import Drawing
-from .activation_ledger import activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry
+from .activation_ledger import ActivationLedgerError, activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry, search_only_operator
 from khata.models import Transaction
 from khata.views import build_transaction_whatsapp_url
 
@@ -92,6 +92,16 @@ def _utr_used_elsewhere(utr_number, userinfo_pk=None, erp_pk=None):
     if erp_pk is not None:
         erp_matches = erp_matches.exclude(pk=erp_pk)
     return userinfo_matches.exists() or erp_matches.exists()
+
+
+def _userinfo_is_currently_active(record):
+    """Match the dashboard's paid-license status before rejecting a reactivation."""
+    amount = int(record.amount or 0)
+    return (
+        int(record.is_active or 0) == 1
+        and amount > 0
+        and int(record.payment_status or 0) == amount
+    )
 
 
 def _activation_whatsapp_url(ledger_entry):
@@ -231,6 +241,9 @@ def userinfo_dashboard(request):
                 | models.Q(accepte_by__isnull=True)
                 | models.Q(accepte_by__exact='')
             )
+
+        if search_only_operator(request.user) and not search_query:
+            clients = clients.none()
 
         if search_query:
             search_filter = (
@@ -391,6 +404,12 @@ def toggle_activation(request, pk):
 
             with transaction.atomic():
                 client = UserInfoData.objects.select_for_update().get(pk=pk)
+                if not request.user.is_superuser:
+                    accepted_by = str(client.accepte_by or '')
+                    if accepted_by and request.user.username.casefold() not in accepted_by.casefold():
+                        raise ValueError('Is record ko activate karne ki permission nahi hai.')
+                    if activation_plan.get('automatic') and _userinfo_is_currently_active(client):
+                        raise ValueError('Ye license pehle hi active hai.')
                 first_paid_pmfby_activation = (
                     str(client.for_whys or '').strip().upper() == 'PMFBY'
                     and client.activation_date is None
@@ -412,10 +431,15 @@ def toggle_activation(request, pk):
                     source_record_id=client.pk,
                     source_label=f'{client.for_whys or "Not assigned"} {client.f_year or ""} | Mobile {client.mobile} / Record #{client.pk}',
                 )
-            request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
+            if request.user.is_superuser:
+                request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, f'PACS ID {client.id} Activated successfully by {accepted_username}!')
-    except Exception as error:
-        logger.exception('UserInfo status update failed'); messages.error(request, 'Status update nahi ho saka. Kripya dobara prayas karein.')
+    except (ActivationLedgerError, ValueError) as error:
+        messages.error(request, str(error))
+        return redirect('licensing:userinfo_dashboard')
+    except Exception:
+        logger.exception('UserInfo status update failed')
+        messages.error(request, 'Status update nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:userinfo_dashboard')
 
     if current_search:
@@ -445,6 +469,8 @@ def pacserp_dashboard(request):
 
     try:
         erp_records = _erp_queryset_for_user(request.user)
+        if search_only_operator(request.user) and not search_query:
+            erp_records = erp_records.none()
         if search_query:
             if search_query.isdigit():
                 erp_records = erp_records.filter(operator_mobile=int(search_query))
@@ -631,6 +657,11 @@ def toggle_erp_activation(request, pk):
             with transaction.atomic():
                 locked_records = _erp_queryset_for_user(request.user).select_for_update()
                 record = locked_records.get(pk=pk)
+                if not request.user.is_superuser and (
+                    int(record.is_active or 0) == 1
+                    and record.expiry_date and record.expiry_date >= timezone.localdate()
+                ):
+                    raise ValueError('Ye ERP license pehle hi active hai.')
                 old_amount = int(record.amount or 0)
                 old_payment_status = int(record.payment_status or 0)
                 create_renewal_copy = (
@@ -696,10 +727,15 @@ def toggle_erp_activation(request, pk):
                     source_label=f'ERP ID {record.erp_id} / Record #{record.pk}',
                 )
 
-            request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
+            if request.user.is_superuser:
+                request._licensing_whatsapp_url = _activation_whatsapp_url(ledger_entry)
             messages.success(request, success_message)
-    except Exception as error:
-        logger.exception('ERP status update failed'); messages.error(request, 'ERP status update nahi ho saka. Kripya dobara prayas karein.')
+    except (ActivationLedgerError, ValueError) as error:
+        messages.error(request, str(error))
+        return redirect('licensing:pacserp_dashboard')
+    except Exception:
+        logger.exception('ERP status update failed')
+        messages.error(request, 'ERP status update nahi ho saka. Kripya dobara prayas karein.')
         return redirect('licensing:pacserp_dashboard')
 
     if current_search:

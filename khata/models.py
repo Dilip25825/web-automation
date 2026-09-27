@@ -2,6 +2,31 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
+from django.core.exceptions import ValidationError
+
+
+class ActivationOperatorSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='activation_operator_settings')
+    customer = models.ForeignKey('Customer', on_delete=models.PROTECT, related_name='activation_operators')
+    search_only = models.BooleanField(default=True)
+    automatic_ledger = models.BooleanField(default=False)
+    show_dashboard = models.BooleanField(default=True)
+    show_user_licenses = models.BooleanField(default=True)
+    show_erp_licenses = models.BooleanField(default=True)
+    show_reminders = models.BooleanField(default=True)
+    show_khata = models.BooleanField(default=True)
+    show_coupons = models.BooleanField(default=True)
+    show_downloads = models.BooleanField(default=True)
+
+    def clean(self):
+        super().clean()
+        if self.user_id and self.user.is_superuser:
+            raise ValidationError({'user': 'Select a regular user.'})
+        if self.customer_id and not self.customer.user.is_superuser:
+            raise ValidationError({'customer': 'Select a superuser-owned ledger.'})
+
+    def __str__(self):
+        return self.user.username
 
 class Customer(models.Model):
     # Har customer kisi ek user (dukaandaar) se juda hoga
