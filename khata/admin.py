@@ -4,10 +4,10 @@ from .models import Customer, Transaction, ShopProfile, ActivationOperatorSettin
 
 @admin.register(ActivationOperatorSettings)
 class ActivationOperatorSettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'customer', 'search_only', 'automatic_ledger', 'enabled_menus')
+    list_display = ('user', 'customer', 'search_only', 'automatic_ledger', 'fixed_activation_amount', 'enabled_menus')
     fieldsets = (
         ('Operator and Khata ledger', {'fields': ('user', 'customer')}),
-        ('License workflow', {'fields': ('search_only', 'automatic_ledger')}),
+        ('License workflow', {'fields': ('search_only', 'automatic_ledger', 'fixed_activation_amount')}),
         ('Visible menus', {'fields': (
             'show_dashboard', 'show_user_licenses', 'show_erp_licenses',
             'show_reminders', 'show_khata', 'show_coupons', 'show_downloads',

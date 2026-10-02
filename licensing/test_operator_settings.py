@@ -131,6 +131,27 @@ class SelectedOperatorTests(TestCase):
         record.save.assert_not_called()
         self.assertFalse(Transaction.objects.exists())
 
+    def test_fixed_amount_overrides_a_modified_post_value(self):
+        self.settings.fixed_activation_amount = 2500
+        self.settings.save()
+        record = SimpleNamespace(pk=12, id=12, is_active=0, amount=0, payment_status=0,
+                                 accepte_by='', for_whys='PMFBY', activation_date=None,
+                                 f_year='2026', mobile=1234567890, save=Mock())
+        with patch.object(views, 'UserInfoData') as model, \
+                patch.object(views, '_utr_used_elsewhere', return_value=False), \
+                patch.object(views, 'messages'), patch.object(views, 'logger'):
+            model.objects.select_for_update.return_value.get.return_value = record
+            request = self.factory.post('/', {'amount': '1'})
+            request.user = self.operator
+            views.toggle_activation(request, 12)
+        self.assertEqual(record.amount, 2500)
+        self.assertEqual(record.payment_status, 2500)
+        self.assertEqual(Transaction.objects.get().amount, 2500)
+
+    def test_blank_fixed_amount_keeps_operator_amount_editable(self):
+        self.assertIsNone(self.settings.fixed_activation_amount)
+        self.assertEqual(prepare_manual_activation(self.request(), 1800)['amount'], 1800)
+
     def test_settings_admin_is_superuser_only_and_owner_scoped(self):
         model_admin = ActivationOperatorSettingsAdmin(ActivationOperatorSettings, admin.site)
         request = self.request()

@@ -24,7 +24,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from reportlab.graphics import renderSVG
 from reportlab.graphics.barcode import qr
 from reportlab.graphics.shapes import Drawing
-from .activation_ledger import ActivationLedgerError, activation_ledger_context, create_activation_ledger_entry, prepare_manual_activation, reverse_activation_ledger_entry, search_only_operator
+from .activation_ledger import ActivationLedgerError, activation_ledger_context, create_activation_ledger_entry, fixed_activation_amount, prepare_manual_activation, reverse_activation_ledger_entry, search_only_operator
 from khata.models import Transaction
 from khata.views import build_transaction_whatsapp_url
 
@@ -399,6 +399,9 @@ def toggle_activation(request, pk):
             if not input_amount.isdigit():
                 input_amount = '0'
             activation_amount = int(input_amount)
+            locked_amount = fixed_activation_amount(request.user)
+            if locked_amount is not None:
+                activation_amount = locked_amount
             activation_plan = prepare_manual_activation(request, activation_amount)
             accepted_username = activation_plan['accepted_username']
 
@@ -619,6 +622,9 @@ def toggle_erp_activation(request, pk):
             if not input_amount.isdigit():
                 input_amount = '0'
             activation_amount = int(input_amount)
+            locked_amount = fixed_activation_amount(request.user)
+            if locked_amount is not None:
+                activation_amount = locked_amount
 
             duplicate_utr = _utr_used_elsewhere(input_utr_number, erp_pk=pk)
             if duplicate_utr:

@@ -10,6 +10,11 @@ class ActivationOperatorSettings(models.Model):
     customer = models.ForeignKey('Customer', on_delete=models.PROTECT, related_name='activation_operators')
     search_only = models.BooleanField(default=True)
     automatic_ledger = models.BooleanField(default=False)
+    fixed_activation_amount = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text='Set amount to lock this operator’s User License and ERP activation amount. Leave blank to allow entry.',
+    )
     show_dashboard = models.BooleanField(default=True)
     show_user_licenses = models.BooleanField(default=True)
     show_erp_licenses = models.BooleanField(default=True)

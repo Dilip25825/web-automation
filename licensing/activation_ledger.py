@@ -18,13 +18,22 @@ def search_only_operator(user):
     return bool(settings and settings.search_only)
 
 
+def fixed_activation_amount(user):
+    settings = operator_settings(user)
+    return int(settings.fixed_activation_amount) if settings and settings.fixed_activation_amount is not None else None
+
+
 class ActivationLedgerError(ValueError):
     pass
 
 
 def activation_ledger_context(user):
     if not user.is_superuser:
-        return {'activation_user_options': [], 'activation_khata_customers': []}
+        return {
+            'activation_user_options': [],
+            'activation_khata_customers': [],
+            'operator_fixed_activation_amount': fixed_activation_amount(user),
+        }
 
     mappings = dict(
         ActivationLedgerMapping.objects.filter(owner=user).values_list('accepted_user_id', 'customer_id')
@@ -39,12 +48,19 @@ def activation_ledger_context(user):
         for item in User.objects.filter(is_active=True).order_by('username')
     ]
     customers = Customer.objects.filter(user=user).order_by('name', 'id')
-    return {'activation_user_options': user_options, 'activation_khata_customers': customers}
+    return {
+        'activation_user_options': user_options,
+        'activation_khata_customers': customers,
+        'operator_fixed_activation_amount': None,
+    }
 
 
 def prepare_manual_activation(request, amount):
     if not request.user.is_superuser:
         settings = operator_settings(request.user)
+        locked_amount = fixed_activation_amount(request.user)
+        if locked_amount is not None:
+            amount = locked_amount
         if settings and settings.automatic_ledger:
             if not settings.customer.user.is_superuser or not settings.customer.user.is_active:
                 raise ActivationLedgerError('Khata setting valid nahi hai. Admin se sampark karein.')
@@ -58,11 +74,13 @@ def prepare_manual_activation(request, amount):
                 'customer': settings.customer,
                 'amount': Decimal(str(amount)),
                 'activation_token': uuid4(),
+                'fixed_amount': locked_amount,
             }
         return {
             'accepted_user': request.user,
             'accepted_username': request.user.username,
             'ledger_enabled': False,
+            'fixed_amount': locked_amount,
         }
 
     accepted_user_id = str(request.POST.get('accepted_by_user', '')).strip()
