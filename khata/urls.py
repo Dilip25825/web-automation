@@ -5,6 +5,7 @@ app_name = 'khata'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('bad-debt/', views.bad_debt_dashboard, name='bad_debt_dashboard'),
     path('add-customer/', views.add_customer, name='add_customer'),
     path('transfer-voucher/', views.transfer_voucher, name='transfer_voucher'),
     

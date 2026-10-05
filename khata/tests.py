@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
+import base64
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -72,6 +73,72 @@ class TransferVoucherTests(TestCase):
             'from_customer': self.from_customer.id,
             'to_customer': self.from_customer.id,
             'amount': '2000', 'date': '2026-07-18',
+        })
+        self.assertEqual(Transaction.objects.count(), 0)
+
+    def test_bad_debt_ledger_is_hidden_from_main_list_and_shown_separately(self):
+        bad_debt = Customer.objects.create(
+            user=self.user, name='Old recovery', phone='9876543212', is_bad_debt=True,
+        )
+        main_response = self.client.get(reverse('khata:dashboard'))
+        bad_debt_response = self.client.get(reverse('khata:bad_debt_dashboard'))
+        self.assertContains(main_response, self.from_customer.name)
+        self.assertNotContains(main_response, bad_debt.name)
+        self.assertContains(bad_debt_response, bad_debt.name)
+        self.assertNotContains(bad_debt_response, self.from_customer.name)
+
+    def test_main_dashboard_shows_bad_debt_summary_card(self):
+        Transaction.objects.create(
+            customer=self.from_customer, amount=Decimal('800'), trans_type='GIVEN', date=date(2026, 7, 18),
+        )
+        bad_debt = Customer.objects.create(
+            user=self.user, name='Old recovery', phone='9876543212', is_bad_debt=True,
+        )
+        Transaction.objects.create(
+            customer=bad_debt, amount=Decimal('1250'), trans_type='GIVEN', date=date(2026, 7, 18),
+        )
+        response = self.client.get(reverse('khata:dashboard'))
+        self.assertContains(response, 'Bad Debts')
+        self.assertContains(response, reverse('khata:bad_debt_dashboard'))
+        self.assertContains(response, 'Outstanding recovery')
+        self.assertEqual(response.context['bad_debt_amount'], Decimal('1250'))
+        self.assertContains(response, 'Total Receivable')
+        self.assertEqual(response.context['total_recovery_amount'], Decimal('2050'))
+        self.assertEqual(response.context['total_recovery_ledger_count'], 2)
+
+    def test_bad_debt_customer_is_created_in_separate_section(self):
+        response = self.client.post(reverse('khata:add_customer'), {
+            'name': 'Written off account', 'phone': '9876543213', 'is_bad_debt': '1',
+        })
+        self.assertRedirects(response, reverse('khata:bad_debt_dashboard'))
+        self.assertTrue(Customer.objects.filter(
+            user=self.user, phone='9876543213', is_bad_debt=True
+        ).exists())
+
+    def test_existing_customer_can_move_to_bad_debt_and_be_restored(self):
+        encoded_id = base64.b64encode(str(self.from_customer.id).encode()).decode()
+        update_url = reverse('khata:update_customer', args=[encoded_id])
+        response = self.client.post(update_url, {
+            'name': self.from_customer.name, 'phone': self.from_customer.phone, 'is_bad_debt': '1',
+        })
+        self.assertRedirects(response, reverse('khata:bad_debt_dashboard'))
+        self.from_customer.refresh_from_db()
+        self.assertTrue(self.from_customer.is_bad_debt)
+        response = self.client.post(update_url, {
+            'name': self.from_customer.name, 'phone': self.from_customer.phone,
+        })
+        self.assertRedirects(response, reverse('khata:dashboard'))
+        self.from_customer.refresh_from_db()
+        self.assertFalse(self.from_customer.is_bad_debt)
+
+    def test_transfer_cannot_mix_main_and_bad_debt_ledgers(self):
+        bad_debt = Customer.objects.create(
+            user=self.user, name='Old recovery', phone='9876543212', is_bad_debt=True,
+        )
+        self.client.post(reverse('khata:transfer_voucher'), {
+            'from_customer': self.from_customer.id,
+            'to_customer': bad_debt.id,
+            'amount': '2000', 'date': '2026-07-18', 'is_bad_debt': '0',
         })
         self.assertEqual(Transaction.objects.count(), 0)
 

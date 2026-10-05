@@ -107,31 +107,29 @@ def build_reminder_whatsapp_url(customer, net_balance):
         "धन्यवाद!"
     )
     return f"https://wa.me/{phone_number}?text={urllib.parse.quote(message)}"
-@login_required
-def dashboard(request):
+def _dashboard_for_ledger_type(request, *, is_bad_debt=False):
     try:
-        customers_qs = Customer.objects.filter(user=request.user)
-        
+        def ledger_balances(bad_debt):
+            return Customer.objects.filter(user=request.user, is_bad_debt=bad_debt).annotate(
+                total_given=Coalesce(
+                    Sum('transaction__amount', filter=Q(transaction__trans_type='GIVEN')),
+                    Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
+                ),
+                total_got=Coalesce(
+                    Sum('transaction__amount', filter=Q(transaction__trans_type='GOT')),
+                    Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
+                )
+            ).annotate(net_balance=F('total_given') - F('total_got'))
+
+        summary_ledgers = ledger_balances(is_bad_debt)
+        customers_qs = summary_ledgers
+
         # ---------- SEARCH ----------
         search_query = request.GET.get('search', '').strip()
         if search_query:
             customers_qs = customers_qs.filter(
                 Q(name__icontains=search_query) | Q(phone__icontains=search_query)
             )
-        
-        # ---------- ANNOTATE: Total Given & Got (Single query) ----------
-        customers_qs = customers_qs.annotate(
-            total_given=Coalesce(
-                Sum('transaction__amount', filter=Q(transaction__trans_type='GIVEN')),
-                Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
-            ),
-            total_got=Coalesce(
-                Sum('transaction__amount', filter=Q(transaction__trans_type='GOT')),
-                Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
-            )
-        ).annotate(
-            net_balance=F('total_given') - F('total_got')
-        )
         
         # ---------- FILTER (lene / dene) ----------
         filter_type = request.GET.get('filter', 'all')
@@ -143,15 +141,23 @@ def dashboard(request):
         # ---------- ORDER ----------
         customers_qs = customers_qs.order_by('name')
         
-        # ---------- TOTAL LENE / DENE (using separate filter sums, no Case/When) ----------
-        total_lene_hain = customers_qs.filter(net_balance__gt=0).aggregate(
+        # Summary cards always use all ledgers, not the current search/filter result.
+        receivable_ledgers = summary_ledgers.filter(net_balance__gt=0)
+        payable_ledgers = summary_ledgers.filter(net_balance__lt=0)
+        total_lene_hain = receivable_ledgers.aggregate(
             total=Sum('net_balance')
         )['total'] or 0
-        
-        total_dene_hain = customers_qs.filter(net_balance__lt=0).aggregate(
+
+        total_dene_hain = payable_ledgers.aggregate(
             total=Sum('net_balance')
         )['total'] or 0
         total_dene_hain = abs(total_dene_hain)   # Convert negative to positive
+
+        bad_debt_ledgers = ledger_balances(True)
+        bad_debt_receivable_ledgers = bad_debt_ledgers.filter(net_balance__gt=0)
+        bad_debt_amount = bad_debt_receivable_ledgers.aggregate(
+            total=Sum('net_balance')
+        )['total'] or 0
         
         # ---------- PAGINATION (10 per page) ----------
         paginator = Paginator(customers_qs, 10)
@@ -170,17 +176,35 @@ def dashboard(request):
         context = {
             'profile': profile,
             'customers': page_obj,
-            'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
+            'transfer_customers': Customer.objects.filter(user=request.user, is_bad_debt=is_bad_debt).order_by('name'),
+            'ledger_count': summary_ledgers.count(),
+            'receivable_ledger_count': receivable_ledgers.count(),
+            'payable_ledger_count': payable_ledgers.count(),
+            'bad_debt_count': bad_debt_ledgers.count(),
+            'bad_debt_amount': bad_debt_amount,
+            'total_recovery_amount': total_lene_hain + bad_debt_amount,
+            'total_recovery_ledger_count': receivable_ledgers.count() + bad_debt_receivable_ledgers.count(),
             'total_lene_hain': total_lene_hain,
             'total_dene_hain': total_dene_hain,
             'current_filter': filter_type,
             'search_query': search_query,
+            'is_bad_debt': is_bad_debt,
         }
         return render(request, 'khata/dashboard.html', context)
         
     except Exception as e:
         messages.error(request, f"Dashboard load karne me error: {str(e)}")
         return render(request, 'khata/error.html')
+
+
+@login_required
+def dashboard(request):
+    return _dashboard_for_ledger_type(request)
+
+
+@login_required
+def bad_debt_dashboard(request):
+    return _dashboard_for_ledger_type(request, is_bad_debt=True)
 
 @login_required
 @ajax_action
@@ -194,13 +218,16 @@ def transfer_voucher(request):
         transfer_date = parse_date(request.POST.get('date', ''))
         note = request.POST.get('remarks', '').strip()
         attachment = request.FILES.get('attachment')
+        is_bad_debt = request.POST.get('is_bad_debt') == '1'
         if not from_id or not to_id or from_id == to_id:
             raise ValueError('Do alag heads select karein.')
         amount = Decimal(request.POST.get('amount', ''))
         if amount <= 0 or not transfer_date:
             raise ValueError('Positive amount aur valid date zaroori hai.')
         validate_attachment(attachment)
-        heads = Customer.objects.filter(user=request.user, id__in=[from_id, to_id]).in_bulk()
+        heads = Customer.objects.filter(
+            user=request.user, is_bad_debt=is_bad_debt, id__in=[from_id, to_id]
+        ).in_bulk()
         from_customer = heads[int(from_id)]
         to_customer = heads[int(to_id)]
         remarks = f'Transfer Voucher: {from_customer.name} se liye, {to_customer.name} ko diye'
@@ -279,10 +306,11 @@ def add_customer(request):
                 return redirect('khata:dashboard')
             
             # Agar duplicate nahi hai, toh naya customer save karein
-            new_customer = Customer(user=request.user, name=name, phone=phone)
+            is_bad_debt = request.POST.get('is_bad_debt') == '1'
+            new_customer = Customer(user=request.user, name=name, phone=phone, is_bad_debt=is_bad_debt)
             new_customer.save()
-            messages.success(request, "Naya grahak safaltapoorvak add ho gaya!")
-            return redirect('khata:dashboard')
+            messages.success(request, "Bad Debt ledger safaltapoorvak add ho gaya!" if is_bad_debt else "Naya grahak safaltapoorvak add ho gaya!")
+            return redirect('khata:bad_debt_dashboard' if is_bad_debt else 'khata:dashboard')
             
         except Exception as e:
             # Error aane par handle karein
@@ -302,6 +330,11 @@ def update_customer(request, b64_id):
         customer = get_object_or_404(Customer, id=actual_id, user=request.user)
         name = request.POST.get('name', '').strip()
         phone = request.POST.get('phone', '').strip()
+        is_bad_debt = request.POST.get('is_bad_debt') == '1'
+
+        if not name or not phone or not phone.isdigit() or len(phone) < 7:
+            messages.warning(request, 'Customer name aur valid phone number zaroori hai.')
+            return redirect('khata:bad_debt_dashboard' if customer.is_bad_debt else 'khata:dashboard')
 
         if Customer.objects.filter(user=request.user, phone=phone).exclude(id=customer.id).exists():
             messages.warning(request, "Yeh phone number pehle se hi kisi aur grahak ke naam par darj hai!")
@@ -309,9 +342,13 @@ def update_customer(request, b64_id):
 
         customer.name = name
         customer.phone = phone
+        customer.is_bad_debt = is_bad_debt
         customer.save()
-        messages.success(request, "Grahak ki jankari safaltapoorvak update ho gayi!")
-        return redirect('khata:dashboard')
+        messages.success(
+            request,
+            'Ledger Bad Debt section me move ho gaya.' if is_bad_debt else 'Ledger main Khata section me restore ho gaya.',
+        )
+        return redirect('khata:bad_debt_dashboard' if is_bad_debt else 'khata:dashboard')
     except Exception as e:
         messages.error(request, f"Grahak edit karne me error aayi: {str(e)}")
         return redirect('khata:dashboard')
@@ -481,7 +518,10 @@ def customer_detail(request, customer_id):
 
         context = {
             'customer': customer,
-            'transfer_customers': Customer.objects.filter(user=request.user).order_by('name'),
+            'transfer_customers': Customer.objects.filter(
+                user=request.user, is_bad_debt=customer.is_bad_debt
+            ).order_by('name'),
+            'is_bad_debt': customer.is_bad_debt,
             'transactions': transaction_page,
             'net_balance': net_balance,
             'encoded_id': base64.b64encode(str(customer.id).encode('utf-8')).decode('utf-8'),
@@ -751,7 +791,9 @@ def report_page(request):
     end_date = request.GET.get('end_date', '').strip()
     search = request.GET.get('search', '').strip()
     trans_type = request.GET.get('trans_type', '').strip().upper()
-    transactions = Transaction.objects.filter(customer__user=request.user).select_related('customer', 'transfer_voucher').order_by('-date', '-id')
+    transactions = Transaction.objects.filter(
+        customer__user=request.user, customer__is_bad_debt=False
+    ).select_related('customer', 'transfer_voucher').order_by('-date', '-id')
     if start_date: transactions = transactions.filter(date__gte=start_date)
     if end_date: transactions = transactions.filter(date__lte=end_date)
     if search: transactions = transactions.filter(Q(customer__name__icontains=search) | Q(customer__phone__icontains=search) | Q(remarks__icontains=search))

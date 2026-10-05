@@ -57,7 +57,8 @@ admin.site.register(ShopProfile)
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'phone', 'user') # Admin list me ye columns dikhenge
+    list_display = ('name', 'phone', 'user', 'is_bad_debt') # Admin list me ye columns dikhenge
+    list_filter = ('is_bad_debt',)
     search_fields = ('name', 'phone')        # Admin me search ka option aa jayega
 
 @admin.register(Transaction)
