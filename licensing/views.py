@@ -19,13 +19,14 @@ from .forms import PacsErpForm, PurposeSettingsForm, UpiQrForm, UpiSettingsForm,
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.views.decorators.http import require_http_methods, require_POST
 from reportlab.graphics import renderSVG
 from reportlab.graphics.barcode import qr
 from reportlab.graphics.shapes import Drawing
 from .activation_ledger import ActivationLedgerError, activation_ledger_context, create_activation_ledger_entry, fixed_activation_amount, prepare_manual_activation, reverse_activation_ledger_entry, search_only_operator
 from khata.models import Transaction
+from khata.access import request_operator_settings
 from khata.views import build_transaction_whatsapp_url
 
 
@@ -218,21 +219,42 @@ def _common_activation_summaries(queryset, user):
     if not user.is_superuser:
         queryset = queryset.filter(accepte_by__iexact=user.username)
 
-    def summarize(start, end):
-        result = queryset.filter(activation_date__gte=start, activation_date__lt=end).aggregate(
-            activation_count=Count('id'), payment_total=Sum('payment_status')
-        )
-        return {'activation_count': result.get('activation_count') or 0, 'payment_total': result.get('payment_total') or 0}
-
-    return {'daily': summarize(today_start, tomorrow_start), 'monthly': summarize(month_start, next_month_start)}
+    # Preserve the existing daily/monthly values while issuing one aggregate query
+    # instead of two independent aggregate queries.
+    result = queryset.aggregate(
+        daily_activation_count=Count(
+            'id', filter=Q(activation_date__gte=today_start, activation_date__lt=tomorrow_start)
+        ),
+        daily_payment_total=Sum(
+            'payment_status', filter=Q(activation_date__gte=today_start, activation_date__lt=tomorrow_start)
+        ),
+        monthly_activation_count=Count(
+            'id', filter=Q(activation_date__gte=month_start, activation_date__lt=next_month_start)
+        ),
+        monthly_payment_total=Sum(
+            'payment_status', filter=Q(activation_date__gte=month_start, activation_date__lt=next_month_start)
+        ),
+    )
+    return {
+        'daily': {
+            'activation_count': result.get('daily_activation_count') or 0,
+            'payment_total': result.get('daily_payment_total') or 0,
+        },
+        'monthly': {
+            'activation_count': result.get('monthly_activation_count') or 0,
+            'payment_total': result.get('monthly_payment_total') or 0,
+        },
+    }
 
 @login_required(login_url='accounts:login')
 def userinfo_dashboard(request):
     search_query = request.GET.get('search_id', '').strip()
     record_id_query = request.GET.get('record_id', '').strip()
     partial_results = request.GET.get('partial') == '1'
+    activation_settings = None
 
     try:
+        activation_settings = request_operator_settings(request)
         if request.user.is_superuser:
             clients = UserInfoData.objects.all()
         else:
@@ -242,7 +264,7 @@ def userinfo_dashboard(request):
                 | models.Q(accepte_by__exact='')
             )
 
-        if search_only_operator(request.user) and not search_query:
+        if search_only_operator(request.user, activation_settings) and not search_query:
             clients = clients.none()
 
         if search_query:
@@ -329,7 +351,7 @@ def userinfo_dashboard(request):
         range_end_value = fallback_date.isoformat()
         report_user = ''
 
-    activation_context = activation_ledger_context(request.user)
+    activation_context = activation_ledger_context(request.user, activation_settings)
     context = {
         'clients': clients,
         'search_query': search_query,
@@ -469,10 +491,12 @@ def _erp_queryset_for_user(user):
 def pacserp_dashboard(request):
     search_query = request.GET.get('search_id', '').strip()
     partial_results = request.GET.get('partial') == '1'
+    activation_settings = None
 
     try:
+        activation_settings = request_operator_settings(request)
         erp_records = _erp_queryset_for_user(request.user)
-        if search_only_operator(request.user) and not search_query:
+        if search_only_operator(request.user, activation_settings) and not search_query:
             erp_records = erp_records.none()
         if search_query:
             if search_query.isdigit():
@@ -555,7 +579,7 @@ def pacserp_dashboard(request):
         range_end_value = fallback_date.isoformat()
         report_user = ''
 
-    activation_context = activation_ledger_context(request.user)
+    activation_context = activation_ledger_context(request.user, activation_settings)
     return render(request, 'licensing/pacserp_dashboard.html', {
         'erp_records': erp_records,
         'search_query': search_query,

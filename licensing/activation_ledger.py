@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from khata.models import ActivationLedgerEntry, ActivationLedgerMapping, ActivationOperatorSettings, Customer, Transaction
 
+_UNSET = object()
 
 def operator_settings(user):
     if user.is_superuser:
@@ -13,13 +14,17 @@ def operator_settings(user):
     return ActivationOperatorSettings.objects.select_related('customer__user').filter(user=user).first()
 
 
-def search_only_operator(user):
-    settings = operator_settings(user)
+def search_only_operator(user, settings=_UNSET):
+    """Use a caller-provided setting when the same request already loaded it."""
+    if settings is _UNSET:
+        settings = operator_settings(user)
     return bool(settings and settings.search_only)
 
 
-def fixed_activation_amount(user):
-    settings = operator_settings(user)
+def fixed_activation_amount(user, settings=_UNSET):
+    """Use a caller-provided setting when the same request already loaded it."""
+    if settings is _UNSET:
+        settings = operator_settings(user)
     return int(settings.fixed_activation_amount) if settings and settings.fixed_activation_amount is not None else None
 
 
@@ -27,12 +32,12 @@ class ActivationLedgerError(ValueError):
     pass
 
 
-def activation_ledger_context(user):
+def activation_ledger_context(user, settings=_UNSET):
     if not user.is_superuser:
         return {
             'activation_user_options': [],
             'activation_khata_customers': [],
-            'operator_fixed_activation_amount': fixed_activation_amount(user),
+            'operator_fixed_activation_amount': fixed_activation_amount(user, settings),
         }
 
     mappings = dict(
@@ -58,7 +63,7 @@ def activation_ledger_context(user):
 def prepare_manual_activation(request, amount):
     if not request.user.is_superuser:
         settings = operator_settings(request.user)
-        locked_amount = fixed_activation_amount(request.user)
+        locked_amount = fixed_activation_amount(request.user, settings)
         if locked_amount is not None:
             amount = locked_amount
         if settings and settings.automatic_ledger:

@@ -103,6 +103,23 @@ git status --short
 - Preserve duplicate UTR protections and any explicit superuser warning/override flow.
 - Payment, activation, Khata ledger and reversal operations must remain auditable and atomic.
 
+## Operator controls and Khata workflow
+
+- `ActivationOperatorSettings` is the superuser-managed source of truth for restricted activation operators. Keep its checks server-side; menu visibility alone is never sufficient authorization.
+- A restricted operator may be configured for search-only access to User Licenses and ERP Licenses, selected dashboard/menu visibility, and a fixed activation amount. Preserve these per-operator settings when changing activation or dashboard flows.
+- Fixed activation amounts must be enforced on the server during activation. Do not trust a browser-supplied amount merely because the amount field is disabled or hidden.
+- Superusers retain all menus, configuration access and Khata actions regardless of restricted-operator settings.
+- Activation entries for a configured operator can be posted only to that operator's explicitly mapped Khata ledger. Preserve the selected-ledger mapping, audit trail, atomic transaction and reversal protection.
+- Khata bad-debt ledgers are intentionally separate from the main customer list. Keep normal and bad-debt totals/counts distinct, allow authorized transfers between them, and do not delete financial history to move a ledger.
+- Dashboard cards must show the intended ledger count and outstanding amount. If a card is hidden by an operator setting, its data must also not be exposed through the page context or an AJAX endpoint.
+
+## Performance safeguards
+
+- Prefer database aggregation (`annotate`/`aggregate`) and queryset reuse over per-row queries or repeated identical querysets.
+- Request-scoped configuration may be reused within one request, but do not introduce cross-request in-memory caching for permissions, activation settings or financial balances without deliberate invalidation.
+- Preserve financial correctness before optimizing: do not approximate running balances, activation ledger entries, reversals, receipts, transfers or authorization decisions.
+- For a performance change, add a focused regression test when practical and distinguish structural query reductions from measured production latency.
+
 ## Google Drive integrations
 
 - Khata attachments and Download catalogue use different configured folder IDs.

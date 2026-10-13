@@ -53,6 +53,19 @@ class FasalRinApiTests(SimpleTestCase):
         token = data['registration_url'].split('token=', 1)[1]
         payload = signing.loads(token, salt=license_views.FASAL_RIN_TOKEN_SALT)
         self.assertEqual(payload['work_type'], 1)
+        self.assertEqual(payload['financial_year'], '2025-2026')
+
+    def test_registration_form_locks_signed_financial_year(self):
+        form = license_views.PublicFasalRinRegistrationForm(
+            financial_years=['2025-2026'],
+            work_type_name='Loan Approval',
+            locked_financial_year='2025-2026',
+        )
+        self.assertTrue(form.fields['financial_year'].disabled)
+        self.assertEqual(
+            form.fields['financial_year'].initial,
+            '2025-2026',
+        )
 
     @patch('licensing.license_views._select_fasal_record')
     def test_active_record_login_returns_signed_work_type_session(self, select_record):

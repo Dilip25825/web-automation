@@ -286,12 +286,23 @@ class PublicFasalRinRegistrationForm(forms.Form):
     work_type_name = forms.CharField(label='Upload Type', disabled=True)
     financial_year = forms.ChoiceField(label='Financial Year', choices=[])
 
-    def __init__(self, *args, financial_years=None, work_type_name='', **kwargs):
+    def __init__(
+        self,
+        *args,
+        financial_years=None,
+        work_type_name='',
+        locked_financial_year='',
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.fields['work_type_name'].initial = work_type_name
         self.fields['financial_year'].choices = [('', '-- Select Financial Year --')] + [
             (year, year) for year in (financial_years or [])
         ]
+        locked_financial_year = str(locked_financial_year or '').strip()
+        if locked_financial_year:
+            self.fields['financial_year'].initial = locked_financial_year
+            self.fields['financial_year'].disabled = True
 
     @staticmethod
     def _clean_mobile(value):

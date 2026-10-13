@@ -7,11 +7,12 @@ from django.core.exceptions import ValidationError
 from django.test import RequestFactory, TestCase
 
 from khata.admin import ActivationOperatorSettingsAdmin
-from khata.access import menu_permissions
+from khata.access import menu_permissions, request_operator_settings
 from khata.models import ActivationLedgerMapping, ActivationOperatorSettings, Customer, Transaction
 from licensing.activation_ledger import (
     ActivationLedgerError, create_activation_ledger_entry,
-    prepare_manual_activation, search_only_operator,
+    activation_ledger_context, fixed_activation_amount, prepare_manual_activation,
+    search_only_operator,
 )
 from licensing import views
 
@@ -55,6 +56,38 @@ class SelectedOperatorTests(TestCase):
         self.assertTrue(search_only_operator(self.operator))
         self.assertFalse(search_only_operator(self.other))
         self.assertFalse(search_only_operator(self.owner))
+
+    def test_preloaded_operator_settings_are_reused(self):
+        with patch('licensing.activation_ledger.operator_settings') as lookup:
+            self.assertTrue(search_only_operator(self.operator, self.settings))
+            self.assertIsNone(fixed_activation_amount(self.operator, self.settings))
+            context = activation_ledger_context(self.operator, self.settings)
+        lookup.assert_not_called()
+        self.assertIsNone(context['operator_fixed_activation_amount'])
+
+    def test_operator_settings_are_loaded_once_per_request(self):
+        request = self.factory.get('/')
+        request.user = self.operator
+        with self.assertNumQueries(1):
+            self.assertEqual(request_operator_settings(request), self.settings)
+            self.assertEqual(request_operator_settings(request), self.settings)
+
+    def test_common_activation_summaries_use_one_conditional_aggregate(self):
+        queryset = Mock()
+        queryset.exclude.return_value = queryset
+        queryset.filter.return_value = queryset
+        queryset.aggregate.return_value = {
+            'daily_activation_count': 2,
+            'daily_payment_total': 4000,
+            'monthly_activation_count': 5,
+            'monthly_payment_total': 10000,
+        }
+
+        summary = views._common_activation_summaries(queryset, self.operator)
+
+        queryset.aggregate.assert_called_once()
+        self.assertEqual(summary['daily'], {'activation_count': 2, 'payment_total': 4000})
+        self.assertEqual(summary['monthly'], {'activation_count': 5, 'payment_total': 10000})
 
     def test_invalid_amount_and_demoted_owner_fail_closed(self):
         with self.assertRaises(ActivationLedgerError):

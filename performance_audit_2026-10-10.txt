@@ -1,0 +1,234 @@
+Django Project Performance Audit (Read-only)
+Date: 10 October 2026
+Project: Web Automation MAAR
+
+Scope
+-----
+This report was prepared through static, read-only inspection. No code, migration,
+database record, environment variable, Render setting, Clever Cloud setting, or
+production service was changed. Production database was not connected.
+
+Database engine
+---------------
+The project is configured for MySQL, not PostgreSQL. See software_admin/settings.py
+lines 112-122.
+
+Executive summary
+-----------------
+The strongest code-level cause of slow warm data pages is repeated dashboard
+aggregation work in User Licenses, ERP Licenses, and Khata. Login redirects to the
+core dashboard, which is template-only; it does not itself fetch dashboard data.
+The UserInfo and ERP pages perform paginated queries plus several activation-report
+aggregates on every page load. Khata also calculates balances through repeated SUM
+aggregations.
+
+Render Free is a separate latency source. Render documents that a Free web service
+spins down after 15 idle minutes and a following request can take about one minute
+to start. This explains occasional very slow first loads, but does not by itself
+explain warm 1-5 second database pages.
+
+The application uses a remote MySQL database with CONN_MAX_AGE=30 and no explicit
+connection pool configuration. Application-to-database region and network latency
+were not available for inspection.
+
+Confirmed and likely findings
+------------------------------
+
+1. LICENSING DASHBOARD AGGREGATIONS - LIKELY HIGH IMPACT
+   File: licensing/views.py, userinfo_dashboard(), lines 230-360
+   Evidence:
+   - Paginated record query: lines 237-276.
+   - Monthly grouped aggregation: lines 278-291.
+   - Daily and current-month aggregates: lines 292-296.
+   - Activation ledger context fetched before render: lines 332-358.
+   Effect: each User Licenses load can issue several independent database queries.
+   Recommendation: capture query count and SQL timings first, then consolidate or
+   safely cache summary-card aggregates with invalidation after activation changes.
+   Risk: activation totals and user-wise permission filtering must remain exact.
+
+2. ERP DASHBOARD HAS THE SAME PATTERN - LIKELY HIGH IMPACT
+   File: licensing/views.py, pacserp_dashboard(), lines 469-559.
+   Evidence:
+   - Record pagination: lines 474-502.
+   - Monthly grouped report: lines 504-517.
+   - Daily/current-month summaries: lines 518-522.
+   Recommendation: profile and optimize alongside UserInfo. Browser-dashboard work
+   can preserve existing Excel/VBA API endpoints and contracts.
+
+3. LEGACY TABLE INDEX COVERAGE IS UNKNOWN - NEEDS MEASUREMENT
+   Files: licensing/models.py lines 42 onward and 107 onward.
+   Evidence: UserInfoData and tblPacsErp are unmanaged legacy MySQL tables. Current
+   migration 0010_userinfo_search_indexes.py creates indexes only for Mobile,
+   OperatorMobile, and UtrNumber.
+   Recommendation: inspect SHOW INDEX and EXPLAIN plans before any migration.
+   Candidate indexes to verify, not blindly add:
+   - userinfo: (isActive, ActivationDate, AccepteBy)
+   - tblPacsErp: (isActive, ActivationDate, AccepteBy)
+   - perhaps (Expiry_Date, AccepteBy), depending on actual plan.
+   Risk: unnecessary indexes consume scarce 512 MB database RAM/storage and slow
+   writes.
+
+4. FREE-TEXT SEARCH MAY SCAN LEGACY TABLES - LIKELY HIGH IMPACT
+   Files: licensing/views.py lines 240, 250-256 and 481-486.
+   Evidence: icontains searches on PACS name, ERP ID, remark and text fields can
+   become leading-wildcard LIKE queries. Ordinary B-tree indexes often cannot serve
+   these efficiently.
+   Recommendation: retain permission behavior; assess real search terms and query
+   plans before choosing exact-match, prefix search, or a full-text design.
+
+5. KHATA DASHBOARD REPEATS BALANCE AGGREGATIONS - CONFIRMED CODE PATTERN
+   File: khata/views.py, _dashboard_for_ledger_type(), lines 110-193.
+   Evidence:
+   - Customer transaction SUM annotations: lines 112-122.
+   - Receivable/payable sums: lines 145-154.
+   - Bad Debt balance sums: lines 156-160.
+   - Several count() evaluations: lines 180-186.
+   Recommendation: consolidate card calculations into a deliberate, measured query
+   strategy. Preserve all existing financial-balance calculations and tests.
+
+6. KHATA CUSTOMER DETAIL LOADS ALL HISTORY BEFORE PAGINATION - CONFIRMED
+   File: khata/views.py, customer_detail(), lines 395-536.
+   Evidence: list(transactions) at line 415 fetches every filtered transaction,
+   runs a Python running-balance loop at lines 416-429, and paginates only at line
+   517.
+   Recommendation: change only after a careful design for cross-page running
+   balances, such as a database window function or a bounded cumulative query.
+   Risk: high financial/report correctness risk if a running balance is wrong.
+
+7. REMINDER TASK LIST HAS NO PAGINATION - LIKELY MEDIUM IMPACT
+   File: reminders/views.py, dashboard(), lines 44-131.
+   Evidence: selected_tasks is sent directly to template at line 118; count() at
+   line 122 adds a separate count query.
+   Recommendation: add server-side pagination only when task data has grown enough
+   to justify it. Current impact is likely low for a small task list.
+
+8. OPERATOR SETTINGS QUERY ON AUTHENTICATED REQUESTS - CONFIRMED
+   File: khata/access.py lines 12-25 and 54-65.
+   Evidence: menu_permissions calls ActivationOperatorSettings.objects.filter(user)
+   on every protected authenticated request. Licensing helpers may query the same
+   settings again.
+   Recommendation: request-scoped reuse/select_related. Do not weaken direct URL
+   permission validation.
+
+9. REMOTE DATABASE CONNECTION/CACHE LIMITS - LIKELY MEDIUM IMPACT
+   File: software_admin/settings.py lines 112-122 and 215 onward.
+   Evidence: MySQL CONN_MAX_AGE is 30 seconds, health checks are enabled, and Redis
+   falls back to LocMemCache if REDIS_URL is unavailable.
+   Effect: cross-provider connections may be recreated regularly; local memory cache
+   is process-local and resets on restart/cold start.
+   Recommendation: collect connection and request metrics before tuning connection
+   lifetime. Use shared Redis only after operational confirmation.
+
+10. DOWNLOAD CATALOG DOES NOT PAGINATE - LIKELY MEDIUM/LONG-TERM IMPACT
+    File: onedownload/views.py lines 63-147.
+    Evidence: every saved Drive file is transformed and rendered into the page.
+    Recommendation: server-side search/pagination if catalogue size becomes large.
+    Note: cached snapshot design avoids a Google Drive request on ordinary page load,
+    which is positive.
+
+Existing useful indexes
+-----------------------
+- khata Transaction(customer, -date) and Transaction(date): khata/models.py 82-84.
+- reminders Task(assigned_to, status): reminders/models.py 47-54.
+- userinfo Mobile, OperatorMobile, UtrNumber: licensing migration 0010.
+- ERP API token mobile index: licensing/models.py 209-226.
+
+Login and dashboard flow
+------------------------
+1. /accounts/login/ uses Django LoginView (accounts/urls.py line 7).
+2. Django authenticates against the standard auth user table.
+3. Session is stored as a signed cookie (settings.py lines 181 onward), so normal
+   requests do not need a Django session-table lookup.
+4. Login redirects to core:dashboard (settings.py lines 175-177).
+5. core dashboard is template-only (core/views.py lines 108-110).
+6. Operator access middleware can make one settings query.
+7. Heavy licensing/Khata data loading starts only when those modules are opened.
+
+Frontend findings
+-----------------
+- UserInfo, ERP, coupons, reminders and Khata use useful AJAX/partial-refresh
+  patterns; static inspection found no automatic polling loop or duplicate network
+  request on initial page load.
+- UserInfo and ERP parse returned HTML with DOMParser and replace result/report
+  sections. This has a browser cost, but database work is the primary suspect.
+- Browser performance can also be affected by external CDN assets in the shared base
+  template. Browser waterfall measurements are needed before changing assets.
+
+Infrastructure assessment
+-------------------------
+Current Render Free + Clever Cloud MySQL:
+- Suitable for low activity/warm traffic after query optimization.
+- Free cold starts are poor for interactive users.
+- Cross-provider and potentially cross-region MySQL latency cannot be measured from
+  this source tree.
+
+Render Paid + Clever Cloud:
+- Most direct way to remove the Free-plan idle spin-down issue.
+- Does not automatically fix slow warm database pages.
+
+Render Paid + same-region database:
+- Likely the best infrastructure latency improvement if app and database regions
+  differ. Confirm actual Render region, Clever Cloud region, and RTT first.
+
+No infrastructure migration is justified solely by static code evidence. A Render
+paid upgrade is justified if users are affected by cold starts.
+
+Render reference
+----------------
+Official Render documentation states that Free web services spin down after 15
+minutes idle and next requests can take about one minute to start:
+https://render.com/docs/free
+
+Official Render documentation confirms the start command is configured in the
+Render service and can use Gunicorn for Python applications:
+https://render.com/docs/web-services
+
+Gunicorn worker/thread/timeout configuration could not be verified because no
+render.yaml, Procfile, Dockerfile, or deployment start command is tracked here.
+
+Recommended implementation sequence
+-----------------------------------
+P0 - Measure before changing:
+1. Capture request duration, SQL query count, total SQL duration, response size,
+   and p50/p95 for login, core dashboard, UserInfo, ERP, Khata dashboard, and Khata
+   ledger detail.
+2. Inspect MySQL SHOW INDEX and EXPLAIN for the exact UserInfo/ERP dashboard queries.
+3. Measure Render-to-Clever Cloud network RTT and confirm both service regions.
+
+P1 - High impact after measurement:
+4. Add only query-plan-proven legacy MySQL indexes via safe migration/release plan.
+5. Consolidate/carefully cache UserInfo and ERP summary aggregates.
+6. Consolidate Khata dashboard card aggregations.
+7. Refactor Khata full-history-before-pagination while proving old/new balances match.
+
+P2 - Medium priority:
+8. Tune database connection lifetime only using connection metrics.
+9. Configure shared Redis when cache/rate-limit consistency across workers is needed.
+10. Paginate large Reminder and Download datasets only once growth warrants it.
+
+P3 - Infrastructure:
+11. Move Render web service to paid if cold-start incidents affect users.
+12. Prefer a database in the same region after latency measurement supports it.
+
+My recommendation
+-----------------
+Do not begin by upgrading the database or changing Gunicorn workers. First measure
+the UserInfo and ERP dashboard SQL, confirm legacy-table indexes, and compare app-to-
+database latency. These steps are low-risk and will identify whether the warm 1-5
+second delay is query, network, or server capacity.
+
+For user experience, move Render from Free to a paid web-service plan if the first
+request after idle is a real problem. That removes the documented idle spin-down
+behavior, but it should be treated separately from database optimization.
+
+The first implementation work I recommend for approval is:
+1. Safe request/query measurement.
+2. EXPLAIN/index audit against a confirmed non-writing database connection.
+3. Targeted UserInfo/ERP summary-query optimization based on results.
+4. Khata customer-detail pagination redesign with financial regression tests.
+
+Excel/VBA compatibility
+-----------------------
+No API or VBA change was made. The recommended dashboard/query work should not
+require VBA updates, provided existing licensing API URLs, request fields, response
+keys, HTTP statuses, and service behavior remain unchanged.

@@ -153,11 +153,19 @@ def _dashboard_for_ledger_type(request, *, is_bad_debt=False):
         )['total'] or 0
         total_dene_hain = abs(total_dene_hain)   # Convert negative to positive
 
-        bad_debt_ledgers = ledger_balances(True)
-        bad_debt_receivable_ledgers = bad_debt_ledgers.filter(net_balance__gt=0)
-        bad_debt_amount = bad_debt_receivable_ledgers.aggregate(
-            total=Sum('net_balance')
-        )['total'] or 0
+        if is_bad_debt:
+            # The Bad Debt screen does not render the main-dashboard recovery
+            # cards, so reuse the already-built queryset instead of repeating
+            # identical transaction aggregates.
+            bad_debt_ledgers = summary_ledgers
+            bad_debt_receivable_ledgers = receivable_ledgers
+            bad_debt_amount = total_lene_hain
+        else:
+            bad_debt_ledgers = ledger_balances(True)
+            bad_debt_receivable_ledgers = bad_debt_ledgers.filter(net_balance__gt=0)
+            bad_debt_amount = bad_debt_receivable_ledgers.aggregate(
+                total=Sum('net_balance')
+            )['total'] or 0
         
         # ---------- PAGINATION (10 per page) ----------
         paginator = Paginator(customers_qs, 10)
@@ -176,11 +184,13 @@ def _dashboard_for_ledger_type(request, *, is_bad_debt=False):
         context = {
             'profile': profile,
             'customers': page_obj,
-            'transfer_customers': Customer.objects.filter(user=request.user, is_bad_debt=is_bad_debt).order_by('name'),
-            'ledger_count': summary_ledgers.count(),
+            'transfer_customers': Customer.objects.filter(
+                user=request.user, is_bad_debt=is_bad_debt
+            ).only('id', 'name', 'phone').order_by('name'),
+            'ledger_count': Customer.objects.filter(user=request.user, is_bad_debt=is_bad_debt).count(),
             'receivable_ledger_count': receivable_ledgers.count(),
             'payable_ledger_count': payable_ledgers.count(),
-            'bad_debt_count': bad_debt_ledgers.count(),
+            'bad_debt_count': Customer.objects.filter(user=request.user, is_bad_debt=True).count(),
             'bad_debt_amount': bad_debt_amount,
             'total_recovery_amount': total_lene_hain + bad_debt_amount,
             'total_recovery_ledger_count': receivable_ledgers.count() + bad_debt_receivable_ledgers.count(),

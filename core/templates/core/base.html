@@ -276,7 +276,29 @@
         }
 
         .table-responsive {
-            overflow-x: auto
+            max-width: 100%;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch
+        }
+
+        @media (max-width: 640px) {
+            main {
+                padding: .5rem !important;
+            }
+
+            main > [class~="max-w-[96rem]"] {
+                padding: .5rem 0 !important;
+            }
+
+            main .app-card,
+            main .card {
+                border-radius: .75rem;
+            }
+
+            main .app-card > .p-5 {
+                padding: .5rem !important;
+            }
         }
 
         .text-center {

@@ -1017,9 +1017,15 @@ def _fasal_years(work_type=0):
     return [str(year).strip() for year in values if str(year).strip()]
 
 
-def _fasal_registration_url(request, mobile, work_type):
+def _fasal_registration_url(
+    request, mobile, work_type, financial_year=''
+):
     token = signing.dumps(
-        {'mobile': mobile, 'work_type': work_type},
+        {
+            'mobile': mobile,
+            'work_type': work_type,
+            'financial_year': str(financial_year or '').strip(),
+        },
         salt=FASAL_RIN_TOKEN_SALT,
         compress=True,
     )
@@ -1120,7 +1126,9 @@ def fasal_rin_subscription(request):
             'authorized': False,
             'status': 'LICENSE_NOT_FOUND',
             'message': 'Is mobile, year aur upload type ka account abhi bana nahi hai.',
-            'registration_url': _fasal_registration_url(request, mobile, work_type),
+            'registration_url': _fasal_registration_url(
+                request, mobile, work_type, financial_year
+            ),
         })
     authorized = _integer(record.is_active) == 1
     return JsonResponse({
@@ -1235,6 +1243,7 @@ def fasal_rin_self_register(request):
         payload = signing.loads(token, salt=FASAL_RIN_TOKEN_SALT, max_age=FASAL_RIN_TOKEN_MAX_AGE)
         mobile = _operator_mobile(payload.get('mobile'))
         work_type = _fasal_work_type(payload.get('work_type'))
+        requested_year = str(payload.get('financial_year') or '').strip()
         if not mobile or not work_type:
             raise signing.BadSignature
     except signing.SignatureExpired:
@@ -1242,12 +1251,24 @@ def fasal_rin_self_register(request):
     except signing.BadSignature:
         return render(request, 'licensing/fasal_rin_self_register.html', {'error': 'Registration link valid nahi hai.'}, status=400)
 
-    years = _fasal_years(work_type)
+    available_years = _fasal_years(work_type)
+    if requested_year and requested_year not in available_years:
+        return render(
+            request,
+            'licensing/fasal_rin_self_register.html',
+            {'error': 'Requested Financial Year registration ke liye available nahi hai.'},
+            status=400,
+        )
+    years = [requested_year] if requested_year else available_years
     form = PublicFasalRinRegistrationForm(
         request.POST or None,
         financial_years=years,
         work_type_name=FASAL_RIN_WORK_TYPES[work_type],
-        initial=_pmfby_registration_initial(mobile),
+        locked_financial_year=requested_year,
+        initial={
+            **_pmfby_registration_initial(mobile),
+            **({'financial_year': requested_year} if requested_year else {}),
+        },
     )
     if request.method == 'POST' and form.is_valid():
         if form.cleaned_data['mobile'] != mobile:
