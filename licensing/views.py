@@ -1,4 +1,5 @@
 import base64
+from io import BytesIO
 from decimal import Decimal
 from urllib.parse import urlencode
 
@@ -11,7 +12,7 @@ from .models import Perpous, UserInfoData
 from .models import tblPacsErp, tblUPI
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
-from django.http import FileResponse, HttpResponseForbidden, JsonResponse
+from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from .utils import generate_pacs_invoice_pdf
 from .utils import generate_erp_invoice_pdf  # Naya function import kiya
 from django.utils import timezone
@@ -21,6 +22,7 @@ from datetime import date
 from functools import wraps
 from django.db.models import Count, Q, Sum
 from django.views.decorators.http import require_http_methods, require_POST
+from openpyxl import Workbook
 from reportlab.graphics import renderSVG
 from reportlab.graphics.barcode import qr
 from reportlab.graphics.shapes import Drawing
@@ -246,6 +248,102 @@ def _common_activation_summaries(queryset, user):
         },
     }
 
+
+def _activation_report_records(model, request):
+    """Return only activation records the current user is allowed to report on."""
+    period = _activation_report_period(request)
+    records = model.objects.filter(
+        activation_date__gte=period['period_start'],
+        activation_date__lt=period['period_end'],
+    ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
+    if not request.user.is_superuser:
+        records = records.filter(accepte_by__iexact=request.user.username)
+    elif request.GET.get('report_user', '').strip():
+        records = records.filter(accepte_by__iexact=request.GET['report_user'].strip())
+    return records, period
+
+
+def _activation_report_context(model, request, license_type):
+    records, period = _activation_report_records(model, request)
+    summary = records.aggregate(activation_count=Count('id'), payment_total=Sum('payment_status'))
+    card_records = model.objects.filter(
+        activation_date__gte=period['period_start'],
+        activation_date__lt=period['period_end'],
+    ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
+    if not request.user.is_superuser:
+        card_records = card_records.filter(accepte_by__iexact=request.user.username)
+    operator_cards = list(
+        card_records.values('accepte_by')
+        .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
+        .order_by('-activation_count', 'accepte_by')
+    )
+    return {
+        'license_type': license_type,
+        'report_records': records.order_by('-activation_date', '-id'),
+        'report_cards': operator_cards,
+        'report_user': request.GET.get('report_user', '').strip() if request.user.is_superuser else request.user.username,
+        'selected_activation_count': summary['activation_count'] or 0,
+        'selected_collection_total': summary['payment_total'] or 0,
+        'report_month': period['report_label'],
+        'report_total_label': period['report_total_label'],
+        **period,
+    }
+
+
+def _activation_report_excel(records, license_type, label):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Activation Report'
+    if license_type == 'userinfo':
+        headers = ['Record ID', 'PACS Name', 'Mobile', 'Plan', 'Financial Year', 'Amount', 'Activated By', 'Activation Date']
+        rows = (
+            [record.id, record.pacs_name or '', record.mobile or '', record.for_whys or '', record.f_year or '',
+             record.payment_status or 0, record.accepte_by or '', timezone.localtime(record.activation_date).replace(tzinfo=None) if record.activation_date else '']
+            for record in records.iterator(chunk_size=500)
+        )
+    else:
+        headers = ['Record ID', 'ERP ID', 'PACS Name', 'Operator Mobile', 'Amount', 'Expiry Date', 'Activated By', 'Activation Date']
+        rows = (
+            [record.id, record.erp_id or '', record.pacs_name or '', record.operator_mobile or '', record.payment_status or 0,
+             record.expiry_date or '', record.accepte_by or '', timezone.localtime(record.activation_date).replace(tzinfo=None) if record.activation_date else '']
+            for record in records.iterator(chunk_size=500)
+        )
+    sheet.append(headers)
+    for cell in sheet[1]:
+        cell.font = cell.font.copy(bold=True)
+    for row in rows:
+        sheet.append(row)
+    for column_cells in sheet.columns:
+        width = min(max(len(str(cell.value or '')) for cell in column_cells) + 2, 36)
+        sheet.column_dimensions[column_cells[0].column_letter].width = width
+    output = BytesIO()
+    workbook.save(output)
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    safe_type = 'user-licenses' if license_type == 'userinfo' else 'erp-licenses'
+    response['Content-Disposition'] = f'attachment; filename="{safe_type}-activation-report-{label}.xlsx"'
+    return response
+
+
+@login_required(login_url='accounts:login')
+def userinfo_activation_report(request):
+    context = _activation_report_context(UserInfoData, request, 'userinfo')
+    if request.GET.get('export') == 'xlsx':
+        return _activation_report_excel(context['report_records'], 'userinfo', context['report_month_value'])
+    context['report_back_url'] = 'licensing:userinfo_dashboard'
+    return render(request, 'licensing/activation_report.html', context)
+
+
+@login_required(login_url='accounts:login')
+def erp_activation_report(request):
+    context = _activation_report_context(tblPacsErp, request, 'erp')
+    if request.GET.get('export') == 'xlsx':
+        return _activation_report_excel(context['report_records'], 'erp', context['report_month_value'])
+    context['report_back_url'] = 'licensing:pacserp_dashboard'
+    return render(request, 'licensing/activation_report.html', context)
+
 @login_required(login_url='accounts:login')
 def userinfo_dashboard(request):
     search_query = request.GET.get('search_id', '').strip()
@@ -279,77 +377,10 @@ def userinfo_dashboard(request):
 
         if record_id_query:
             clients = clients.filter(pk=int(record_id_query)) if record_id_query.isdigit() else clients.none()
-
-        report_period = _activation_report_period(request)
-        month_start = report_period['period_start']
-        next_month = report_period['period_end']
-        requested_report_user = request.GET.get('report_user', '').strip()
-        report_user = (
-            requested_report_user
-            if request.user.is_superuser
-            else (request.user.username if requested_report_user else '')
-        )
-        if report_user:
-            clients = clients.filter(
-                accepte_by__iexact=report_user,
-                activation_date__gte=month_start,
-                activation_date__lt=next_month,
-            )
         clients = Paginator(clients.order_by('-id'), 10).get_page(request.GET.get('page'))
-
-        monthly_records = UserInfoData.objects.filter(
-            is_active=1,
-            activation_date__gte=month_start,
-            activation_date__lt=next_month,
-        ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
-        if not request.user.is_superuser:
-            monthly_records = monthly_records.filter(accepte_by__iexact=request.user.username)
-        monthly_activation_report = list(
-            monthly_records.values('accepte_by')
-            .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
-            .order_by('-activation_count', 'accepte_by')
-        )
-        monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
-        monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
-        common_summaries = _common_activation_summaries(UserInfoData.objects.filter(is_active=1), request.user)
-        today_activation_count = common_summaries['daily']['activation_count']
-        today_collection_total = common_summaries['daily']['payment_total']
-        current_month_activation_count = common_summaries['monthly']['activation_count']
-        current_month_collection_total = common_summaries['monthly']['payment_total']
-        selected_activation_count = monthly_activation_count
-        selected_collection_total = monthly_payment_total
-        report_month = report_period['report_label']
-        report_total_label = report_period['report_total_label']
-        report_type = report_period['report_type']
-        report_month_value = report_period['report_month_value']
-        previous_month_value = report_period['previous_month_value']
-        next_month_value = report_period['next_month_value']
-        report_date_value = report_period['report_date_value']
-        range_start_value = report_period['range_start_value']
-        range_end_value = report_period['range_end_value']
-    except Exception as error:
+    except Exception:
         logger.exception('UserInfo dashboard fetch failed'); messages.error(request, 'Records load nahi ho sake. Kripya dobara prayas karein.')
         clients = []
-        monthly_activation_report = []
-        monthly_activation_count = 0
-        monthly_payment_total = 0
-        today_activation_count = 0
-        today_collection_total = 0
-        current_month_activation_count = 0
-        current_month_collection_total = 0
-        selected_activation_count = 0
-        selected_collection_total = 0
-        fallback_date = timezone.localdate()
-        report_month = fallback_date.strftime('%B %Y')
-        report_total_label = 'Month Total'
-        report_type = 'monthly'
-        report_month_value = fallback_date.strftime('%Y-%m')
-        previous_month_value = ''
-        next_month_value = ''
-        report_date_value = fallback_date.isoformat()
-        range_start_value = fallback_date.replace(day=1).isoformat()
-        range_end_value = fallback_date.isoformat()
-        report_user = ''
 
     activation_context = activation_ledger_context(request.user, activation_settings)
     context = {
@@ -358,25 +389,6 @@ def userinfo_dashboard(request):
         'record_id_query': record_id_query,
         'partial_results': partial_results,
         'farmer_form': None if partial_results else UserInfoForm(),
-        'monthly_activation_report': monthly_activation_report,
-        'monthly_activation_count': monthly_activation_count,
-        'monthly_payment_total': monthly_payment_total,
-        'today_activation_count': today_activation_count,
-        'today_collection_total': today_collection_total,
-        'current_month_activation_count': current_month_activation_count,
-        'current_month_collection_total': current_month_collection_total,
-        'selected_activation_count': selected_activation_count,
-        'selected_collection_total': selected_collection_total,
-        'report_month': report_month,
-        'report_total_label': report_total_label,
-        'report_type': report_type,
-        'report_date_value': report_date_value,
-        'range_start_value': range_start_value,
-        'range_end_value': range_end_value,
-        'report_month_value': report_month_value,
-        'previous_month_value': previous_month_value,
-        'next_month_value': next_month_value,
-        'report_user': report_user,
         **activation_context,
     }
     return render(request, 'licensing/userinfo_dashboard.html', context)
@@ -508,76 +520,10 @@ def pacserp_dashboard(request):
                     | models.Q(remark__icontains=search_query)
                     | models.Q(system_id__icontains=search_query)
                 )
-        report_period = _activation_report_period(request)
-        month_start = report_period['period_start']
-        next_month = report_period['period_end']
-        requested_report_user = request.GET.get('report_user', '').strip()
-        report_user = (
-            requested_report_user
-            if request.user.is_superuser
-            else (request.user.username if requested_report_user else '')
-        )
-        if report_user:
-            erp_records = erp_records.filter(
-                accepte_by__iexact=report_user,
-                activation_date__gte=month_start,
-                activation_date__lt=next_month,
-            )
         erp_records = Paginator(erp_records.order_by('-id'), 10).get_page(request.GET.get('page'))
-
-        monthly_records = tblPacsErp.objects.filter(
-            is_active=1,
-            activation_date__gte=month_start,
-            activation_date__lt=next_month,
-        ).exclude(accepte_by__isnull=True).exclude(accepte_by__exact='')
-        if not request.user.is_superuser:
-            monthly_records = monthly_records.filter(accepte_by__iexact=request.user.username)
-        monthly_activation_report = list(
-            monthly_records.values('accepte_by')
-            .annotate(activation_count=Count('id'), payment_total=Sum('payment_status'))
-            .order_by('-activation_count', 'accepte_by')
-        )
-        monthly_activation_count = sum(item['activation_count'] for item in monthly_activation_report)
-        monthly_payment_total = sum((item['payment_total'] or 0) for item in monthly_activation_report)
-        common_summaries = _common_activation_summaries(tblPacsErp.objects.filter(is_active=1, expiry_date__gte=timezone.localdate()), request.user)
-        today_activation_count = common_summaries['daily']['activation_count']
-        today_collection_total = common_summaries['daily']['payment_total']
-        current_month_activation_count = common_summaries['monthly']['activation_count']
-        current_month_collection_total = common_summaries['monthly']['payment_total']
-        selected_activation_count = monthly_activation_count
-        selected_collection_total = monthly_payment_total
-        report_month = report_period['report_label']
-        report_total_label = report_period['report_total_label']
-        report_type = report_period['report_type']
-        report_month_value = report_period['report_month_value']
-        previous_month_value = report_period['previous_month_value']
-        next_month_value = report_period['next_month_value']
-        report_date_value = report_period['report_date_value']
-        range_start_value = report_period['range_start_value']
-        range_end_value = report_period['range_end_value']
-    except Exception as error:
+    except Exception:
         logger.exception('ERP dashboard fetch failed'); messages.error(request, 'ERP records load nahi ho sake. Kripya dobara prayas karein.')
         erp_records = []
-        monthly_activation_report = []
-        monthly_activation_count = 0
-        monthly_payment_total = 0
-        today_activation_count = 0
-        today_collection_total = 0
-        current_month_activation_count = 0
-        current_month_collection_total = 0
-        selected_activation_count = 0
-        selected_collection_total = 0
-        fallback_date = timezone.localdate()
-        report_month = fallback_date.strftime('%B %Y')
-        report_total_label = 'Month Total'
-        report_type = 'monthly'
-        report_month_value = fallback_date.strftime('%Y-%m')
-        previous_month_value = ''
-        next_month_value = ''
-        report_date_value = fallback_date.isoformat()
-        range_start_value = fallback_date.replace(day=1).isoformat()
-        range_end_value = fallback_date.isoformat()
-        report_user = ''
 
     activation_context = activation_ledger_context(request.user, activation_settings)
     return render(request, 'licensing/pacserp_dashboard.html', {
@@ -585,25 +531,6 @@ def pacserp_dashboard(request):
         'search_query': search_query,
         'erp_form': None if partial_results else PacsErpForm(),
         'partial_results': partial_results,
-        'monthly_activation_report': monthly_activation_report,
-        'monthly_activation_count': monthly_activation_count,
-        'monthly_payment_total': monthly_payment_total,
-        'today_activation_count': today_activation_count,
-        'today_collection_total': today_collection_total,
-        'current_month_activation_count': current_month_activation_count,
-        'current_month_collection_total': current_month_collection_total,
-        'selected_activation_count': selected_activation_count,
-        'selected_collection_total': selected_collection_total,
-        'report_month': report_month,
-        'report_total_label': report_total_label,
-        'report_type': report_type,
-        'report_date_value': report_date_value,
-        'range_start_value': range_start_value,
-        'range_end_value': range_end_value,
-        'report_month_value': report_month_value,
-        'previous_month_value': previous_month_value,
-        'next_month_value': next_month_value,
-        'report_user': report_user,
         **activation_context,
     })
 

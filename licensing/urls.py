@@ -6,8 +6,10 @@ app_name = 'licensing'
 
 urlpatterns = [
     path('userinfo/', views.userinfo_dashboard, name='userinfo_dashboard'),
+    path('userinfo/report/', views.userinfo_activation_report, name='userinfo_activation_report'),
     path('toggle/<int:pk>/', views.toggle_activation, name='toggle_activation'),
     path('pacserp/', views.pacserp_dashboard, name='pacserp_dashboard'),
+    path('pacserp/report/', views.erp_activation_report, name='erp_activation_report'),
     path('toggle-erp/<int:pk>/', views.toggle_erp_activation, name='toggle_erp_activation'),
     path('userinfo/invoice/<int:pk>/', views.generate_invoice, name='generate_invoice'),
     path('pacserp/invoice/<int:pk>/', views.generate_erp_invoice, name='generate_erp_invoice'),

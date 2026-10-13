@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+{% load tz %}
+
+{% block title %}{% if license_type == 'userinfo' %}User License{% else %}ERP License{% endif %} Activation Report{% endblock %}
+
+{% block content %}
+<style>
+    .activation-report-shell { max-width: 96rem; margin: 0 auto; padding: 1.5rem 1rem; }
+    .activation-report-hero { background: linear-gradient(135deg,#0f172a,#1e3a8a 58%,#4f46e5); border-radius: 1rem; color: #fff; padding: 1.25rem; box-shadow: 0 16px 38px rgba(30,58,138,.2); }
+    .activation-report-hero h1 { color: #fff; font-size: 1.45rem; font-weight: 850; margin: .2rem 0; }
+    .activation-report-hero p { color: #dbeafe; font-size: .84rem; margin: 0; }
+    .activation-report-filter { display: grid; gap: .7rem; grid-template-columns: repeat(5,minmax(0,1fr)); margin-top: 1rem; }
+    .activation-report-filter label { color: #dbeafe; display: grid; font-size: .69rem; font-weight: 800; gap: .3rem; text-transform: uppercase; }
+    .activation-report-filter input,.activation-report-filter select { border: 0; border-radius: .6rem; color: #172033; min-height: 2.55rem; padding: .55rem .65rem; }
+    .activation-report-filter button { align-self: end; border: 0; border-radius: .6rem; cursor: pointer; font-weight: 800; min-height: 2.55rem; padding: .55rem .8rem; }
+    .activation-report-apply { background: #fff; color: #1e3a8a; }
+    .activation-report-export { background: #34d399; color: #064e3b; }
+    .activation-report-summary { display: grid; gap: .75rem; grid-template-columns: repeat(3,minmax(0,1fr)); margin: 1rem 0; }
+    .activation-report-stat { background: #fff; border: 1px solid #dbe4f0; border-radius: .85rem; padding: .85rem; box-shadow: 0 5px 16px rgba(15,23,42,.06); }
+    .activation-report-stat span { color: #64748b; display: block; font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+    .activation-report-stat strong { color: #172033; display: block; font-size: 1.2rem; margin-top: .3rem; }
+    .activation-operator-cards { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); margin-bottom: 1rem; }
+    .activation-operator-card { background: #fff; border: 1px solid #dbe4f0; border-radius: .8rem; color: #172033; padding: .75rem; text-decoration: none; }
+    .activation-operator-card:hover,.activation-operator-card.is-selected { border-color: #6366f1; box-shadow: 0 5px 15px rgba(79,70,229,.12); }
+    .activation-operator-card strong,.activation-operator-card span { display: block; }
+    .activation-operator-card strong { font-size: .86rem; }
+    .activation-operator-card span { color: #64748b; font-size: .75rem; margin-top: .3rem; }
+    .activation-report-table { min-width: 920px; }
+    .activation-report-empty { color: #64748b; padding: 2.5rem!important; text-align: center; }
+    @media (max-width: 700px) {
+        .activation-report-shell { padding: .5rem 0; }
+        .activation-report-hero { border-radius: .75rem; padding: .8rem; }
+        .activation-report-filter { grid-template-columns: 1fr 1fr; }
+        .activation-report-filter label:first-child { grid-column: 1 / -1; }
+        .activation-report-summary { gap: .45rem; }
+        .activation-report-stat { padding: .65rem; }
+        .activation-report-stat strong { font-size: 1rem; }
+    }
+</style>
+<div class="activation-report-shell">
+    <section class="activation-report-hero">
+        <div class="flex items-start justify-between gap-3"><div><span class="text-xs font-extrabold uppercase tracking-[.14em] text-blue-200">Activation Reports</span><h1>{% if license_type == 'userinfo' %}User License{% else %}ERP License{% endif %} Report</h1><p>{% if request.user.is_superuser %}All operators' activation data is available.{% else %}Only your activated IDs are available.{% endif %}</p></div><a class="rounded-lg border border-white/25 px-3 py-2 text-xs font-bold text-white" href="{% url report_back_url %}"><i class="fas fa-arrow-left"></i> Back</a></div>
+        <form method="get" class="activation-report-filter" id="activation-report-filter">
+            <label>Report type<select name="report_type" id="report-type"><option value="monthly"{% if report_type == 'monthly' %} selected{% endif %}>Monthly</option><option value="daily"{% if report_type == 'daily' %} selected{% endif %}>Daily</option><option value="range"{% if report_type == 'range' %} selected{% endif %}>Date Range</option></select></label>
+            <label data-report-month>Month<input type="month" name="report_month" value="{{ report_month_value }}"></label>
+            <label data-report-day{% if report_type != 'daily' %} hidden{% endif %}>Date<input type="date" name="report_date" value="{{ report_date_value }}" max="{% now 'Y-m-d' %}"></label>
+            <label data-report-range{% if report_type != 'range' %} hidden{% endif %}>From<input type="date" name="range_start" value="{{ range_start_value }}" max="{% now 'Y-m-d' %}"></label>
+            <label data-report-range{% if report_type != 'range' %} hidden{% endif %}>To<input type="date" name="range_end" value="{{ range_end_value }}" max="{% now 'Y-m-d' %}"></label>
+            {% if request.user.is_superuser %}<input type="hidden" name="report_user" value="{{ report_user }}">{% endif %}
+            <button class="activation-report-apply" type="submit"><i class="fas fa-filter"></i> Apply</button>
+            <button class="activation-report-export" name="export" value="xlsx" type="submit"><i class="fas fa-file-excel"></i> Export Excel</button>
+        </form>
+    </section>
+
+    <section class="activation-report-summary"><article class="activation-report-stat"><span>Selected period</span><strong>{{ report_month }}</strong></article><article class="activation-report-stat"><span>Activated IDs</span><strong>{{ selected_activation_count }}</strong></article><article class="activation-report-stat"><span>Collection</span><strong>₹{{ selected_collection_total }}</strong></article></section>
+
+    {% if request.user.is_superuser %}<section class="activation-operator-cards" aria-label="Filter activation report by operator"><a class="activation-operator-card{% if not report_user %} is-selected{% endif %}" href="?report_type={{ report_type }}&amp;report_month={{ report_month_value }}&amp;report_date={{ report_date_value }}&amp;range_start={{ range_start_value }}&amp;range_end={{ range_end_value }}"><strong>All operators</strong><span>View all activations</span></a>{% for item in report_cards %}<a class="activation-operator-card{% if report_user == item.accepte_by %} is-selected{% endif %}" href="?report_type={{ report_type }}&amp;report_month={{ report_month_value }}&amp;report_date={{ report_date_value }}&amp;range_start={{ range_start_value }}&amp;range_end={{ range_end_value }}&amp;report_user={{ item.accepte_by|urlencode }}"><strong>{{ item.accepte_by }}</strong><span>{{ item.activation_count }} IDs · ₹{{ item.payment_total|default:0 }}</span></a>{% endfor %}</section>{% endif %}
+
+    <section class="app-card overflow-hidden"><div class="table-responsive"><table class="app-table activation-report-table"><thead><tr>{% if license_type == 'userinfo' %}<th>Record</th><th>PACS Details</th><th>Plan</th><th>Amount</th>{% else %}<th>Record</th><th>ERP / PACS</th><th>Operator</th><th>Amount / Expiry</th>{% endif %}<th>Activated By</th><th>Activation Date</th></tr></thead><tbody>{% for record in report_records %}<tr>{% if license_type == 'userinfo' %}<td>#{{ record.id }}</td><td><strong>{{ record.pacs_name|default:'-' }}</strong><br><span class="text-muted">{{ record.mobile|default:'-' }}</span></td><td>{{ record.for_whys|default:'-' }}<br><span class="text-muted">FY {{ record.f_year|default:'-' }}</span></td><td>₹{{ record.payment_status|default:0 }}</td>{% else %}<td>#{{ record.id }}</td><td><strong>{{ record.erp_id|default:'-' }}</strong><br><span class="text-muted">{{ record.pacs_name|default:'-' }}</span></td><td>{{ record.operator_mobile|default:'-' }}</td><td>₹{{ record.payment_status|default:0 }}<br><span class="text-muted">{{ record.expiry_date|date:'d M Y'|default:'-' }}</span></td>{% endif %}<td>{{ record.accepte_by }}</td><td>{{ record.activation_date|timezone:'Asia/Kolkata'|date:'d M Y, h:i A' }}</td></tr>{% empty %}<tr><td class="activation-report-empty" colspan="6">Selected period में कोई activation record नहीं मिला।</td></tr>{% endfor %}</tbody></table></div></section>
+</div>
+<script>
+(() => { const type=document.getElementById('report-type'); const sync=()=>{ const value=type.value; document.querySelector('[data-report-month]').hidden=value!=='monthly'; document.querySelector('[data-report-day]').hidden=value!=='daily'; document.querySelectorAll('[data-report-range]').forEach(item=>item.hidden=value!=='range'); }; type.addEventListener('change',sync); sync(); })();
+</script>
+{% endblock %}

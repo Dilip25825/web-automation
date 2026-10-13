@@ -55,9 +55,9 @@ def required_menu(request):
         return match.namespace if match.namespace != 'downloads' else 'downloads'
     if match.namespace != 'licensing':
         return None
-    if match.url_name in {'userinfo_dashboard', 'toggle_activation', 'generate_invoice', 'create_userinfo', 'delete_userinfo', 'update_userinfo'}:
+    if match.url_name in {'userinfo_dashboard', 'userinfo_activation_report', 'toggle_activation', 'generate_invoice', 'create_userinfo', 'delete_userinfo', 'update_userinfo'}:
         return 'user_licenses'
-    if match.url_name in {'pacserp_dashboard', 'toggle_erp_activation', 'generate_erp_invoice', 'create_pacserp', 'delete_record', 'update_pacserp'}:
+    if match.url_name in {'pacserp_dashboard', 'erp_activation_report', 'toggle_erp_activation', 'generate_erp_invoice', 'create_pacserp', 'delete_record', 'update_pacserp'}:
         return 'erp_licenses'
     return None
 
