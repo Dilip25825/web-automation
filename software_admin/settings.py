@@ -117,6 +117,9 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        # Store and read MySQL DATETIME values in Indian Standard Time.
+        # This keeps legacy UserInfo Date_Time values aligned with the business timezone.
+        'TIME_ZONE': 'Asia/Kolkata',
         'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '30')),
         'CONN_HEALTH_CHECKS': True,
     }
