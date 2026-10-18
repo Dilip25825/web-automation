@@ -4,9 +4,9 @@
 {% block title %}User Licenses{% endblock %}
 
 {% block content %}
-<div id="userinfo-loading-overlay" class="fixed inset-0 hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"><div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl"><span class="h-12 w-12 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600"></span><p id="userinfo-loading-text" class="mt-4 font-extrabold text-slate-800">Loading User Licenses...</p><p class="mt-1 text-xs text-slate-500">Please wait</p></div></div>
 <style>
-    #userinfo-loading-overlay { z-index: 20000 !important; }
+    /* User Licenses uses inline AJAX refresh; do not show the shared full-screen loader here. */
+    #global-loading-overlay { display: none !important; }
     #userinfo-bulk-actions { display: none !important; }
     .userinfo-control-hero { background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 58%,#4f46e5 100%); border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; box-shadow: 0 16px 38px rgba(30,58,138,.2); color: #fff; margin-bottom: 1.25rem; overflow: hidden; padding: 1.3rem 1.4rem; position: relative; }
     .userinfo-control-hero::after { background: rgba(255,255,255,.06); border-radius: 999px; content: ''; height: 14rem; pointer-events: none; position: absolute; right: -5rem; top: -8rem; width: 14rem; }
@@ -902,8 +902,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script>
 (() => {
- const overlay=document.getElementById('userinfo-loading-overlay'),label=document.getElementById('userinfo-loading-text');
- const setLoading=(show,text='Loading UserInfo...')=>{label.textContent=text;overlay.classList.toggle('hidden',!show);overlay.classList.toggle('flex',show)};
+ const setLoading=()=>{};
  const toast=(icon,title)=>Swal.fire({toast:true,position:'top-end',icon,title,showConfirmButton:false,timer:2200,timerProgressBar:true});
  const refreshResults=async(url=window.location.href)=>{const requestUrl=new URL(url,window.location.href);const currentUrl=new URL(window.location.href);['report_type','report_month','report_date','range_start','range_end','report_user'].forEach(key=>{const activeValue=currentUrl.searchParams.get(key);if(activeValue&&!requestUrl.searchParams.has(key))requestUrl.searchParams.set(key,activeValue)});requestUrl.searchParams.set('partial','1');const response=await fetch(requestUrl,{headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});if(!response.ok)throw new Error('UserInfo results load nahi ho sake.');const page=new DOMParser().parseFromString(await response.text(),'text/html'),fresh=page.getElementById('userinfo-results'),current=document.getElementById('userinfo-results');if(!fresh||!current)throw new Error('UserInfo results section nahi mila.');current.innerHTML=fresh.innerHTML;const freshTotal=page.getElementById('userinfo-total-records'),currentTotal=document.getElementById('userinfo-total-records');if(freshTotal&&currentTotal)currentTotal.textContent=freshTotal.textContent;const freshReport=page.getElementById('userinfo-monthly-report'),currentReport=document.getElementById('userinfo-monthly-report');if(freshReport&&currentReport)currentReport.innerHTML=freshReport.innerHTML;document.getElementById('selected-count').textContent='Select one record to use actions.'};
  window.userinfoAjaxAction=async(url,{method='POST',body=null,loadingText='Saving changes...'}={})=>{setLoading(true,loadingText);

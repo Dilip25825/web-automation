@@ -5,3 +5,4 @@ __pycache__/
 *$py.class
 staticfiles/
 licensing/vba/ErpApiLogin.bas
+.gitpush
