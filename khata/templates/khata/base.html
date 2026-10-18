@@ -14,17 +14,10 @@
 #khata-app .modal input:focus,#khata-app .modal select:focus,#khata-app .modal textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.14)}
 @media(max-width:575px){#khata-app .modal-dialog{margin:.5rem;padding:0}#khata-app .modal-header,#khata-app .modal-body,#khata-app .modal-footer{padding:1.1rem!important}}
 </style>
-<div id="khata-loading-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-hidden="true">
-  <div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl">
-    <span class="h-12 w-12 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></span>
-    <p id="khata-loading-text" class="mt-4 font-extrabold text-slate-800">Saving changes...</p>
-    <p class="mt-1 text-xs text-slate-500">Please wait</p>
-  </div>
-</div>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
- const app=()=>document.getElementById('khata-app'),overlay=document.getElementById('khata-loading-overlay'),loadingText=document.getElementById('khata-loading-text');
- const loading=(show,text='Saving changes...')=>{if(!overlay)return;loadingText.textContent=text;overlay.classList.toggle('hidden',!show);overlay.classList.toggle('flex',show);overlay.setAttribute('aria-hidden',show?'false':'true')};
+ const app=()=>document.getElementById('khata-app');
+ const loading=()=>{};
  const toast=(icon,title)=>Swal.fire({toast:true,position:'top-end',icon,title,showConfirmButton:false,timer:2200,timerProgressBar:true});
  const calculateInterest=()=>{const principal=document.getElementById('principalAmt'),rate=document.getElementById('interestRate'),months=document.getElementById('interestMonths'),from=document.getElementById('interestFromDate'),to=document.getElementById('interestDate'),total=document.getElementById('totalInterest');if(!total)return;let monthValue=parseFloat(months?.value)||0;if(from?.value&&to?.value){monthValue=Math.max(0,(new Date(to.value)-new Date(from.value))/86400000)/30;if(months)months.value=monthValue.toFixed(2)}const value=((parseFloat(principal?.value)||0)*(parseFloat(rate?.value)||0)*monthValue)/100;total.value=value.toFixed(2);const preview=document.getElementById('totalInterestPreview');if(preview)preview.textContent=value.toFixed(2)};
  const initialize=()=>{const transferDate=document.getElementById('transferDate');if(transferDate&&!transferDate.value)transferDate.value=new Date().toLocaleDateString('en-CA');calculateInterest()};

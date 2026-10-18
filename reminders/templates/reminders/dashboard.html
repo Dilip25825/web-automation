@@ -1,7 +1,6 @@
 {% extends 'core/base.html' %}
 {% block title %}Task Reminders{% endblock %}
 {% block content %}
-<div id="reminders-loading-overlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="status" aria-live="polite" aria-hidden="true"><div class="flex min-w-56 flex-col items-center rounded-2xl bg-white px-8 py-7 text-center shadow-2xl"><span class="h-12 w-12 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></span><p id="reminders-loading-text" class="mt-4 font-extrabold text-slate-800">Saving changes...</p><p class="mt-1 text-xs text-slate-500">Please wait</p></div></div>
 <div id="reminders-app">
 <style>
 #reminders-app .reminder-modal-panel{border:0;border-radius:1.35rem;overflow:hidden;background:#fff;box-shadow:0 32px 90px rgba(15,23,42,.36)}
@@ -45,8 +44,8 @@
 {% endblock %}
 {% block extra_js %}<script>
 document.addEventListener('DOMContentLoaded', () => {
- const app=()=>document.getElementById('reminders-app'),overlay=document.getElementById('reminders-loading-overlay'),loadingText=document.getElementById('reminders-loading-text');
- const setLoading=(show,text='Saving changes...')=>{if(!overlay)return;loadingText.textContent=text;overlay.classList.toggle('hidden',!show);overlay.classList.toggle('flex',show);overlay.setAttribute('aria-hidden',show?'false':'true')};
+ const app=()=>document.getElementById('reminders-app');
+ const setLoading=()=>{};
  const setModal=(id,show)=>{const modal=document.getElementById(id);if(!modal)return;modal.classList.toggle('hidden',!show);modal.classList.toggle('flex',show)};
  const toast=(icon,title)=>Swal.fire({toast:true,position:'top-end',icon,title,showConfirmButton:false,timer:2200,timerProgressBar:true});
  const refreshReminders=async(url=window.location.href,refreshModals=false)=>{const requestUrl=new URL(url,window.location.href);if(!refreshModals)requestUrl.searchParams.set('ajax_partial','1');const response=await fetch(requestUrl,{headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});if(!response.ok)throw new Error('Updated reminders could not be loaded.');const page=new DOMParser().parseFromString(await response.text(),'text/html'),freshDashboard=page.getElementById('reminders-dashboard-content'),currentDashboard=document.getElementById('reminders-dashboard-content');if(!freshDashboard||!currentDashboard)throw new Error('Updated reminders section was not found.');currentDashboard.innerHTML=freshDashboard.innerHTML;if(refreshModals){['task-modal','edit-task-modal','category-modal','edit-category-modal'].forEach(id=>{const current=document.getElementById(id),fresh=page.getElementById(id);if(current&&fresh)current.replaceWith(fresh)})}};
