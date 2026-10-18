@@ -6,12 +6,40 @@ from django.core import signing
 from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from .drive_catalog import _load_catalog, file_is_in_downloads_root
+from .drive_catalog import _load_catalog, configured, drive_service, file_is_in_downloads_root
 from .views import public_downloads, sync_drive_catalog
 
 
 @override_settings(GOOGLE_DRIVE_DOWNLOADS_FOLDER_ID='root-folder')
 class DriveCatalogTests(SimpleTestCase):
+    def tearDown(self):
+        drive_service.cache_clear()
+        super().tearDown()
+
+    @override_settings(
+        GOOGLE_DRIVE_DOWNLOADS_FOLDER_ID='root-folder',
+        GOOGLE_SERVICE_ACCOUNT_FILE='',
+        GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account"}',
+    )
+    @patch('onedownload.drive_catalog.service_account.Credentials.from_service_account_info')
+    @patch('onedownload.drive_catalog.build')
+    def test_drive_service_accepts_service_account_json_from_environment(self, build, from_info):
+        drive_service()
+
+        from_info.assert_called_once_with(
+            {'type': 'service_account'},
+            scopes=['https://www.googleapis.com/auth/drive.readonly'],
+        )
+        build.assert_called_once()
+
+    @override_settings(
+        GOOGLE_DRIVE_DOWNLOADS_FOLDER_ID='root-folder',
+        GOOGLE_SERVICE_ACCOUNT_FILE='',
+        GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account"}',
+    )
+    def test_json_environment_credentials_count_as_configured(self):
+        self.assertTrue(configured())
+
     @patch('onedownload.drive_catalog.catalog')
     def test_membership_uses_configured_root_catalog(self, drive_catalog):
         drive_catalog.return_value = {'categories': [], 'files': [{'id': 'inside'}]}
@@ -89,7 +117,9 @@ class DownloadSnapshotTests(SimpleTestCase):
             file_count=1,
             category_count=1,
         )
-        response = public_downloads(self.factory.get('/downloads/'))
+        request = self.factory.get('/downloads/')
+        request.user = SimpleNamespace(is_authenticated=False, is_superuser=False)
+        response = public_downloads(request)
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'https://drive.google.com/open?id=drive-file-123&amp;usp=drive_fs',

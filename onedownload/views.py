@@ -1,20 +1,24 @@
 from datetime import timezone as datetime_timezone
+import logging
 from types import SimpleNamespace
 
+from django.core.exceptions import ImproperlyConfigured
 from django.core import signing
 from django.core.cache import cache
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_GET, require_POST
+from googleapiclient.errors import HttpError
 
 from .drive_catalog import catalog as drive_catalog
 from .drive_catalog import download_file, file_is_in_downloads_root, refresh_catalog
 from .models import DownloadCatalogSnapshot
 
 SNAPSHOT_CACHE_KEY = 'downloads-saved-catalog-snapshot-v1'
+logger = logging.getLogger(__name__)
 
 
 def _resource_icon(*values):
@@ -210,7 +214,26 @@ def sync_drive_catalog(request):
             'file_count': snapshot.file_count,
             'category_count': snapshot.category_count,
         })
+    except ImproperlyConfigured:
+        return JsonResponse({
+            'success': False,
+            'message': 'Google Drive credentials server par configure nahi hain.',
+        }, status=503)
+    except HttpError as error:
+        if error.resp.status in {403, 404}:
+            message = 'Google service account ko Downloads folder ka access nahi mila.'
+        else:
+            message = 'Google Drive service abhi response nahi de rahi. Dobara try karein.'
+        logger.warning('Google Drive download sync failed with HTTP status %s.', error.resp.status)
+        return JsonResponse({'success': False, 'message': message}, status=503)
+    except DatabaseError:
+        logger.exception('Download catalog sync database operation failed.')
+        return JsonResponse({
+            'success': False,
+            'message': 'Download database setup pending hai. Migration run karke dobara sync karein.',
+        }, status=503)
     except Exception:
+        logger.exception('Google Drive download catalog sync failed.')
         return JsonResponse({
             'success': False,
             'message': 'Google Drive sync nahi ho saka. Purani download list safe rakhi gayi hai.',

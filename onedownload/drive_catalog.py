@@ -1,8 +1,10 @@
+import json
 import tempfile
 from functools import lru_cache
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -12,15 +14,39 @@ CACHE_KEY = 'downloads-google-drive-catalog-v1'
 
 
 def configured():
-    return bool(settings.GOOGLE_DRIVE_DOWNLOADS_FOLDER_ID and settings.GOOGLE_SERVICE_ACCOUNT_FILE)
+    return bool(
+        settings.GOOGLE_DRIVE_DOWNLOADS_FOLDER_ID
+        and (settings.GOOGLE_SERVICE_ACCOUNT_JSON or settings.GOOGLE_SERVICE_ACCOUNT_FILE)
+    )
+
+
+def _service_account_credentials():
+    scopes = ['https://www.googleapis.com/auth/drive.readonly']
+    raw_json = settings.GOOGLE_SERVICE_ACCOUNT_JSON
+    if raw_json:
+        try:
+            service_account_info = json.loads(raw_json)
+        except json.JSONDecodeError as error:
+            raise ImproperlyConfigured(
+                'GOOGLE_SERVICE_ACCOUNT_JSON must contain valid service-account JSON.'
+            ) from error
+        return service_account.Credentials.from_service_account_info(
+            service_account_info,
+            scopes=scopes,
+        )
+    if settings.GOOGLE_SERVICE_ACCOUNT_FILE:
+        return service_account.Credentials.from_service_account_file(
+            settings.GOOGLE_SERVICE_ACCOUNT_FILE,
+            scopes=scopes,
+        )
+    raise ImproperlyConfigured(
+        'Set GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_SERVICE_ACCOUNT_FILE for Google Drive access.'
+    )
 
 
 @lru_cache(maxsize=1)
 def drive_service():
-    credentials = service_account.Credentials.from_service_account_file(
-        settings.GOOGLE_SERVICE_ACCOUNT_FILE,
-        scopes=['https://www.googleapis.com/auth/drive.readonly'],
-    )
+    credentials = _service_account_credentials()
     return build('drive', 'v3', credentials=credentials, cache_discovery=False)
 
 
