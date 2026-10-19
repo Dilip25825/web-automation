@@ -12,6 +12,7 @@ _FORWARDED_REQUEST_HEADERS = (
     'Authorization',
     'Content-Type',
     'X-License-API-Key',
+    'User-Agent',
 )
 _FORWARDED_RESPONSE_HEADERS = (
     'Cache-Control',

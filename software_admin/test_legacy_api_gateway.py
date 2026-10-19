@@ -29,6 +29,7 @@ class LegacyLicensingGatewayTests(SimpleTestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION='Bearer client-token',
             HTTP_X_LICENSE_API_KEY='legacy-key',
+            HTTP_USER_AGENT='Microsoft WinHTTP client',
             REMOTE_ADDR='203.0.113.25',
         )
 
@@ -46,6 +47,7 @@ class LegacyLicensingGatewayTests(SimpleTestCase):
                 'Authorization': 'Bearer client-token',
                 'Content-Type': 'application/json',
                 'X-License-API-Key': 'legacy-key',
+                'User-Agent': 'Microsoft WinHTTP client',
                 'X-Forwarded-For': '203.0.113.25',
             },
             timeout=12,
