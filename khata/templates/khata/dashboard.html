@@ -2,7 +2,7 @@
 {% block title %}{% if is_bad_debt %}Bad Debt Ledgers{% else %}Khata Dashboard{% endif %}{% endblock %}
 {% block content %}
 <div id="khata-app">
-<div class="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-[96rem] space-y-4 px-0 py-1">
 <header class="app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
   <div class="flex flex-col justify-between gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-center">
     <div><p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-200"><i class="fa-solid {% if is_bad_debt %}fa-triangle-exclamation{% else %}fa-book{% endif %} mr-2"></i>{% if is_bad_debt %}Bad Debt ledger{% else %}Customer ledger{% endif %}</p>

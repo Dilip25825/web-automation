@@ -566,7 +566,11 @@
         @keyframes appModalFade { from { opacity: 0; } to { opacity: 1; } }
         .swal2-popup.activation-swal-popup,.swal2-popup.erp-activation-swal-popup { animation: appModalIn .24s ease-out both; }
         .farmer-form-modal.is-open,.erp-form-modal.is-open { animation: appModalFade .2s ease-out both; }
-        .farmer-form-dialog,.erp-form-dialog { animation: appModalIn .24s ease-out both; }    </style>
+        .farmer-form-dialog,.erp-form-dialog { animation: appModalIn .24s ease-out both; }        /* Compact page gutters: visual theme intentionally remains unchanged. */
+        main { padding: .5rem !important; }
+        main > .mx-auto { padding-left: 0 !important; padding-right: 0 !important; }
+
+    </style>
 </head>
 
 <body class="min-h-screen font-sans antialiased">
