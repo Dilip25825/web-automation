@@ -214,6 +214,12 @@ LICENSE_VALIDATION_API_KEY = os.getenv('LICENSE_VALIDATION_API_KEY', '').strip()
 ERP_API_IP_RATE_LIMIT = int(os.getenv('ERP_API_IP_RATE_LIMIT', '60'))
 ERP_API_MOBILE_RATE_LIMIT = int(os.getenv('ERP_API_MOBILE_RATE_LIMIT', '20'))
 
+# When configured only on the retired host, this keeps existing Excel/VBA API
+# URLs working by forwarding /api/licensing/ requests to the replacement host.
+# Leave blank everywhere else so this application serves its own API normally.
+LEGACY_API_GATEWAY_BASE_URL = os.getenv('LEGACY_API_GATEWAY_BASE_URL', '').strip().rstrip('/')
+LEGACY_API_GATEWAY_TIMEOUT_SECONDS = int(os.getenv('LEGACY_API_GATEWAY_TIMEOUT_SECONDS', '30'))
+
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
 if REDIS_URL:
     CACHES = {

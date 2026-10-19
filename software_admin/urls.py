@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 from django.urls import include, path
 from django.http import HttpResponse
 admin.site.site_header = 'Web Automation with Excel'
@@ -22,3 +23,10 @@ urlpatterns = [
     path('coupons/', include('coupons.urls')),
     path('', include('core.urls')),
 ]
+
+# This route exists only on the retired host while old Excel/VBA workbooks still
+# use its API base URL.  The replacement host must leave the setting blank.
+if settings.LEGACY_API_GATEWAY_BASE_URL:
+    from .legacy_api_gateway import proxy_licensing_api
+
+    urlpatterns.insert(0, path('api/licensing/<path:api_path>', proxy_licensing_api))
