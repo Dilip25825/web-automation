@@ -15,6 +15,9 @@ class LegacyLicensingGatewayTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
+    def test_gateway_is_csrf_exempt_like_the_licensing_api(self):
+        self.assertTrue(proxy_licensing_api.csrf_exempt)
+
     @patch('software_admin.legacy_api_gateway.requests.request')
     def test_post_preserves_api_contract_and_authentication_headers(self, request_mock):
         upstream = MagicMock()

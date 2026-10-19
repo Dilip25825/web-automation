@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 import requests
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 _FORWARDED_REQUEST_HEADERS = (
@@ -35,6 +36,7 @@ def _upstream_url(api_path, query_string):
     return url
 
 
+@csrf_exempt
 def proxy_licensing_api(request, api_path):
     """Forward a legacy licensing request without changing its public contract."""
     if request.method not in _ALLOWED_METHODS:
