@@ -107,31 +107,46 @@ class ErpSubscriptionApiTests(SimpleTestCase):
         self.assertEqual(second['Retry-After'], '60')
         cache.clear()
 
-@override_settings(LICENSE_VALIDATION_API_KEY='test-api-key', ALLOWED_HOSTS=['testserver'])
+@override_settings(ALLOWED_HOSTS=['testserver'], ERP_API_IP_RATE_LIMIT=100)
 class ErpVersionApiTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.url = reverse('license_api:erp_version')
 
     @patch('licensing.license_views.VersionInfo.objects')
-    def test_newer_server_version_is_reported(self, objects):
+    def test_mismatched_workbook_version_returns_google_drive_update_link(self, objects):
         objects.filter.return_value.first.return_value = SimpleNamespace(
             Version='5.1.0.9',
             Description='ERP update',
             Year='2026',
-            Remark='Recommended',
+            Remark='https://drive.google.com/file/d/example/view',
         )
         request = self.factory.post(
             self.url,
-            data='{"operator_mobile":"9876543210","current_version":"5.1.0.8"}',
+            data='{"current_version":"5.1.0.8"}',
             content_type='application/json',
-            HTTP_X_LICENSE_API_KEY='test-api-key',
         )
         response = license_views.check_erp_version(request)
         data = json.loads(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['update_available'])
         self.assertEqual(data['latest_version'], '5.1.0.9')
+        self.assertEqual(data['download_url'], 'https://drive.google.com/file/d/example/view')
+
+    @patch('licensing.license_views.VersionInfo.objects')
+    def test_same_version_is_up_to_date(self, objects):
+        objects.filter.return_value.first.return_value = SimpleNamespace(
+            Version='5.1.0.9', Description='ERP update', Year='2026', Remark='',
+        )
+        request = self.factory.post(
+            self.url,
+            data='{"current_version":"5.1.0.9"}',
+            content_type='application/json',
+        )
+        response = license_views.check_erp_version(request)
+        data = json.loads(response.content)
+        self.assertFalse(data['update_available'])
+        self.assertTrue(data['version_matches'])
 
     def test_numeric_version_comparison_does_not_treat_older_server_as_update(self):
         self.assertGreater(license_views._version_parts('5.10.0'), license_views._version_parts('5.9.9'))

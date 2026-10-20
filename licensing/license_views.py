@@ -411,32 +411,28 @@ def _version_parts(value):
 @require_POST
 @never_cache
 def check_erp_version(request):
+    """Return the configured ERP release for the workbook open-time check.
+
+    This endpoint deliberately has no licence/device authentication because it
+    exposes only public release metadata.  It must therefore never return a
+    token, licence detail, or other customer data.
+    """
     if _rate_limited(request, 'version-ip', '', settings.ERP_API_IP_RATE_LIMIT):
         return _too_many_requests()
     body = _json_body(request)
     if body is None:
         return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
 
-    operator_mobile = _operator_mobile(body.get('operator_mobile'))
     current_version = str(body.get('current_version') or '').strip()
-    if not operator_mobile or not current_version:
+    if not current_version:
         return JsonResponse(
             {
                 'success': False,
                 'status': 'INVALID_REQUEST',
-                'message': 'OperatorMobile aur current version required hain.',
+                'message': 'Current version required hai.',
             },
             status=400,
         )
-    if _rate_limited(request, 'version-mobile', operator_mobile, settings.ERP_API_MOBILE_RATE_LIMIT):
-        return _too_many_requests()
-
-    master_authenticated = _api_key_is_valid(request)
-    client_authenticated = False
-    if not master_authenticated:
-        client_authenticated = _client_token_is_valid(request, operator_mobile)
-    if not master_authenticated and not client_authenticated:
-        return JsonResponse({'success': False, 'status': 'UNAUTHORIZED', 'message': 'Secure login verify nahi ho saka. Kripya dobara login karein.'}, status=401)
 
     version_record = VersionInfo.objects.filter(pk=4).first()
     if not version_record or not str(version_record.Version or '').strip():
@@ -450,16 +446,21 @@ def check_erp_version(request):
         )
 
     latest_version = str(version_record.Version).strip()
+    configured_link = str(version_record.Remark or '').strip()
+    download_url = configured_link if configured_link.lower().startswith(('https://', 'http://')) else ''
+    version_matches = current_version == latest_version
     return JsonResponse(
         {
             'success': True,
-            'status': 'UPDATE_AVAILABLE' if _version_parts(latest_version) > _version_parts(current_version) else 'UP_TO_DATE',
-            'update_available': _version_parts(latest_version) > _version_parts(current_version),
+            'status': 'UP_TO_DATE' if version_matches else 'UPDATE_AVAILABLE',
+            'update_available': not version_matches,
+            'version_matches': version_matches,
             'current_version': current_version,
             'latest_version': latest_version,
             'description': version_record.Description or '',
             'year': version_record.Year or '',
             'remark': version_record.Remark or '',
+            'download_url': download_url,
         }
     )
 

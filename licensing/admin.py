@@ -39,6 +39,13 @@ class VersionAdmin(admin.ModelAdmin):
     list_display = ('Description', 'Year','Version','Remark')
     search_fields = ('Description',)
 
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == 'Remark':
+            formfield.label = 'Google Drive update URL'
+            formfield.help_text = 'ERP update ke liye public Google Drive URL paste karein.'
+        return formfield
+
 @admin.register(ErpApiClientToken)
 class ErpApiClientTokenAdmin(admin.ModelAdmin):
     list_display = ('id', 'operator_mobile', 'token_prefix', 'device_hash', 'is_active', 'expires_at', 'last_used_at', 'created_at')

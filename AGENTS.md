@@ -56,9 +56,10 @@ The production site is hosted on Render and the primary database is MySQL. Excel
 3. Make the smallest scoped change that satisfies the request.
 4. For model changes, create a migration with `makemigrations`; never manually improvise production schema changes.
 5. Keep UI consistent with the existing project theme, responsive desktop/mobile layouts, AJAX/no-reload behavior and visible spinner/modal stacking.
-6. Keep user-facing messages simple and client-friendly; do not expose SQL, exception traces, internal tokens or developer terminology.
-7. Add or update focused tests for business rules and regressions.
-8. Report exactly what changed, what was tested, whether a migration/deployment action remains, and any VBA compatibility impact.
+6. Preserve the established purple/blue gradient theme, coloured action icons and rounded cards. The current compact layout is intentional: use reduced outer page gutters, wide content areas and tighter section gaps; do not replace the theme with an Office/Excel green theme unless the user explicitly asks again.
+7. Keep user-facing messages simple and client-friendly; do not expose SQL, exception traces, internal tokens or developer terminology.
+8. Add or update focused tests for business rules and regressions.
+9. Report exactly what changed, what was tested, whether a migration/deployment action remains, and any VBA compatibility impact.
 
 ## Required verification
 
