@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block title %}My Profile | Web Automation with Excel{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl py-4 sm:py-8">
+  <div class="overflow-hidden rounded-3xl border border-indigo-100 bg-white shadow-[0_20px_55px_rgba(49,46,129,.12)]">
+    <div class="bg-gradient-to-r from-indigo-950 via-indigo-800 to-violet-700 px-6 py-7 text-white sm:px-9"><p class="text-xs font-extrabold uppercase tracking-[.18em] text-cyan-200">Account details</p><h1 class="mt-2 text-3xl font-extrabold">My Profile</h1><p class="mt-2 text-sm text-indigo-100">Password reset OTP isi email address par aayega.</p></div>
+    <div class="p-6 sm:p-9"><dl class="mb-7 grid gap-3 rounded-2xl bg-slate-50 p-5 text-sm sm:grid-cols-2"><div><dt class="font-bold text-slate-500">Username</dt><dd class="mt-1 font-extrabold text-slate-900">{{ request.user.username }}</dd></div><div><dt class="font-bold text-slate-500">Password security</dt><dd class="mt-1 font-extrabold text-emerald-700">Email OTP enabled</dd></div></dl>
+      <form method="post" class="space-y-5">{% csrf_token %}<div><label for="{{ form.email.id_for_label }}" class="mb-2 block text-sm font-extrabold text-slate-700">Email address</label><input type="email" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}" value="{{ form.email.value|default_if_none:'' }}" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-indigo-500 focus:bg-white">{% for error in form.email.errors %}<p class="mt-2 text-sm text-rose-600">{{ error }}</p>{% endfor %}</div><button class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-indigo-200"><i class="fa-solid fa-floppy-disk mr-2"></i>Save email</button></form>
+      {% if request.user.email %}<div class="mt-8 border-t border-slate-100 pt-6"><h2 class="text-lg font-extrabold text-slate-900">Change password</h2><p class="mt-1 text-sm leading-6 text-slate-500">We will send a 6-digit OTP to your saved email before changing the password.</p><a href="{% url 'accounts:password_reset_request' %}" class="mt-4 inline-flex rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-extrabold text-indigo-700 hover:bg-indigo-100"><i class="fa-solid fa-key mr-2"></i>Change password with OTP</a></div>{% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

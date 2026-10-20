@@ -4,7 +4,7 @@
 
 This repository is the Django backend and web dashboard for **Web Automation With Excel**. It manages User Licenses, ERP Licenses, PMFBY/Fasal Rin integrations, Khata ledgers, reminders, coupons, Google Drive downloads/attachments, UPI QR generation, and optional Razorpay payment flows.
 
-The production site is hosted on Render and the primary database is MySQL. Excel/VBA clients call selected licensing APIs, so API response fields and status codes are public contracts even when no mobile or browser frontend uses them.
+The production site is hosted on AlwaysData at `https://webautomationexcel.com/`, and the primary MySQL database is also hosted on AlwaysData. Excel/VBA clients call selected licensing APIs, so API response fields and status codes are public contracts even when no mobile or browser frontend uses them.
 
 ## Canonical working copy
 
@@ -33,8 +33,8 @@ The production site is hosted on Render and the primary database is MySQL. Excel
 - Database: MySQL in normal development/production.
 - Time zone: `Asia/Kolkata`, with `USE_TZ = True`.
 - Static serving: WhiteNoise with manifest storage.
-- Production: Render at `https://web-automation-maar.onrender.com`.
-- Secrets/configuration belong in `.env` locally and Render environment variables in production.
+- Production: AlwaysData at `https://webautomationexcel.com/`.
+- Secrets/configuration belong in `.env` locally and in the private AlwaysData production configuration; never commit them.
 
 ## Non-negotiable safety rules
 
@@ -135,9 +135,10 @@ git status --short
 - Before committing, inspect the diff and exclude unrelated user-owned files.
 - Use a concise commit message describing the completed feature/fix.
 - Push to `origin master` only when explicitly requested or clearly included in the user request.
-- Deploy only after commit/push and successful relevant checks. Use the configured Render deploy hook without printing its URL or secret.
-- After deployment, verify the deployment status/log and at least `/health/`; verify the changed public/API page when safe.
-- Never report deployment success merely because the hook accepted the request; wait for the Render deployment result when access is available.
+- Deploy only after commit/push and successful relevant checks. The production working tree is `/home/ddelwash/apps/django_test`; connect through the configured AlwaysData SSH account and use `git pull --ff-only origin master` only after checking its status.
+- Run production steps only when required by the change: dependency install, migration plan/apply, and `collectstatic`. Restart the AlwaysData Django site after a code deploy.
+- After deployment, verify the AlwaysData site/process status and at least `https://webautomationexcel.com/health/`; verify the changed public/API page when safe.
+- Do not assume GitHub push automatically deploys: the current documented flow is SSH pull. An AlwaysData Git hook or webhook must be explicitly configured and verified before calling it automatic deployment.
 
 ## Communication style
 

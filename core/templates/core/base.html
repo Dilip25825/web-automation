@@ -531,6 +531,17 @@
         .admin-menu-panel a, .admin-menu-panel button { display: flex; align-items: center; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .65rem .75rem; color: #334155; font: inherit; font-size: .82rem; font-weight: 800; text-align: left; text-decoration: none; }
         .admin-menu-panel a:hover, .admin-menu-panel button:hover { background: #eef2ff; color: #4338ca; }
         .admin-menu-panel i { width: 1.35rem; color: #4f46e5; }
+        .account-menu { position: relative; }
+        .account-menu > summary { cursor: pointer; list-style: none; }
+        .account-menu > summary::-webkit-details-marker { display: none; }
+        .account-menu-panel { position: absolute; top: calc(100% + .45rem); right: 0; z-index: 60; min-width: 225px; padding: .45rem; border: 1px solid rgba(199,210,254,.55); border-radius: .9rem; background: #fff; box-shadow: 0 18px 38px rgba(15,23,42,.24); }
+        .account-menu-panel a, .account-menu-panel button { display: flex; align-items: center; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .65rem .75rem; color: #334155; font: inherit; font-size: .82rem; font-weight: 800; text-align: left; text-decoration: none; }
+        .account-menu-panel a:hover, .account-menu-panel button:hover { background: #eef2ff; color: #4338ca; }
+        .account-menu-panel i { width: 1.35rem; color: #4f46e5; }
+        .account-menu-panel .account-name { padding: .55rem .75rem .7rem; border-bottom: 1px solid #e2e8f0; margin-bottom: .35rem; color: #0f172a; font-size: .85rem; font-weight: 900; overflow-wrap: anywhere; }
+        .account-menu-panel .account-email { display: block; margin-top: .15rem; color: #64748b; font-size: .7rem; font-weight: 600; }
+        .account-menu-panel .logout-action { color: #be123c; }
+        .account-menu-panel .logout-action i { color: #e11d48; }
         .mobile-admin-menu > summary { list-style: none; cursor: pointer; }
         .mobile-admin-menu > summary::-webkit-details-marker { display: none; }
         .mobile-admin-submenu { margin: 0 0 .35rem 1.25rem; border-left: 1px solid rgba(199,210,254,.35); padding-left: .55rem; }
@@ -631,12 +642,7 @@
                         {% if request.user.is_superuser %}<details class="admin-menu"><summary class="flex items-center gap-2 rounded-xl px-3 py-2 text-indigo-100 transition hover:bg-white/10 hover:text-white"><i class="fa-solid fa-user-shield"></i> Admin Menu <i class="fa-solid fa-chevron-down text-[10px]"></i></summary><div class="admin-menu-panel"><button type="button" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a href="{% url 'licensing:version_control' %}"><i class="fa-solid fa-code-branch"></i> Version Control</a><a href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> Settings</a><form method="post" action="{% url 'downloads:sync_drive_catalog' %}" data-drive-sync-form>{% csrf_token %}<button type="submit"><i class="fa-brands fa-google-drive"></i> Sync Google Drive</button></form></div></details>{% endif %}
                     </div>
 
-                    <form action="{% url 'accounts:logout' %}" method="post">
-                        {% csrf_token %}
-                        <button class="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-rose-500/25" data-logout>
-                            <i class="fa-solid fa-right-from-bracket"></i>{{ user.username }} &middot; Logout
-                        </button>
-                    </form>
+                    <details class="account-menu"><summary class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/20"><span class="grid h-6 w-6 place-items-center rounded-full bg-cyan-300 text-xs text-indigo-950"><i class="fa-solid fa-user"></i></span><span class="max-w-32 truncate">{{ user.username }}</span><i class="fa-solid fa-chevron-down text-[10px] text-indigo-200"></i></summary><div class="account-menu-panel"><div class="account-name"><i class="fa-solid fa-user-circle mr-1 text-indigo-600"></i>{{ user.username }}{% if user.email %}<span class="account-email">{{ user.email }}</span>{% endif %}</div><a href="{% url 'accounts:profile' %}"><i class="fa-solid fa-user-gear"></i>My Profile</a><form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-action" data-logout><i class="fa-solid fa-right-from-bracket"></i>Logout</button></form></div></details>
                 </div>
             {% else %}
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
@@ -667,7 +673,7 @@
             {% endif %}
             {% if not request.user.is_authenticated or menu_permissions.downloads %}<a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% endif %}<a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> Client Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
-            {% if request.user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
+            {% if request.user.is_authenticated %}<a class="nav-item" href="{% url 'accounts:profile' %}"><i class="fa-solid fa-user-gear"></i> My Profile</a><form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
         </div>   </div>
 
     {% if request.user.is_superuser %}
@@ -937,6 +943,19 @@
 (()=>{const modal=document.getElementById('global-qr-modal'),form=document.getElementById('global-qr-form'),select=form?.querySelector('[name=upi_id]'),result=document.getElementById('global-qr-result'),submit=document.getElementById('global-qr-submit');if(!modal||!form)return;const close=()=>{modal.classList.add('hidden');modal.classList.remove('flex')};const errors=()=>document.querySelectorAll('[data-global-qr-error]').forEach(el=>el.textContent='');async function openQr(prefill={}){modal.classList.remove('hidden');modal.classList.add('flex');result.classList.add('hidden');errors();form.elements.amount.value=prefill.amount??'';form.elements.remark.value=prefill.remark??'';select.innerHTML='<option value="">Loading UPI accounts...</option>';try{const response=await fetch(form.action,{headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'UPI list load nahi hui.');select.replaceChildren(new Option('-- Select UPI ID --',''));data.upi_accounts.forEach(upi=>{const label=upi.upi_id+(upi.remark?' — '+upi.remark:'')+(upi.is_active?' (Active)':'');select.add(new Option(label,String(upi.id),false,upi.is_active))});if(!data.upi_accounts.length)throw new Error('Koi UPI ID available nahi hai.')}catch(error){select.innerHTML='<option value="">No UPI available</option>';Swal.fire({icon:'error',title:'UPI unavailable',text:error.message})}}window.openGlobalQrGenerator=openQr;document.querySelectorAll('[data-qr-modal-open]').forEach(button=>button.addEventListener('click',()=>{document.getElementById('mobilePanel')?.classList.remove('open');openQr()}));document.querySelectorAll('[data-qr-modal-close]').forEach(button=>button.addEventListener('click',close));modal.addEventListener('click',event=>{if(event.target===modal)close()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.classList.contains('hidden'))close()});form.addEventListener('submit',async event=>{event.preventDefault();errors();submit.disabled=true;submit.textContent='Generating...';try{const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success){if(data.errors)Object.entries(data.errors).forEach(([name,items])=>{const el=document.querySelector(`[data-global-qr-error="${name}"]`);if(el)el.textContent=items.map(item=>item.message).join(' ')});throw new Error(data.message||'QR generate nahi hua.')}document.getElementById('global-qr-image').src=data.qr_data_url;document.getElementById('global-qr-upi').textContent=data.upi_id;document.getElementById('global-qr-summary').textContent=`₹${data.amount} · ${data.remark}`;result.classList.remove('hidden')}catch(error){Swal.fire({icon:'error',title:'QR failed',text:error.message})}finally{submit.disabled=false;submit.innerHTML='<i class="fa-solid fa-qrcode mr-2"></i>Generate Payment QR'}})})();
     </script>
     {% endif %}
+    <script>
+    (() => {
+        const menus = () => document.querySelectorAll('details.account-menu, details.admin-menu');
+        document.addEventListener('click', event => {
+            menus().forEach(menu => {
+                if (menu.open && !menu.contains(event.target)) menu.removeAttribute('open');
+            });
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') menus().forEach(menu => menu.removeAttribute('open'));
+        });
+    })();
+    </script>
     {% if request.user.is_superuser %}
     <script>
     (() => {
