@@ -52,11 +52,11 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = env_bool('DJANGO_DEBUG', False)
 ALLOWED_HOSTS = env_list(
     'ALLOWED_HOSTS',
-    '127.0.0.1,localhost' if DEBUG else 'web-automation-maar.onrender.com',
+    '127.0.0.1,localhost' if DEBUG else 'webautomationexcel.com,www.webautomationexcel.com',
 )
 CSRF_TRUSTED_ORIGINS = env_list(
     'CSRF_TRUSTED_ORIGINS',
-    '' if DEBUG else 'https://web-automation-maar.onrender.com',
+    '' if DEBUG else 'https://webautomationexcel.com,https://www.webautomationexcel.com',
 )
 
 if not DEBUG:
