@@ -446,7 +446,7 @@ def check_erp_version(request):
         )
 
     latest_version = str(version_record.Version).strip()
-    configured_link = str(version_record.Remark or '').strip()
+    configured_link = str(version_record.url or '').strip()
     download_url = configured_link if configured_link.lower().startswith(('https://', 'http://')) else ''
     version_matches = current_version == latest_version
     return JsonResponse(

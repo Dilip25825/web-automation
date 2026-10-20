@@ -178,6 +178,7 @@ class VersionInfo(models.Model):
     Year = models.TextField(max_length=255,null=True,blank=True,verbose_name='Year')
     Version = models.TextField(max_length=255,null=True,blank=True,verbose_name='Version')
     Remark = models.TextField(max_length=255,null=True,blank=True,verbose_name='Remark')
+    url = models.TextField(null=True, blank=True, db_column='url', verbose_name='Google Drive folder URL')
 
     class Meta:
         db_table = 'VersionInfo'

@@ -119,7 +119,8 @@ class ErpVersionApiTests(SimpleTestCase):
             Version='5.1.0.9',
             Description='ERP update',
             Year='2026',
-            Remark='https://drive.google.com/file/d/example/view',
+            Remark='Recommended',
+            url='https://drive.google.com/drive/folders/example',
         )
         request = self.factory.post(
             self.url,
@@ -131,12 +132,12 @@ class ErpVersionApiTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['update_available'])
         self.assertEqual(data['latest_version'], '5.1.0.9')
-        self.assertEqual(data['download_url'], 'https://drive.google.com/file/d/example/view')
+        self.assertEqual(data['download_url'], 'https://drive.google.com/drive/folders/example')
 
     @patch('licensing.license_views.VersionInfo.objects')
     def test_same_version_is_up_to_date(self, objects):
         objects.filter.return_value.first.return_value = SimpleNamespace(
-            Version='5.1.0.9', Description='ERP update', Year='2026', Remark='',
+            Version='5.1.0.9', Description='ERP update', Year='2026', Remark='', url='',
         )
         request = self.factory.post(
             self.url,

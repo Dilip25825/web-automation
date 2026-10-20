@@ -36,15 +36,8 @@ class PerpousAdmin(admin.ModelAdmin):
 @admin.register(VersionInfo)
 class VersionAdmin(admin.ModelAdmin):
     # Admin list view mein column dikhane ke liye
-    list_display = ('Description', 'Year','Version','Remark')
+    list_display = ('Description', 'Year', 'Version', 'url', 'Remark')
     search_fields = ('Description',)
-
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
-        if db_field.name == 'Remark':
-            formfield.label = 'Google Drive update URL'
-            formfield.help_text = 'ERP update ke liye public Google Drive URL paste karein.'
-        return formfield
 
 @admin.register(ErpApiClientToken)
 class ErpApiClientTokenAdmin(admin.ModelAdmin):

@@ -34,7 +34,7 @@ Public Sub CheckErpVersionOnOpen()
         MsgBox "New ERP version " & latestVersion & " available hai." & vbCrLf & _
                "Update link abhi server par configure nahi hai.", vbExclamation, PROMPT_TITLE
     ElseIf MsgBox("New ERP version " & latestVersion & " available hai." & vbCrLf & vbCrLf & _
-                  "Update download page kholna chahte hain?", vbQuestion + vbYesNo, PROMPT_TITLE) = vbYes Then
+                  "Google Drive update folder kholna chahte hain?", vbQuestion + vbYesNo, PROMPT_TITLE) = vbYes Then
         ThisWorkbook.FollowHyperlink downloadUrl
     End If
     Exit Sub
