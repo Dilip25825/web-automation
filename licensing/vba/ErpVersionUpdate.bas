@@ -50,7 +50,7 @@ Private Function GetErpVersionResponse(ByVal currentVersion As String) As String
     http.Open "POST", ERP_VERSION_API_URL, False
     http.SetRequestHeader "Content-Type", "application/json"
     http.SetRequestHeader "Accept", "application/json"
-    http.Send "{\"current_version\":\"" & JsonEscapeValue(currentVersion) & "\"}"
+    http.Send "{""current_version"":""" & JsonEscapeValue(currentVersion) & """}"
     If CLng(http.Status) >= 200 And CLng(http.Status) < 300 Then GetErpVersionResponse = CStr(http.ResponseText)
 End Function
 

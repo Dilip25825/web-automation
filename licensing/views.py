@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 from django.shortcuts import render, redirect, get_object_or_404, get_object_or_404
 from django.contrib import messages
 from django.db import models, transaction
-from .models import Perpous, UserInfoData
+from .models import Perpous, UserInfoData, VersionInfo
 from .models import tblPacsErp, tblUPI
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
@@ -16,7 +16,7 @@ from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonR
 from .utils import generate_pacs_invoice_pdf
 from .utils import generate_erp_invoice_pdf  # Naya function import kiya
 from django.utils import timezone
-from .forms import PacsErpForm, PurposeSettingsForm, UpiQrForm, UpiSettingsForm, UserInfoForm
+from .forms import PacsErpForm, PurposeSettingsForm, UpiQrForm, UpiSettingsForm, UserInfoForm, VersionInfoForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date
 from functools import wraps
@@ -1035,6 +1035,53 @@ def system_settings(request):
     if section == 'upi':
         return render(request, 'licensing/_settings_upis.html', context)
     return render(request, 'licensing/system_settings.html', context)
+
+
+@superuser_settings_required
+def version_control(request):
+    editing_record = None
+    edit_pk = request.GET.get('edit')
+    if request.method == 'GET' and edit_pk:
+        editing_record = get_object_or_404(VersionInfo, pk=edit_pk)
+    form = VersionInfoForm(request.POST or None, instance=editing_record)
+    if request.method == 'POST' and form.is_valid():
+        version_info = form.save()
+        messages.success(request, f'{version_info.Description} version added successfully.')
+        return redirect('licensing:version_control')
+    return render(request, 'licensing/version_control.html', {
+        'form': form,
+        'editing_record': editing_record,
+        'version_records': VersionInfo.objects.all().order_by('pk'),
+    })
+
+
+@superuser_settings_required
+@require_POST
+def update_version_info(request, pk):
+    version_info = get_object_or_404(VersionInfo, pk=pk)
+    form = VersionInfoForm(request.POST, instance=version_info)
+    if not form.is_valid():
+        return render(request, 'licensing/version_control.html', {
+            'form': form,
+            'editing_record': version_info,
+            'version_records': VersionInfo.objects.all().order_by('pk'),
+        }, status=400)
+    form.save()
+    messages.success(request, f'{version_info.Description} version updated successfully.')
+    return redirect('licensing:version_control')
+
+
+@superuser_settings_required
+@require_POST
+def delete_version_info(request, pk):
+    version_info = get_object_or_404(VersionInfo, pk=pk)
+    if version_info.pk == 4:
+        messages.error(request, 'ERP version row (ID 4) delete nahi ki ja sakti; isse update API use karti hai.')
+    else:
+        label = version_info.Description or f'Version #{version_info.pk}'
+        version_info.delete()
+        messages.success(request, f'{label} deleted successfully.')
+    return redirect('licensing:version_control')
 
 
 @superuser_settings_required

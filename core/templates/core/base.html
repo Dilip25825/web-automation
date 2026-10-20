@@ -492,11 +492,17 @@
         }
 
         .mobile-menu-panel .nav-item {
-            display: block;
+            display: flex;
+            align-items: center;
+            width: 100%;
             padding: 0.75rem 1rem;
+            border: 0;
             border-radius: 0.5rem;
+            background: transparent;
             color: #e0e7ff;
+            font: inherit;
             font-weight: 600;
+            text-align: left;
             text-decoration: none;
             transition: all 0.15s ease;
         }
@@ -513,9 +519,22 @@
         }
 
         .mobile-menu-panel .nav-item i {
-            width: 1.5rem;
+            flex: 0 0 1.5rem;
             margin-right: 0.75rem;
+            text-align: center;
         }
+
+        .admin-menu { position: relative; }
+        .admin-menu > summary { cursor: pointer; list-style: none; }
+        .admin-menu > summary::-webkit-details-marker { display: none; }
+        .admin-menu-panel { position: absolute; top: calc(100% + .45rem); right: 0; z-index: 60; min-width: 205px; padding: .45rem; border: 1px solid rgba(199,210,254,.55); border-radius: .9rem; background: #fff; box-shadow: 0 18px 38px rgba(15,23,42,.24); }
+        .admin-menu-panel a, .admin-menu-panel button { display: flex; align-items: center; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .65rem .75rem; color: #334155; font: inherit; font-size: .82rem; font-weight: 800; text-align: left; text-decoration: none; }
+        .admin-menu-panel a:hover, .admin-menu-panel button:hover { background: #eef2ff; color: #4338ca; }
+        .admin-menu-panel i { width: 1.35rem; color: #4f46e5; }
+        .mobile-admin-menu > summary { list-style: none; cursor: pointer; }
+        .mobile-admin-menu > summary::-webkit-details-marker { display: none; }
+        .mobile-admin-submenu { margin: 0 0 .35rem 1.25rem; border-left: 1px solid rgba(199,210,254,.35); padding-left: .55rem; }
+        .mobile-admin-submenu .nav-item { padding-top: .6rem; padding-bottom: .6rem; font-size: .92rem; }
 
         .mobile-menu-panel .divider {
             border-top: 1px solid rgba(255,255,255,.16);
@@ -609,11 +628,7 @@
                         {% if menu_permissions.downloads %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'downloads:public_downloads' %}">
                             <i class="fa-solid fa-download"></i> Download
                         </a>{% endif %}
-                        {% if request.user.is_superuser %}<button type="button" data-qr-modal-open class="flex items-center gap-2 rounded-xl px-3 py-2 text-indigo-100 transition hover:bg-white/10 hover:text-white"><i class="fa-solid fa-qrcode"></i> QR</button>{% endif %}
-
-                        {% if request.user.is_superuser %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.url_name == 'system_settings' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'licensing:system_settings' %}">
-                            <i class="fa-solid fa-gear"></i> Settings
-                        </a>{% endif %}
+                        {% if request.user.is_superuser %}<details class="admin-menu"><summary class="flex items-center gap-2 rounded-xl px-3 py-2 text-indigo-100 transition hover:bg-white/10 hover:text-white"><i class="fa-solid fa-user-shield"></i> Admin Menu <i class="fa-solid fa-chevron-down text-[10px]"></i></summary><div class="admin-menu-panel"><button type="button" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a href="{% url 'licensing:version_control' %}"><i class="fa-solid fa-code-branch"></i> Version Control</a><a href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> Settings</a><form method="post" action="{% url 'downloads:sync_drive_catalog' %}" data-drive-sync-form>{% csrf_token %}<button type="submit"><i class="fa-brands fa-google-drive"></i> Sync Google Drive</button></form></div></details>{% endif %}
                     </div>
 
                     <form action="{% url 'accounts:logout' %}" method="post">
@@ -648,7 +663,7 @@
         <div style="margin-top: 2rem;">
             {% if request.user.is_authenticated %}
             {% if menu_permissions.dashboard %}<a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a>{% endif %}{% if menu_permissions.user_licenses %}<a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> User Licenses</a>{% endif %}{% if menu_permissions.erp_licenses %}<a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP Licenses</a>{% endif %}{% if menu_permissions.reminders %}<a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a>{% endif %}{% if menu_permissions.khata %}<a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a>{% endif %}{% if menu_permissions.coupons %}<a class="nav-item" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}
-            {% if request.user.is_superuser %}<button type="button" class="nav-item w-full" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a class="nav-item" href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> System Settings</a>{% endif %}
+            {% if request.user.is_superuser %}<details class="mobile-admin-menu"><summary class="nav-item"><i class="fa-solid fa-user-shield"></i> Admin Menu <i class="fa-solid fa-chevron-down ml-auto mr-0 text-xs"></i></summary><div class="mobile-admin-submenu"><button type="button" class="nav-item" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a class="nav-item" href="{% url 'licensing:version_control' %}"><i class="fa-solid fa-code-branch"></i> Version Control</a><a class="nav-item" href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> Settings</a><form method="post" action="{% url 'downloads:sync_drive_catalog' %}" data-drive-sync-form>{% csrf_token %}<button type="submit" class="nav-item"><i class="fa-brands fa-google-drive"></i> Sync Google Drive</button></form></div></details>{% endif %}
             {% endif %}
             {% if not request.user.is_authenticated or menu_permissions.downloads %}<a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% endif %}<a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> Client Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
@@ -920,6 +935,45 @@
     {% if request.user.is_superuser %}
     <script>
 (()=>{const modal=document.getElementById('global-qr-modal'),form=document.getElementById('global-qr-form'),select=form?.querySelector('[name=upi_id]'),result=document.getElementById('global-qr-result'),submit=document.getElementById('global-qr-submit');if(!modal||!form)return;const close=()=>{modal.classList.add('hidden');modal.classList.remove('flex')};const errors=()=>document.querySelectorAll('[data-global-qr-error]').forEach(el=>el.textContent='');async function openQr(prefill={}){modal.classList.remove('hidden');modal.classList.add('flex');result.classList.add('hidden');errors();form.elements.amount.value=prefill.amount??'';form.elements.remark.value=prefill.remark??'';select.innerHTML='<option value="">Loading UPI accounts...</option>';try{const response=await fetch(form.action,{headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'UPI list load nahi hui.');select.replaceChildren(new Option('-- Select UPI ID --',''));data.upi_accounts.forEach(upi=>{const label=upi.upi_id+(upi.remark?' — '+upi.remark:'')+(upi.is_active?' (Active)':'');select.add(new Option(label,String(upi.id),false,upi.is_active))});if(!data.upi_accounts.length)throw new Error('Koi UPI ID available nahi hai.')}catch(error){select.innerHTML='<option value="">No UPI available</option>';Swal.fire({icon:'error',title:'UPI unavailable',text:error.message})}}window.openGlobalQrGenerator=openQr;document.querySelectorAll('[data-qr-modal-open]').forEach(button=>button.addEventListener('click',()=>{document.getElementById('mobilePanel')?.classList.remove('open');openQr()}));document.querySelectorAll('[data-qr-modal-close]').forEach(button=>button.addEventListener('click',close));modal.addEventListener('click',event=>{if(event.target===modal)close()});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.classList.contains('hidden'))close()});form.addEventListener('submit',async event=>{event.preventDefault();errors();submit.disabled=true;submit.textContent='Generating...';try{const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{'X-Requested-With':'XMLHttpRequest'}}),data=await response.json();if(!response.ok||!data.success){if(data.errors)Object.entries(data.errors).forEach(([name,items])=>{const el=document.querySelector(`[data-global-qr-error="${name}"]`);if(el)el.textContent=items.map(item=>item.message).join(' ')});throw new Error(data.message||'QR generate nahi hua.')}document.getElementById('global-qr-image').src=data.qr_data_url;document.getElementById('global-qr-upi').textContent=data.upi_id;document.getElementById('global-qr-summary').textContent=`₹${data.amount} · ${data.remark}`;result.classList.remove('hidden')}catch(error){Swal.fire({icon:'error',title:'QR failed',text:error.message})}finally{submit.disabled=false;submit.innerHTML='<i class="fa-solid fa-qrcode mr-2"></i>Generate Payment QR'}})})();
+    </script>
+    {% endif %}
+    {% if request.user.is_superuser %}
+    <script>
+    (() => {
+        document.querySelectorAll('.admin-menu-panel a, .mobile-admin-submenu a, [data-qr-modal-open]').forEach(item => {
+            item.addEventListener('click', () => item.closest('details')?.removeAttribute('open'));
+        });
+        document.querySelectorAll('[data-drive-sync-form]').forEach(form => {
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                form.closest('details')?.removeAttribute('open');
+                const button = form.querySelector('button[type="submit"]');
+                if (button) button.disabled = true;
+                Swal.fire({
+                    title: 'Syncing Google Drive…',
+                    text: 'Files aur folders ki latest list update ho rahi hai. Kripya wait karein.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading(),
+                });
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST', body: new FormData(form),
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}, credentials: 'same-origin',
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error(result.message || 'Drive sync failed.');
+                    Swal.close();
+                    await Swal.fire({icon: 'success', title: 'Drive Sync Complete', text: result.message, confirmButtonColor: '#4f46e5'});
+                    window.location.reload();
+                } catch (error) {
+                    Swal.close();
+                    if (button) button.disabled = false;
+                    Swal.fire({icon: 'error', title: 'Sync failed', text: error.message});
+                }
+            });
+        });
+    })();
     </script>
     {% endif %}
     {% block extra_js %}{% endblock %}

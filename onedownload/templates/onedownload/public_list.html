@@ -20,13 +20,6 @@
           {% if download_snapshot and download_snapshot.synced_at %}<span class="rounded-xl border border-white/15 bg-white/10 px-4 py-2"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Updated {{ download_snapshot.synced_at|date:"d M Y, h:i A" }}</span>{% endif %}
         </div>
       </div>
-      {% if user.is_superuser %}
-      <form method="post" action="{% url 'downloads:sync_drive_catalog' %}" data-drive-sync-form data-download-ajax-form class="lg:text-right">
-        {% csrf_token %}
-        <button type="submit" class="btn min-w-48 border border-white/25 bg-white text-indigo-700 shadow-xl hover:bg-indigo-50"><i class="fa-solid fa-rotate"></i><span>Sync Google Drive</span></button>
-        <p class="mt-2 text-xs text-indigo-200">Drive changes ko download list mein publish karein.</p>
-      </form>
-      {% endif %}
     </div>
   </div>
 

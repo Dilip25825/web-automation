@@ -32,6 +32,9 @@ class SystemSettingsPermissionTests(SimpleTestCase):
             (views.update_upi, (1,)),
             (views.delete_upi, (1,)),
             (views.generate_upi_qr, ()),
+            (views.version_control, ()),
+            (views.update_version_info, (1,)),
+            (views.delete_version_info, (1,)),
         ]
         for view, args in endpoints:
             with self.subTest(view=view.__name__):
@@ -43,6 +46,17 @@ class SystemSettingsPermissionTests(SimpleTestCase):
         from licensing.forms import UpiQrForm
         self.assertTrue(UpiQrForm({'upi_id': '7', 'amount': '2000', 'remark': 'FASAL RIN 2025-2026'}).is_valid())
         self.assertFalse(UpiQrForm({'upi_id': '', 'amount': '0', 'remark': ''}).is_valid())
+
+    def test_version_form_accepts_google_drive_folder_url(self):
+        from licensing.forms import VersionInfoForm
+        form = VersionInfoForm({
+            'Description': 'Pacs Computerize ERP',
+            'Year': '2026',
+            'Version': '4.5.0.71',
+            'url': 'https://drive.google.com/drive/folders/example',
+            'Remark': 'Latest ERP release',
+        })
+        self.assertTrue(form.is_valid())
 
     @patch('licensing.views.tblUPI.objects')
     def test_superuser_can_generate_qr_from_active_upi(self, objects):

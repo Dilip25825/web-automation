@@ -2,7 +2,7 @@ import json
 import re
 
 from django import forms
-from .models import UserInfoData, tblPacsErp,Perpous,tblUPI
+from .models import UserInfoData, tblPacsErp, Perpous, tblUPI, VersionInfo
 
 
 class PurposeSettingsForm(forms.ModelForm):
@@ -78,6 +78,37 @@ class UpiQrForm(forms.Form):
 
     def clean_remark(self):
         return ' '.join(self.cleaned_data['remark'].split())
+
+
+class VersionInfoForm(forms.ModelForm):
+    class Meta:
+        model = VersionInfo
+        fields = ['Description', 'Year', 'Version', 'url', 'Remark']
+        widgets = {
+            'Description': forms.TextInput(attrs={'maxlength': '255', 'placeholder': 'Example: Pacs Computerize ERP'}),
+            'Year': forms.TextInput(attrs={'maxlength': '255', 'placeholder': 'Example: 2026'}),
+            'Version': forms.TextInput(attrs={'maxlength': '255', 'placeholder': 'Example: 4.5.0.71'}),
+            'url': forms.URLInput(attrs={'placeholder': 'https://drive.google.com/drive/folders/...'}),
+            'Remark': forms.Textarea(attrs={'rows': 3, 'maxlength': '255', 'placeholder': 'Optional release note'}),
+        }
+
+    def clean_Description(self):
+        value = ' '.join((self.cleaned_data.get('Description') or '').split())
+        if not value:
+            raise forms.ValidationError('Description is required.')
+        return value
+
+    def clean_Version(self):
+        value = (self.cleaned_data.get('Version') or '').strip()
+        if not value:
+            raise forms.ValidationError('Version is required.')
+        return value
+
+    def clean_url(self):
+        value = (self.cleaned_data.get('url') or '').strip()
+        if value and not value.lower().startswith(('https://', 'http://')):
+            raise forms.ValidationError('Google Drive folder URL must start with http:// or https://.')
+        return value
 
 
 class UserInfoForm(forms.ModelForm):
