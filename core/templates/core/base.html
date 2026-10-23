@@ -10,6 +10,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
+    {% if not request.user.is_authenticated and request.resolver_match.namespace != 'accounts' %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6094868873003811" crossorigin="anonymous"></script>
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
@@ -648,7 +652,8 @@
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
                 <div class="ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
                     <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-download"></i> Downloads</a>
-                    <a href="{% url 'core:client_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-book-open"></i> Client Guide</a>
+                    <a href="{% url 'core:client_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-book-open"></i> PMFBY &amp; KRP Guide</a>
+                    <a href="{% url 'core:erp_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-building-columns"></i> ERP Guide</a>
                     <a href="{% url 'core:pricing' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-tags"></i> Pricing</a>
                     <a href="{% url 'core:contact' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-address-card"></i> Contact</a>
                     <a href="{% url 'accounts:login' %}" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
@@ -671,7 +676,7 @@
             {% if menu_permissions.dashboard %}<a class="nav-item" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-table-columns"></i> Dashboard</a>{% endif %}{% if menu_permissions.user_licenses %}<a class="nav-item" href="{% url 'licensing:userinfo_dashboard' %}"><i class="fa-solid fa-users"></i> User Licenses</a>{% endif %}{% if menu_permissions.erp_licenses %}<a class="nav-item" href="{% url 'licensing:pacserp_dashboard' %}"><i class="fa-solid fa-tractor"></i> ERP Licenses</a>{% endif %}{% if menu_permissions.reminders %}<a class="nav-item" href="{% url 'reminders:dashboard' %}"><i class="fa-solid fa-bell"></i> Reminders</a>{% endif %}{% if menu_permissions.khata %}<a class="nav-item" href="{% url 'khata:dashboard' %}"><i class="fa-solid fa-file-invoice-dollar"></i> Khata</a>{% endif %}{% if menu_permissions.coupons %}<a class="nav-item" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}
             {% if request.user.is_superuser %}<details class="mobile-admin-menu"><summary class="nav-item"><i class="fa-solid fa-user-shield"></i> Admin Menu <i class="fa-solid fa-chevron-down ml-auto mr-0 text-xs"></i></summary><div class="mobile-admin-submenu"><button type="button" class="nav-item" data-qr-modal-open><i class="fa-solid fa-qrcode"></i> QR Generator</button><a class="nav-item" href="{% url 'licensing:version_control' %}"><i class="fa-solid fa-code-branch"></i> Version Control</a><a class="nav-item" href="{% url 'licensing:system_settings' %}"><i class="fa-solid fa-gear"></i> Settings</a><form method="post" action="{% url 'downloads:sync_drive_catalog' %}" data-drive-sync-form>{% csrf_token %}<button type="submit" class="nav-item"><i class="fa-brands fa-google-drive"></i> Sync Google Drive</button></form></div></details>{% endif %}
             {% endif %}
-            {% if not request.user.is_authenticated or menu_permissions.downloads %}<a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% endif %}<a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> Client Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
+            {% if not request.user.is_authenticated or menu_permissions.downloads %}<a class="nav-item" href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% endif %}<a class="nav-item" href="{% url 'core:client_guide' %}"><i class="fa-solid fa-book-open"></i> PMFBY &amp; KRP Guide</a><a class="nav-item" href="{% url 'core:erp_guide' %}"><i class="fa-solid fa-building-columns"></i> ERP Guide</a>{% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:contact' %}"><i class="fa-solid fa-address-card"></i> Contact</a>{% endif %}
             {% if not request.user.is_authenticated %}<a class="nav-item" href="{% url 'core:pricing' %}"><i class="fa-solid fa-tags"></i> Pricing</a>{% endif %}<div class="divider"></div>
             {% if request.user.is_authenticated %}<a class="nav-item" href="{% url 'accounts:profile' %}"><i class="fa-solid fa-user-gear"></i> My Profile</a><form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button type="submit" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> {{ user.username }} &middot; Logout</button></form>{% else %}<a class="nav-item active" href="{% url 'accounts:login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>{% endif %}
         </div>   </div>
@@ -698,7 +703,7 @@
     </main>
 
     <footer class="mt-8 border-t border-indigo-100 bg-white px-4 py-4 text-center text-xs text-slate-500">
-        &copy; {% now "Y" %} Web Automation with Excel &middot; <a class="font-bold text-violet-700 hover:underline" href="{% url 'core:contact' %}">Contact Us</a>
+        <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">&copy; {% now "Y" %} Web Automation with Excel <span class="text-slate-300">&middot;</span><a class="font-bold text-violet-700 hover:underline" href="{% url 'core:terms_and_conditions' %}">Terms &amp; Conditions</a><span class="text-slate-300">&middot;</span><a class="font-bold text-violet-700 hover:underline" href="{% url 'core:refund_policy' %}">Refund Policy</a><span class="text-slate-300">&middot;</span><a class="font-bold text-violet-700 hover:underline" href="{% url 'core:privacy_policy' %}">Privacy Policy</a><span class="text-slate-300">&middot;</span><a class="font-bold text-violet-700 hover:underline" href="{% url 'core:contact' %}">Contact Us</a></div>
     </footer>
 
     <script>

@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render
 
 
@@ -116,3 +116,26 @@ def documentation(request):
 
 def client_guide(request):
     return render(request, 'core/client_guide.html')
+
+
+def erp_guide(request):
+    return render(request, 'core/erp_guide.html')
+
+
+def terms_and_conditions(request):
+    return render(request, 'core/terms_and_conditions.html')
+
+
+def refund_policy(request):
+    return render(request, 'core/refund_policy.html')
+
+
+def privacy_policy(request):
+    return render(request, 'core/privacy_policy.html')
+
+
+def ads_txt(request):
+    return HttpResponse(
+        'google.com, pub-6094868873003811, DIRECT, f08c47fec0942fa0\n',
+        content_type='text/plain; charset=utf-8',
+    )

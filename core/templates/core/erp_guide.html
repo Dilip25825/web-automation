@@ -1,0 +1,164 @@
+{% extends 'core/base.html' %}
+{% block title %}Unite ERP Excel Guide | Web Automation with Excel{% endblock %}
+{% block content %}
+<style>
+
+    body { background: #f5f7ff; color: #172033; }
+    .app-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 10px 28px rgba(65, 62, 145, .08); }
+    .sheet-card { scroll-margin-top: 1.25rem; }
+    .sheet-card[hidden] { display: none; }
+    .app-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    .app-table th { background: #f1f5ff; color: #475569; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 800; text-align: left; padding: .8rem 1rem; }
+    .app-table td { border-top: 1px solid #e8edf6; padding: .75rem 1rem; vertical-align: top; }
+    .app-table tbody tr:hover { background: #f8faff; }
+    .sheet-link { transition: .18s ease; }
+    .sheet-link:hover { transform: translateY(-1px); background: #eef2ff; }
+  
+</style>
+<main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <section class="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 px-6 py-10 text-white shadow-xl sm:px-10 lg:py-12">
+      <p class="text-sm font-extrabold uppercase tracking-[.2em] text-indigo-100">Unite ERP Automation</p>
+      <h1 class="mt-3 max-w-4xl text-3xl font-extrabold leading-tight sm:text-5xl">ERP Guide: Excel Sheets भरने की पूरी जानकारी</h1>
+      <p class="mt-4 max-w-3xl leading-7 text-indigo-100">पहले सही sheet और row range चुनें। हर transaction से पहले member, amount, date और portal result verify करें। Success के बिना वही row दोबारा submit न करें।</p>
+      <div class="mt-7 rounded-2xl border border-white/20 bg-white/10 p-3">
+        <label for="guide-search" class="sr-only">Sheet खोजें</label>
+        <div class="flex items-center gap-3"><i class="fa-solid fa-magnifying-glass text-indigo-200"></i><input id="guide-search" type="search" placeholder="Sheet या column खोजें, जैसे AdmissionNo, Loan Collection, BillNumber" class="w-full bg-transparent text-white outline-none placeholder:text-indigo-200"></div>
+      </div>
+    </section>
+
+    <section class="app-card p-5 sm:p-6">
+      <p class="text-xs font-extrabold uppercase tracking-[.18em] text-indigo-600">Quick Start</p>
+      <div class="mt-4 grid gap-4 md:grid-cols-4">
+        <div class="rounded-2xl bg-indigo-50 p-4"><b class="text-indigo-800">1. Template</b><p class="mt-2 text-sm leading-6 text-slate-600">Generate Excel Template से नया workbook बनाएं।</p></div>
+        <div class="rounded-2xl bg-cyan-50 p-4"><b class="text-cyan-800">2. सही Sheet</b><p class="mt-2 text-sm leading-6 text-slate-600">अपने काम की sheet में ही data भरें।</p></div>
+        <div class="rounded-2xl bg-amber-50 p-4"><b class="text-amber-800">3. Row Range</b><p class="mt-2 text-sm leading-6 text-slate-600">Start/End Row केवल उन्हीं records पर लगाएं जिन्हें चलाना है।</p></div>
+        <div class="rounded-2xl bg-emerald-50 p-4"><b class="text-emerald-800">4. Result</b><p class="mt-2 text-sm leading-6 text-slate-600">Status और portal success को देखकर ही अगली entry करें।</p></div>
+      </div>
+    </section>
+
+    <section id="field-examples" class="app-card overflow-hidden" data-guide-card>
+      <div class="bg-gradient-to-r from-indigo-950 via-indigo-800 to-violet-700 p-6 text-white sm:p-7">
+        <p class="text-xs font-extrabold uppercase tracking-[.18em] text-indigo-200">Portal value examples</p>
+        <h2 class="mt-2 text-2xl font-extrabold">Product, Purpose aur Account Type kaise bharein</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-indigo-100">Neeche common examples diye hain. Excel me wahi spelling use karein jo logged-in ERP portal ke dropdown me exact dikh rahi ho; har PACS/client me available values alag ho sakti hain.</p>
+      </div>
+      <div class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
+        <article class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
+          <p class="text-xs font-extrabold uppercase tracking-wider text-emerald-700">SalesUpload</p>
+          <h3 class="mt-2 font-extrabold text-slate-900">Verified sale values</h3>
+          <dl class="mt-4 space-y-3 text-sm leading-6"><div><dt class="font-bold text-slate-700">AccountType</dt><dd><code>Loans</code></dd></div><div><dt class="font-bold text-slate-700">PaymentMethod</dt><dd><code>Credit</code></dd></div><div><dt class="font-bold text-slate-700">Accounts examples</dt><dd class="text-slate-600"><code>KCC Kharif</code>, <code>KCC Rabi</code>, <code>Normal KCC</code></dd></div></dl>
+        </article>
+        <article class="rounded-2xl border border-sky-100 bg-sky-50/70 p-5">
+          <p class="text-xs font-extrabold uppercase tracking-wider text-sky-700">Loan sheets</p>
+          <h3 class="mt-2 font-extrabold text-slate-900">Product &amp; Purpose examples</h3>
+          <dl class="mt-4 space-y-3 text-sm leading-6"><div><dt class="font-bold text-slate-700">Product examples</dt><dd class="text-slate-600"><code>KCC Kharif</code>, <code>KCC Rabi</code>, <code>Normal KCC</code></dd></div><div><dt class="font-bold text-slate-700">Purpose examples</dt><dd class="text-slate-600"><code>Soyabean</code>, <code>Wheat</code>, <code>Chana</code>, <code>Maize</code></dd></div><div><dt class="font-bold text-slate-700">Use in</dt><dd class="text-slate-600">Increase Limit, Loan Disbursement, Loan Collection aur LandRegister.</dd></div></dl>
+        </article>
+        <article class="rounded-2xl border border-amber-100 bg-amber-50/80 p-5">
+          <p class="text-xs font-extrabold uppercase tracking-wider text-amber-700">Voucher &amp; validation</p>
+          <h3 class="mt-2 font-extrabold text-slate-900">Submission se pehle</h3>
+          <ul class="mt-4 space-y-3 text-sm leading-6 text-slate-600"><li><b>Loan Disbursement:</b> <code>VoucherType = Transfer</code>.</li><li><b>Loan Collection:</b> portal ke hisaab se <code>Cash</code> ya <code>Transfer</code>.</li><li><b>Sales ItemName:</b> item master ka exact naam.</li><li><b>Important:</b> Product/Purpose ka approximate naam likhne par automation match nahi karega.</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <nav class="flex flex-wrap gap-2" aria-label="Sheet navigation">
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#field-examples">Product &amp; Purpose Examples</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#sales-upload">SalesUpload</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#sale-cancel">SaleCancel</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#sale-voucher">SaleVoucher</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#increase-limit">Increase Limit</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#loan-disbursement">Loan Disbursement</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#loan-collection">Loan Collection</a>
+      <a class="sheet-link rounded-xl border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-700" href="#land-register">LandRegister</a>
+    </nav>
+
+    <section id="sales-upload" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-emerald-700 to-teal-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-emerald-100">Merchandise</p><h2 class="mt-2 text-2xl font-extrabold">SalesUpload</h2><p class="mt-2 text-sm leading-6 text-emerald-50">Khad / sale items upload करने के लिए। एक bill की multiple item rows में AdmissionNo, account और bill details एक जैसे रखें।</p></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>AdmissionNo</td><td>Member का admission / membership number</td><td>Text रखें; leading zero न हटाएं।</td></tr>
+        <tr><td>Accounts</td><td>Portal में दिखने वाला loan product/account नाम</td><td>Portal option से exact match होना चाहिए।</td></tr>
+        <tr><td>AccountType</td><td><code>Loans</code></td><td>वर्तमान automation Loans account type के लिए है।</td></tr>
+        <tr><td>BillDate</td><td>Bill की date</td><td>Excel date value रखें।</td></tr>
+        <tr><td>PaymentMethod</td><td>Payment type, जैसे Credit</td><td>एक ही bill की सभी item rows में समान रखें।</td></tr>
+        <tr><td>ItemName</td><td>Portal item master का exact नाम</td><td>Spelling अलग होने पर item match नहीं होगा।</td></tr>
+        <tr><td>Quantity</td><td>बेची जाने वाली quantity</td><td>0 से अधिक संख्या।</td></tr>
+        <tr><td>Rate</td><td>Rate; खाली छोड़ने पर portal rate लागू होगा</td><td>Rate बदलने की अनुमति portal पर निर्भर है।</td></tr>
+        <tr><td>BillNumber / UploadStatus</td><td>Automation result columns</td><td>इनको manually न भरें/न बदलें।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="sale-cancel" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-rose-700 to-pink-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-rose-100">Merchandise</p><h2 class="mt-2 text-2xl font-extrabold">SaleCancel</h2><p class="mt-2 text-sm leading-6 text-rose-50">पहले bill number और date range portal से मिलाएं। Cancellation एक financial reversal है।</p></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>FromDate / ToDate</td><td>उस date range की शुरुआत और समाप्ति जिसमें bill बना था</td><td>गलत range पर bill नहीं मिलेगा।</td></tr>
+        <tr><td>BillNumber</td><td>Cancel किया जाने वाला exact bill number</td><td>एक ही bill को duplicate rows में न रखें।</td></tr>
+        <tr><td>Reason</td><td>Cancellation का कारण</td><td>खाली होने पर default reason उपयोग हो सकता है।</td></tr>
+        <tr><td>Status / SalePkey</td><td>Automation result columns</td><td>Success/Processing rows को बिना portal verification के दोबारा न चलाएं।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="sale-voucher" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-violet-700 to-fuchsia-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-violet-100">Merchandise</p><h2 class="mt-2 text-2xl font-extrabold">SaleVoucher</h2><p class="mt-2 text-sm leading-6 text-violet-50">Sale के बाद voucher बनाने के लिए। पहले app में Godown load और select करें।</p></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>BillNumber</td><td>उस sale का exact bill number</td><td>एक bill केवल एक row में रखें।</td></tr>
+        <tr><td>VoucherStatus / SalePkey / ErrorReason / BatchId</td><td>Automation result columns</td><td>इन values को automation भरती है।</td></tr>
+        <tr><td>Voucher Type</td><td>पहली 10 rows में dropdown से Cash या Transfer चुनें</td><td>यह template entry field है; portal option हमेशा verify करें।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="increase-limit" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-sky-700 to-blue-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-sky-100">Loan</p><h2 class="mt-2 text-2xl font-extrabold">Increase Limit</h2></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>AdmissionNo</td><td>Member admission number</td><td>Text format में रखें।</td></tr><tr><td>Product / Purpose</td><td>Portal के exact product और purpose names</td><td>Spelling portal dropdown से match हो।</td></tr><tr><td>LimitAmount</td><td>नई/बढ़ाई जाने वाली limit amount</td><td>Negative value न डालें।</td></tr><tr><td>Remark</td><td>Reason या note</td><td>Clear और short रखें।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="loan-disbursement" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-amber-600 to-orange-600 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-amber-100">Loan</p><h2 class="mt-2 text-2xl font-extrabold">Loan Disbursement</h2></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>AdmissionNo, Product, Purpose</td><td>Member और portal के exact loan details</td><td>तीनों values selected account से match होनी चाहिए।</td></tr>
+        <tr><td>VoucherType</td><td>Template में उपलब्ध portal-supported option</td><td>वर्तमान template में Transfer दिया है।</td></tr>
+        <tr><td>Amount</td><td>Disbursement amount</td><td>0 से अधिक amount।</td></tr>
+        <tr><td>DCCBSBAccount</td><td>Required bank/SB account detail</td><td>Account number को text format में रखें।</td></tr>
+        <tr><td>DueDate, LedgerFolio, Remark</td><td>Due date, ledger folio और note</td><td>DueDate valid Excel date रखें।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="loan-collection" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-indigo-700 to-blue-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-100">Loan</p><h2 class="mt-2 text-2xl font-extrabold">Loan Collection</h2><p class="mt-2 text-sm leading-6 text-indigo-50">एक pending row चलाने से पहले Collection Status और portal outstanding जरूर देखें।</p></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>AdmissionNo, Product, Purpose</td><td>Member और portal के exact selected details</td><td>Portal dropdown values से match करें।</td></tr>
+        <tr><td>VoucherType</td><td>Cash या Transfer</td><td>Transfer में valid batch flow और portal selection आवश्यक है।</td></tr>
+        <tr><td>Activity Type</td><td>Partial/Full/Overdue activity text या supported option number</td><td>Full Collection के लिए <code>3</code> या exact Full Regular Loan Collection with Subvention text उपयोग करें।</td></tr>
+        <tr><td>Principle</td><td>Partial/Overdue की principal amount</td><td>Full Collection में portal amount वापिस Excel में लिखता है; 0/blank स्वीकार्य है।</td></tr>
+        <tr><td>IOD, Penal Interest, Interest Received</td><td>Overdue allocation amounts</td><td>Partial में इन्हें 0 रखें। Full में portal amount use होता है।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="land-register" class="sheet-card app-card overflow-hidden" data-guide-card>
+      <header class="bg-gradient-to-r from-lime-700 to-green-700 p-6 text-white"><p class="text-xs font-bold uppercase tracking-[.18em] text-lime-100">Land & Crop</p><h2 class="mt-2 text-2xl font-extrabold">LandRegister</h2></header>
+      <div class="overflow-x-auto"><table class="app-table"><thead><tr><th>Column</th><th>क्या भरें</th><th>ध्यान रखें</th></tr></thead><tbody>
+        <tr><td>AdmissionNo / Village</td><td>Member number और village</td><td>Portal record से match करें।</td></tr>
+        <tr><td>SurveyNoExtension</td><td>Survey number / extension</td><td>Text format रखें।</td></tr>
+        <tr><td>LandArea / LandValuePerHectare</td><td>भूमि का area और प्रति hectare value</td><td>सही numeric values भरें।</td></tr>
+        <tr><td>LandOwnership से IrrigationType</td><td>Ownership, soil, land और irrigation के portal options</td><td>Portal option names ही use करें।</td></tr>
+        <tr><td>Product / Crop</td><td>Loan product और crop</td><td>Land declaration से पहले verify करें।</td></tr>
+        <tr><td>*Result columns</td><td>LandRegisterResult, LandDeclarationResult, CreditLimitResult, DrawalResult</td><td>ये automation result columns हैं।</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section class="rounded-3xl bg-slate-900 p-6 text-white sm:p-8">
+      <div class="grid gap-5 md:grid-cols-2"><div><p class="text-xs font-extrabold uppercase tracking-[.18em] text-amber-300">Safety Checklist</p><h2 class="mt-2 text-2xl font-extrabold">Submit करने से पहले</h2><ul class="mt-4 space-y-2 text-sm leading-6 text-slate-300"><li><i class="fa-solid fa-check mr-2 text-emerald-400"></i>Correct portal URL और login session verify करें।</li><li><i class="fa-solid fa-check mr-2 text-emerald-400"></i>Member, account, amount और date मिलाएं।</li><li><i class="fa-solid fa-check mr-2 text-emerald-400"></i>Processing/Success status वाली row फिर से न चलाएं।</li></ul></div><div class="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5 text-sm leading-6 text-amber-50"><b>महत्वपूर्ण:</b> कोई भी financial transaction error या unclear portal response पर दोबारा submit करने से पहले portal receipt/status check करें।</div></div>
+    </section>
+  </main>
+{% endblock %}
+{% block extra_js %}
+<script>
+const search = document.querySelector('#guide-search');
+    const cards = [...document.querySelectorAll('[data-guide-card]')];
+    search.addEventListener('input', () => {
+      const term = search.value.trim().toLocaleLowerCase();
+      cards.forEach(card => { card.hidden = term && !card.innerText.toLocaleLowerCase().includes(term); });
+    });
+</script>
+{% endblock %}
