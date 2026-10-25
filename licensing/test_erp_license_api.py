@@ -124,7 +124,7 @@ class ErpVersionApiTests(SimpleTestCase):
         )
         request = self.factory.post(
             self.url,
-            data='{"current_version":"5.1.0.8"}',
+            data='{"id":4,"current_version":"5.1.0.8"}',
             content_type='application/json',
         )
         response = license_views.check_erp_version(request)
@@ -132,6 +132,7 @@ class ErpVersionApiTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(data['update_available'])
         self.assertEqual(data['latest_version'], '5.1.0.9')
+        self.assertEqual(data['version_info_id'], 4)
         self.assertEqual(data['download_url'], 'https://drive.google.com/drive/folders/example')
 
     @patch('licensing.license_views.VersionInfo.objects')
@@ -141,7 +142,7 @@ class ErpVersionApiTests(SimpleTestCase):
         )
         request = self.factory.post(
             self.url,
-            data='{"current_version":"5.1.0.9"}',
+            data='{"id":4,"current_version":"5.1.0.9"}',
             content_type='application/json',
         )
         response = license_views.check_erp_version(request)

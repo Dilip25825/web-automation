@@ -1,4 +1,4 @@
-Attribute VB_Name = "ErpVersionUpdate"
+Attribute VB_Name = "VersionUpdateInfo"
 Option Explicit
 
 ' Import this standard module in the ERP workbook.
@@ -10,6 +10,7 @@ Option Explicit
 Private Const ERP_VERSION_API_URL As String = "https://web-automation-maar.onrender.com/api/licensing/erp/version/"
 Private Const USER_SHEET_NAME As String = "User"
 Private Const VERSION_CELL As String = "B6"
+Private Const VERSION_INFO_ID As Long = 4
 Private Const HTTP_TIMEOUT_MS As Long = 30000
 Private Const PROMPT_TITLE As String = "@DilipDelwash"
 
@@ -50,7 +51,7 @@ Private Function GetErpVersionResponse(ByVal currentVersion As String) As String
     http.Open "POST", ERP_VERSION_API_URL, False
     http.SetRequestHeader "Content-Type", "application/json"
     http.SetRequestHeader "Accept", "application/json"
-    http.Send "{""current_version"":""" & JsonEscapeValue(currentVersion) & """}"
+    http.Send "{""id"":" & CStr(VERSION_INFO_ID) & ",""current_version"":""" & JsonEscapeValue(currentVersion) & """}"
     If CLng(http.Status) >= 200 And CLng(http.Status) < 300 Then GetErpVersionResponse = CStr(http.ResponseText)
 End Function
 

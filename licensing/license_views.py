@@ -513,6 +513,17 @@ def check_erp_version(request):
     if body is None:
         return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
 
+    version_info_id = _integer(body.get('id'), default=4)
+    if version_info_id <= 0:
+        return JsonResponse(
+            {
+                'success': False,
+                'status': 'INVALID_REQUEST',
+                'message': 'Valid VersionInfo ID required hai.',
+            },
+            status=400,
+        )
+
     current_version = str(body.get('current_version') or '').strip()
     if not current_version:
         return JsonResponse(
@@ -524,7 +535,7 @@ def check_erp_version(request):
             status=400,
         )
 
-    version_record = VersionInfo.objects.filter(pk=4).first()
+    version_record = VersionInfo.objects.filter(pk=version_info_id).first()
     if not version_record or not str(version_record.Version or '').strip():
         return JsonResponse(
             {
@@ -546,6 +557,7 @@ def check_erp_version(request):
             'update_available': not version_matches,
             'version_matches': version_matches,
             'current_version': current_version,
+            'version_info_id': version_info_id,
             'latest_version': latest_version,
             'description': version_record.Description or '',
             'year': version_record.Year or '',
