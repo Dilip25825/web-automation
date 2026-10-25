@@ -21,6 +21,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST
 
+from coupons.models import Coupon
+
 from .forms import PublicFasalRinRegistrationForm, PublicPacsErpRegistrationForm, PublicPmfbyRegistrationForm
 from .models import ErpApiClientToken, Perpous, UserInfoData, VersionInfo, tblPacsErp, tblUPI
 from .utils import generate_erp_invoice_pdf
@@ -340,6 +342,94 @@ def check_erp_subscription(request):
         record.last_login = timezone.now()
         record.save(update_fields=["last_login"])
     return JsonResponse(response_data)
+
+
+@csrf_exempt
+@require_POST
+@never_cache
+def redeem_erp_coupon(request):
+    """Apply one active coupon to the authenticated ERP record exactly once."""
+    if _rate_limited(request, 'coupon-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+
+    operator_mobile = _operator_mobile(body.get('operator_mobile'))
+    coupon_code = str(body.get('coupon_code') or '').strip().upper()
+    if not operator_mobile:
+        return JsonResponse({'success': False, 'status': 'INVALID_MOBILE'}, status=400)
+    if not coupon_code or len(coupon_code) > 48:
+        return JsonResponse({'success': False, 'status': 'INVALID_COUPON'}, status=400)
+    if _rate_limited(request, 'coupon-mobile', operator_mobile, settings.ERP_API_MOBILE_RATE_LIMIT):
+        return _too_many_requests()
+
+    if not _api_key_is_valid(request) and not _client_token_is_valid(request, operator_mobile):
+        return JsonResponse(
+            {
+                'success': False,
+                'status': 'UNAUTHORIZED',
+                'message': 'Secure login verify nahi ho saka. Kripya dobara login karein.',
+            },
+            status=401,
+        )
+
+    selected_record, multiple_active = _select_erp_record(operator_mobile)
+    if multiple_active:
+        return JsonResponse({'success': False, 'status': 'MULTIPLE_ACTIVE_RECORDS'}, status=409)
+    if not selected_record:
+        return JsonResponse({'success': False, 'status': 'LICENSE_NOT_FOUND'}, status=404)
+
+    with transaction.atomic():
+        record = tblPacsErp.objects.select_for_update().get(pk=selected_record.pk)
+        coupon_owner = f'ERP:{record.pk}'
+        if Coupon.objects.select_for_update().filter(used_by=coupon_owner, status=False).exists():
+            return JsonResponse(
+                {'success': False, 'status': 'COUPON_ALREADY_USED', 'message': 'Is ERP licence par coupon pehle hi apply ho chuka hai.'},
+                status=409,
+            )
+
+        coupon = Coupon.objects.select_for_update().filter(coupon_code=coupon_code, status=True).first()
+        if not coupon or (coupon.used_by and not coupon.used_by.startswith('RESERVED:') and coupon.used_by != coupon_owner):
+            return JsonResponse(
+                {'success': False, 'status': 'COUPON_NOT_AVAILABLE', 'message': 'Coupon valid nahi hai, already use ho chuka hai, ya kisi aur licence ke liye reserved hai.'},
+                status=409,
+            )
+
+        old_amount = int(record.current_amount or 0)
+        payment_status = int(record.payment_status or 0)
+        discount_amount = int(coupon.discount_amount or 0)
+        if payment_status > 0:
+            return JsonResponse(
+                {'success': False, 'status': 'PAYMENT_ALREADY_STARTED', 'message': 'Payment start hone ke baad coupon apply nahi kiya ja sakta.'},
+                status=409,
+            )
+        if discount_amount <= 0 or discount_amount > old_amount:
+            return JsonResponse(
+                {'success': False, 'status': 'INVALID_DISCOUNT', 'message': 'Coupon discount payable ERP amount ke liye valid nahi hai.'},
+                status=409,
+            )
+
+        new_amount = old_amount - discount_amount
+        record.current_amount = new_amount
+        record.save(update_fields=['current_amount'])
+        coupon.used_by = coupon_owner
+        coupon.status = False
+        coupon.save(update_fields=['used_by', 'status'])
+
+    return JsonResponse(
+        {
+            'success': True,
+            'status': 'COUPON_APPLIED',
+            'record_id': record.pk,
+            'coupon_code': coupon_code,
+            'discount_amount': discount_amount,
+            'old_amount': old_amount,
+            'current_amount': new_amount,
+            'message': 'ERP coupon successfully apply ho gaya hai.',
+        }
+    )
 
 
 @require_http_methods(["GET", "POST"])

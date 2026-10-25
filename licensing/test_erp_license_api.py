@@ -330,3 +330,55 @@ class ErpRecordSelectionTests(SimpleTestCase):
 
         self.assertIsNone(record)
         self.assertTrue(multiple_active)
+
+
+@override_settings(ALLOWED_HOSTS=['testserver'], ERP_API_IP_RATE_LIMIT=100, ERP_API_MOBILE_RATE_LIMIT=100)
+class ErpCouponApiTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+        self.factory = RequestFactory()
+        self.url = reverse('license_api:erp_coupon_redeem')
+
+    def test_erp_coupon_requires_authenticated_device_or_api_key(self):
+        request = self.factory.post(
+            self.url,
+            data='{"operator_mobile":"9876543210","coupon_code":"C500-ABCDE-FGHIJ-KLMNO-PQRST-UVWXYZ"}',
+            content_type='application/json',
+        )
+        response = license_views.redeem_erp_coupon(request)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content)['status'], 'UNAUTHORIZED')
+
+    @patch('licensing.license_views.transaction.atomic', return_value=nullcontext())
+    @patch('licensing.license_views.Coupon.objects')
+    @patch('licensing.license_views.tblPacsErp.objects')
+    @patch('licensing.license_views._select_erp_record')
+    @patch('licensing.license_views._client_token_is_valid', return_value=True)
+    def test_authenticated_erp_coupon_reduces_current_amount_once(
+        self, _token_valid, select_record, erp_objects, coupon_objects, _atomic,
+    ):
+        selected = SimpleNamespace(pk=71)
+        record = MagicMock(pk=71, current_amount=4500, payment_status=0)
+        coupon = MagicMock(used_by=None, discount_amount=500)
+        select_record.return_value = (selected, False)
+        erp_objects.select_for_update.return_value.get.return_value = record
+        coupon_filter = coupon_objects.select_for_update.return_value.filter
+        coupon_filter.return_value.exists.return_value = False
+        coupon_filter.return_value.first.return_value = coupon
+
+        request = self.factory.post(
+            self.url,
+            data='{"operator_mobile":"9876543210","coupon_code":"C500-ABCDE-FGHIJ-KLMNO-PQRST-UVWXYZ"}',
+            content_type='application/json',
+        )
+        response = license_views.redeem_erp_coupon(request)
+        data = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data['status'], 'COUPON_APPLIED')
+        self.assertEqual(data['current_amount'], 4000)
+        self.assertEqual(record.current_amount, 4000)
+        self.assertEqual(coupon.used_by, 'ERP:71')
+        self.assertFalse(coupon.status)
+        record.save.assert_called_once_with(update_fields=['current_amount'])
+        coupon.save.assert_called_once_with(update_fields=['used_by', 'status'])

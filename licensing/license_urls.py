@@ -33,6 +33,7 @@ urlpatterns = [
     path("activation-check/", license_views.check_activation, name="activation_check"),
     path("erp/device/register/", license_views.register_erp_device, name="erp_device_register"),
     path("erp/subscription/", license_views.check_erp_subscription, name="erp_subscription"),
+    path("erp/coupon/redeem/", license_views.redeem_erp_coupon, name="erp_coupon_redeem"),
     path("erp/version/", license_views.check_erp_version, name="erp_version"),
     path("erp/upi/", license_views.get_erp_upi, name="erp_upi"),
     path("erp/invoice/create/", license_views.create_erp_invoice, name="erp_invoice_create"),

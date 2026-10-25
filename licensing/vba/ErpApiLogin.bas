@@ -1,10 +1,10 @@
 Attribute VB_Name = "ErpApiLogin"
 Option Explicit
 
-' True = localhost testing, False = Render production.
+' True = localhost testing, False = AlwaysData production.
 Private Const USE_LOCAL_SERVER As Boolean = False
 Private Const LOCAL_BASE_URL As String = "http://127.0.0.1:8000"
-Private Const PRODUCTION_BASE_URL As String = "https://web-automation-maar.onrender.com"
+Private Const PRODUCTION_BASE_URL As String = "https://webautomationexcel.com"
 Private Const TOKEN_SETTINGS_APP As String = "WebAutomationWithExcel"
 Private Const TOKEN_SETTINGS_SECTION As String = "ErpDeviceTokens"
 Private Const USER_SHEET As String = "User"
@@ -540,6 +540,20 @@ Private Function ApiBaseUrl() As String
     Else
         ApiBaseUrl = PRODUCTION_BASE_URL
     End If
+End Function
+
+' Shared credential helper for other ERP VBA modules. The token remains
+' device-bound and is never stored in worksheet cells or source constants.
+Public Function GetErpApiCredentials(ByRef operatorMobile As String, ByRef clientToken As String, ByRef errorMessage As String) As Boolean
+    If Not TryGetOperatorMobile(operatorMobile) Then
+        errorMessage = "User sheet ke B1 me valid 10 digit Operator Mobile nahi hai."
+        Exit Function
+    End If
+    GetErpApiCredentials = EnsureErpClientToken(operatorMobile, clientToken, errorMessage)
+End Function
+
+Public Function ErpApiBaseUrl() As String
+    ErpApiBaseUrl = ApiBaseUrl()
 End Function
 
 Private Function OnlyDigits(ByVal value As String) As String
