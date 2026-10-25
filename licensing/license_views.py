@@ -983,6 +983,50 @@ def consume_pmfby_entries(request):
     return JsonResponse({'success': True, 'status': 'UPLOAD_RECORDED'})
 
 
+@csrf_exempt
+@require_POST
+@never_cache
+def redeem_pmfby_coupon(request):
+    """Redeem one coupon for the PMFBY license identified by its signed session token."""
+    if _rate_limited(request, 'pmfby-coupon-ip', '', settings.ERP_API_IP_RATE_LIMIT):
+        return _too_many_requests()
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({'success': False, 'status': 'INVALID_JSON'}, status=400)
+
+    coupon_code = str(body.get('coupon_code') or '').strip().upper()
+    if not coupon_code or len(coupon_code) > 48:
+        return JsonResponse({'success': False, 'status': 'INVALID_COUPON'}, status=400)
+    record, error_response = _pmfby_record_from_token(str(body.get('record_token') or '').strip())
+    if error_response:
+        return error_response
+    if _integer(record.is_active) != 1:
+        return JsonResponse({'success': False, 'status': 'LICENSE_NOT_ACTIVE'}, status=403)
+
+    with transaction.atomic():
+        record = UserInfoData.objects.select_for_update().get(pk=record.pk)
+        coupon_owner = f'PMFBY:{record.pk}'
+        if Coupon.objects.select_for_update().filter(used_by=coupon_owner, status=False).exists():
+            return JsonResponse({'success': False, 'status': 'COUPON_ALREADY_USED', 'message': 'Is PMFBY licence par coupon pehle hi apply ho chuka hai.'}, status=409)
+        coupon = Coupon.objects.select_for_update().filter(coupon_code=coupon_code, status=True).first()
+        if not coupon or (coupon.used_by and not coupon.used_by.startswith('RESERVED:') and coupon.used_by != coupon_owner):
+            return JsonResponse({'success': False, 'status': 'COUPON_NOT_AVAILABLE', 'message': 'Coupon valid nahi hai, already use ho chuka hai, ya kisi aur licence ke liye reserved hai.'}, status=409)
+        old_amount = _integer(record.amount)
+        if _integer(record.payment_status) > 0:
+            return JsonResponse({'success': False, 'status': 'PAYMENT_ALREADY_STARTED', 'message': 'Payment start hone ke baad coupon apply nahi kiya ja sakta.'}, status=409)
+        discount_amount = _integer(coupon.discount_amount)
+        if discount_amount <= 0 or discount_amount > old_amount:
+            return JsonResponse({'success': False, 'status': 'INVALID_DISCOUNT', 'message': 'Coupon discount payable PMFBY amount ke liye valid nahi hai.'}, status=409)
+        new_amount = old_amount - discount_amount
+        record.amount = new_amount
+        record.save(update_fields=['amount'])
+        coupon.used_by = coupon_owner
+        coupon.status = False
+        coupon.save(update_fields=['used_by', 'status'])
+
+    return JsonResponse({'success': True, 'status': 'COUPON_APPLIED', 'coupon_code': coupon_code, 'discount_amount': discount_amount, 'old_amount': old_amount, 'current_amount': new_amount, 'message': 'PMFBY coupon successfully apply ho gaya hai.'})
+
+
 @require_http_methods(['GET', 'POST'])
 @never_cache
 def pmfby_self_register(request):

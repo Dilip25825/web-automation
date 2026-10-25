@@ -29,6 +29,7 @@ urlpatterns = [
     path("userinfo/pmfby/entries/check/", license_views.check_pmfby_entry, name="pmfby_entry_check"),
     path("userinfo/pmfby/upi/", license_views.get_pmfby_upi, name="pmfby_upi"),
     path("userinfo/pmfby/entries/consume/", license_views.consume_pmfby_entries, name="pmfby_entries_consume"),
+    path("userinfo/pmfby/coupon/redeem/", license_views.redeem_pmfby_coupon, name="pmfby_coupon_redeem"),
     path("validate/", license_views.validate_license, name="validate"),
     path("activation-check/", license_views.check_activation, name="activation_check"),
     path("erp/device/register/", license_views.register_erp_device, name="erp_device_register"),
