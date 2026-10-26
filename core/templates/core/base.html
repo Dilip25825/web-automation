@@ -1004,6 +1004,58 @@
     })();
     </script>
     {% endif %}
+    {% if request.user.is_superuser %}
+    <script>
+    // Keep diary entitlement administration visible only inside the superuser menu.
+    (() => {
+        const href = "{% url 'admin:personal_diary_diaryaccesssettings_changelist' %}";
+        const addLink = (container, className) => {
+            if (!container || container.querySelector('[data-diary-admin-link]')) return;
+            const link = document.createElement('a');
+            link.href = href;
+            link.className = className;
+            link.dataset.diaryAdminLink = '1';
+            link.innerHTML = '<i class="fa-solid fa-book-open"></i> Diary Access Settings';
+            container.appendChild(link);
+        };
+        addLink(document.querySelector('.admin-menu-panel'), '');
+        addLink(document.querySelector('.mobile-admin-submenu'), 'nav-item');
+        document.querySelectorAll('a[href="{% url 'personal_diary:dashboard' %}"]').forEach((link) => {
+            link.innerHTML = '<i class="fa-solid fa-book-open"></i> My Diary';
+        });
+    })();
+    </script>
+    {% endif %}
+    <script>
+    document.querySelectorAll('a[href="{% url 'personal_diary:dashboard' %}"]').forEach((link) => {
+        link.innerHTML = '<i class="fa-solid fa-book-open"></i> My Diary';
+    });
+    document.querySelectorAll('nav a[href="{% url 'personal_diary:dashboard' %}"], #mobilePanel a[href="{% url 'personal_diary:dashboard' %}"]').forEach((link) => {
+        link.remove();
+    });
+    </script>
+    {% if can_access_diary %}
+    <script>
+    (() => {
+        const panel = document.querySelector('.account-menu-panel');
+        if (!panel || panel.querySelector('[data-profile-diary-link]')) return;
+        const link = document.createElement('a');
+        link.href = "{% url 'personal_diary:dashboard' %}";
+        link.dataset.profileDiaryLink = '1';
+        link.innerHTML = '<i class="fa-solid fa-book-open"></i> My Diary';
+        panel.insertBefore(link, panel.querySelector('form'));
+    })();
+    </script>
+    {% endif %}
+    {% if request.resolver_match.namespace == 'personal_diary' %}
+    <script>
+    // Match the compact, wide working area used by the User Licenses screens.
+    document.querySelectorAll('main > .mx-auto').forEach((page) => {
+        page.style.maxWidth = '96rem';
+        page.style.width = '100%';
+    });
+    </script>
+    {% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 
