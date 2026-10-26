@@ -702,6 +702,45 @@
         </div>
     </div>
     {% endif %}
+    {% if request.resolver_match.namespace == 'personal_diary' %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&amp;display=swap">
+    <style>
+        /* Personal Diary: CSS notebook theme, intentionally isolated from business modules. */
+        body { background: #eef2ff; }
+        main { position: relative; overflow: hidden; margin-top: .65rem; padding: 1.15rem !important; border: 1px solid #c7d2fe; border-radius: 1.5rem; background-color: #eef2ff; background-image: radial-gradient(circle at 15% 15%, rgba(255,255,255,.85) 0 1px, transparent 1.5px), linear-gradient(135deg, #f8faff, #e8eaff 55%, #e0e7ff); box-shadow: 0 18px 40px rgba(79, 70, 229, .16); }
+        main::before { content: ''; position: absolute; inset: .7rem; z-index: 0; pointer-events: none; border: 2px dashed rgba(99, 102, 241, .42); border-radius: 1.15rem; }
+        main > * { position: relative; z-index: 1; }
+        main .app-card, main article { border-color: #d8cdb8 !important; background-color: #fffdf4 !important; box-shadow: 0 12px 24px rgba(0,0,0,.18); }
+        main > .mx-auto > div:first-child > p, main > .mx-auto > div:first-child h1 { color: #1e1b4b !important; }
+        main > .mx-auto > div:first-child > p { color: #5b21b6 !important; }
+        main > .mx-auto > p { color: #475569 !important; }
+        main > .mx-auto > div:first-child .btn.border { border-color: #a5b4fc !important; background: #fff !important; color: #312e81 !important; }
+        main .app-card { background-image: linear-gradient(to bottom, transparent 31px, rgba(76, 103, 142, .13) 32px) !important; background-size: 100% 32px !important; }
+        main .app-card input:not([type="checkbox"]), main .app-card select, main .app-card textarea { border-color: #c6bca9; background-color: rgba(255,253,244,.92); }
+        main #diary-form { position: relative; overflow: hidden; padding-left: 3.6rem !important; }
+        main #diary-form::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2.25rem; width: 2px; background: #e8a7a2; box-shadow: 7px 0 0 rgba(232,167,162,.22); }
+        main #diary-form::after { content: ''; position: absolute; top: 1rem; bottom: 1rem; left: -.55rem; width: 1.1rem; background: repeating-radial-gradient(circle at 50% 12px, #1e1e1e 0 5px, transparent 6px 26px); }
+        main #id_content { min-height: 350px; font-family: 'Kalam', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', cursive; line-height: 32px; resize: vertical; background-image: linear-gradient(to bottom, transparent 30px, rgba(57,81,116,.27) 31px) !important; background-size: 100% 32px !important; }
+        main .diary-reading-page { position: relative; isolation: isolate; margin-left: .75rem; overflow: visible !important; border: 1px solid #c9c9c9 !important; border-radius: .8rem !important; background-color: #fff !important; background-image: linear-gradient(90deg, rgba(180,180,180,.08), transparent 11%, transparent 90%, rgba(180,180,180,.06)) !important; box-shadow: 0 3px 0 #d8d8d8, 0 13px 26px rgba(0,0,0,.28), -8px 0 0 rgba(248,248,248,.75) !important; }
+        main .diary-reading-page::before { content: ''; position: absolute; z-index: 3; top: .65rem; bottom: .65rem; left: -1rem; width: 1.2rem; pointer-events: none; border-radius: .6rem 0 0 .6rem; background: repeating-linear-gradient(to bottom, #352f2b 0 18px, #9c302f 18px 20px, #352f2b 20px 38px); box-shadow: -2px 0 0 rgba(255,255,255,.18), 2px 0 5px rgba(0,0,0,.32); }
+        main .diary-reading-page::after { content: ''; position: absolute; z-index: 2; top: 0; bottom: 0; left: 3.15rem; width: 2px; background: rgba(207,89,80,.62); box-shadow: 7px 0 0 rgba(207,89,80,.10); pointer-events: none; }
+        main .diary-page-header { position: relative; min-height: 166px; padding-left: 5.4rem !important; background: linear-gradient(110deg, #fff, #fafafa); }
+        main .diary-date-stamp { position: relative; display: inline-flex; align-items: center; gap: .8rem; color: #171717; }
+        main .diary-date-stamp strong { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(3.6rem, 8vw, 5.8rem); font-weight: 900; letter-spacing: -.08em; line-height: .8; }
+        main .diary-date-stamp span { display: grid; gap: .12rem; border-left: 2px solid #262626; padding-left: .8rem; font-family: Georgia, 'Times New Roman', serif; line-height: 1; text-transform: uppercase; }
+        main .diary-date-stamp span b { font-size: 1.35rem; } main .diary-date-stamp span small { font-size: .78rem; letter-spacing: .08em; }
+        main .diary-date-stamp em { position: absolute; top: .45rem; left: 11.7rem; width: 180px; color: #57534e; font-family: ui-sans-serif, system-ui; font-size: .72rem; font-style: normal; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+        main .diary-reading-lines { min-height: 540px; padding-left: 6.2rem !important; background-color: #fff; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(56, 91, 147, .28) 32px, transparent 33px); background-size: 100% 32px; }
+        main .diary-reading-page h1, main .diary-entry-copy, main .app-card .line-clamp-2 { font-family: 'Kalam', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', cursive; }
+        main .diary-entry-copy { max-width: 100%; padding-top: 1px; color: #073b86; line-height: 32px !important; text-shadow: 0 .2px 0 rgba(7,59,134,.18); }
+        main .diary-red-ink { color: #c1121f; font-weight: 700; text-shadow: 0 .2px 0 rgba(193,18,31,.16); }
+        main h1, main h2, main h3 { font-family: Georgia, 'Times New Roman', serif; }
+        main .btn-primary { background: #b93036 !important; border-color: #96252b !important; }
+        main .btn-primary:hover { background: #92242a !important; }
+        @media (min-width: 900px) { main::after { content: ''; position: absolute; top: 3rem; bottom: 3rem; left: 50%; width: 12px; z-index: 0; transform: translateX(-50%); border-radius: 99px; background: linear-gradient(90deg, #818cf8, #fff 48%, #6366f1); opacity: .34; pointer-events: none; } }
+        @media (max-width: 640px) { main { border-radius: 1rem; padding: .7rem !important; } main #diary-form { padding-left: 2.5rem !important; } main #diary-form::before { left: 1.5rem; } main #diary-form::after { display: none; } main .diary-reading-page { margin-left: .45rem; } main .diary-reading-page::before { left: -.6rem; width: .7rem; } main .diary-reading-page::after { left: 1.9rem; } main .diary-page-header { min-height: 0; padding-left: 3.2rem !important; } main .diary-date-stamp { gap: .55rem; } main .diary-date-stamp em { position: static; align-self: flex-end; width: auto; margin: 0 0 .1rem .2rem; white-space: normal; } main .diary-reading-lines { min-height: 360px; padding-left: 3.2rem !important; padding-right: 1rem !important; } }
+    </style>
+    {% endif %}
     <main class="mx-auto w-full max-w-[1920px] px-4 py-5 sm:px-6">
         {% block content %}{% endblock %}
     </main>
@@ -1044,6 +1083,26 @@
         link.dataset.profileDiaryLink = '1';
         link.innerHTML = '<i class="fa-solid fa-book-open"></i> My Diary';
         panel.insertBefore(link, panel.querySelector('form'));
+        const pinLink = document.createElement('a');
+        pinLink.href = "{% url 'personal_diary:pin_settings' %}";
+        pinLink.dataset.profileDiaryPinLink = '1';
+        pinLink.innerHTML = '<i class="fa-solid fa-key"></i> Change Diary PIN';
+        panel.insertBefore(pinLink, panel.querySelector('form'));
+        const mobileProfile = document.querySelector('#mobilePanel a[href="{% url 'accounts:profile' %}"]');
+        if (mobileProfile && !document.querySelector('[data-mobile-profile-diary-link]')) {
+            const mobileLink = document.createElement('a');
+            mobileLink.href = "{% url 'personal_diary:dashboard' %}";
+            mobileLink.className = 'nav-item';
+            mobileLink.dataset.mobileProfileDiaryLink = '1';
+            mobileLink.innerHTML = '<i class="fa-solid fa-book-open"></i> My Diary';
+            mobileProfile.parentNode.insertBefore(mobileLink, mobileProfile);
+            const mobilePinLink = document.createElement('a');
+            mobilePinLink.href = "{% url 'personal_diary:pin_settings' %}";
+            mobilePinLink.className = 'nav-item';
+            mobilePinLink.dataset.mobileProfileDiaryPinLink = '1';
+            mobilePinLink.innerHTML = '<i class="fa-solid fa-key"></i> Change Diary PIN';
+            mobileProfile.parentNode.insertBefore(mobilePinLink, mobileProfile);
+        }
     })();
     </script>
     {% endif %}
@@ -1053,6 +1112,28 @@
     document.querySelectorAll('main > .mx-auto').forEach((page) => {
         page.style.maxWidth = '96rem';
         page.style.width = '100%';
+    });
+    </script>
+    {% endif %}
+    {% if request.resolver_match.namespace == 'personal_diary' %}
+    <script>
+    // Explicit **important words** render as red ink; all other diary text stays blue.
+    document.querySelectorAll('.diary-entry-copy').forEach((element) => {
+        const text = element.textContent;
+        const fragments = text.split(/(\*\*.+?\*\*)/g);
+        if (fragments.length === 1) return;
+        const output = document.createDocumentFragment();
+        fragments.forEach((fragment) => {
+            if (fragment.startsWith('**') && fragment.endsWith('**')) {
+                const mark = document.createElement('span');
+                mark.className = 'diary-red-ink';
+                mark.textContent = fragment.slice(2, -2);
+                output.appendChild(mark);
+            } else {
+                output.appendChild(document.createTextNode(fragment));
+            }
+        });
+        element.replaceChildren(output);
     });
     </script>
     {% endif %}

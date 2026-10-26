@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -68,8 +69,8 @@ class DiaryPhaseTests(TestCase):
         self.client.force_login(self.b)
         self.assertEqual(self.client.post(reverse('personal_diary:event_delete', args=[event.pk])).status_code, 404)
         self.assertEqual(self.client.get(reverse('personal_diary:media_download', args=[media.pk])).status_code, 404)
-        self.assertEqual(self.client.get(reverse('personal_diary:export_json)).status_code, 200)
-        self.assertNotContains(self.client.get(reverse('personal_diary:export_json)), 'A secret')
+        self.assertEqual(self.client.get(reverse('personal_diary:export_json')).status_code, 200)
+        self.assertNotContains(self.client.get(reverse('personal_diary:export_json')), 'A secret')
 
     def test_locked_entry_never_returns_body_until_pin_verified(self):
         self.entry.is_locked = True; self.entry.save()
@@ -79,6 +80,15 @@ class DiaryPhaseTests(TestCase):
         self.assertEqual(self.client.post(reverse('personal_diary:unlock_entry', args=[self.entry.pk]), {'pin': '1234'}).status_code, 302)
         self.assertContains(self.client.get(reverse('personal_diary:entry_detail', args=[self.entry.pk])), 'private body')
 
+    def test_private_entry_without_pin_uses_its_date_as_initial_pin(self):
+        self.entry.is_locked = True
+        self.entry.entry_date = timezone.localdate()
+        self.entry.save()
+        self.client.force_login(self.a)
+        self.client.get(reverse('personal_diary:entry_detail', args=[self.entry.pk]))
+        preference = DiaryPreference.objects.get(user=self.a)
+        self.assertTrue(check_password(self.entry.entry_date.strftime('%d%m%Y'), preference.pin_hash))
+
     def test_autosave_conflict_and_other_owner_denied(self):
         self.client.force_login(self.a)
         old = self.entry.updated_at.isoformat()
@@ -86,6 +96,19 @@ class DiaryPhaseTests(TestCase):
         self.assertEqual(response.status_code, 409)
         self.client.force_login(self.b)
         self.assertEqual(self.client.post(reverse('personal_diary:autosave', args=[self.entry.pk]), data='{}', content_type='application/json').status_code, 404)
+
+    def test_autosave_does_not_turn_saved_entry_into_draft(self):
+        self.entry.is_draft = False
+        self.entry.save(update_fields=['is_draft'])
+        self.client.force_login(self.a)
+        response = self.client.post(
+            reverse('personal_diary:autosave', args=[self.entry.pk]),
+            data='{"title":"Edited title","content":"Edited body"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.entry.refresh_from_db()
+        self.assertFalse(self.entry.is_draft)
 
     def test_invalid_signature_and_quota_are_rejected_before_drive(self):
         self.client.force_login(self.a)

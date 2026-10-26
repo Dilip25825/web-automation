@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -20,6 +21,16 @@ from .models import DiaryAccessSettings, DiaryEntry, DiaryMedia, DiaryPreference
 def _entries_for(r): return DiaryEntry.objects.filter(user=r.user, deleted_at__isnull=True).prefetch_related('tags')
 def _owned_entry(r, pk): return get_object_or_404(_entries_for(r), pk=pk)
 def _preference(u): return DiaryPreference.objects.get_or_create(user=u)[0]
+def _ensure_locked_entry_pin(entry):
+    """Create the user-requested date PIN only when no diary PIN exists yet."""
+    if not entry.is_locked:
+        return False
+    preference = _preference(entry.user)
+    if preference.pin_hash:
+        return False
+    preference.pin_hash = make_password(entry.entry_date.strftime('%d%m%Y'))
+    preference.save(update_fields=('pin_hash', 'updated_at'))
+    return True
 def _unlocked(r, e): return not e.is_locked or r.session.get('diary_unlock_until', 0) >= int(timezone.now().timestamp())
 def _require_unlocked(r, e):
     if not _unlocked(r, e): raise Http404
@@ -62,20 +73,28 @@ def entry_list(request):
     if request.GET.get('favorite') == '1': entries = entries.filter(is_favorite=True)
     sort = request.GET.get('sort', 'newest')
     entries = entries.order_by('entry_date', 'entry_time', 'id') if sort == 'oldest' else entries.order_by('-entry_date', '-entry_time', '-id')
-    return render(request, 'personal_diary/entry_list.html', {'entries': entries, 'query':query, 'mood':mood, 'category':category, 'entry_date':entry_date, 'date_from':date_from, 'date_to':date_to, 'sort':sort, 'moods':DiaryEntry.Mood, 'categories':DiaryEntry.Category})
+    paginator = Paginator(entries, 30)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    return render(request, 'personal_diary/entry_list.html', {'entries': page_obj, 'page_obj': page_obj, 'query_string': query_params.urlencode(), 'query':query, 'mood':mood, 'category':category, 'entry_date':entry_date, 'date_from':date_from, 'date_to':date_to, 'sort':sort, 'moods':DiaryEntry.Mood, 'categories':DiaryEntry.Category})
 
 @diary_access_required
 @never_cache
 def entry_create(request):
     form = DiaryEntryForm(request.POST or None, user=request.user, initial={'entry_date':request.GET.get('date')} if request.GET.get('date') else None)
     if request.method == 'POST' and form.is_valid():
-        entry=form.save(commit=False); entry.user=request.user; entry.save(); entry.tags.set([request.user.diary_tags.get_or_create(name=x)[0] for x in form.cleaned_data['tags_text']]); messages.success(request, 'Diary entry saved.'); return redirect('personal_diary:entry_detail', pk=entry.pk)
+        entry=form.save(commit=False); entry.user=request.user; entry.save(); entry.tags.set([request.user.diary_tags.get_or_create(name=x)[0] for x in form.cleaned_data['tags_text']]);
+        if _ensure_locked_entry_pin(entry): messages.info(request, 'Private entry PIN has been set to its date in DDMMYYYY format. Change it from Diary PIN settings.')
+        messages.success(request, 'Diary entry saved.'); return redirect('personal_diary:entry_detail', pk=entry.pk)
     return render(request, 'personal_diary/entry_form.html', {'form':form, 'page_title':'नई डायरी लिखें'})
 
 @diary_access_required
 @never_cache
 def entry_detail(request, pk):
     entry=_owned_entry(request,pk)
+    # Covers older private entries created before the date-PIN default existed.
+    _ensure_locked_entry_pin(entry)
     if entry.is_locked and not _unlocked(request,entry): return render(request,'personal_diary/unlock.html',{'entry':entry,'has_pin':bool(_preference(request.user).pin_hash)})
     return _private(render(request,'personal_diary/entry_detail.html',{'entry':entry,'media_items':entry.media.filter(deleted_at__isnull=True)}))
 
@@ -83,7 +102,10 @@ def entry_detail(request, pk):
 @never_cache
 def entry_update(request,pk):
     entry=_owned_entry(request,pk); _require_unlocked(request,entry); form=DiaryEntryForm(request.POST or None,instance=entry,user=request.user)
-    if request.method=='POST' and form.is_valid(): form.save(); messages.success(request, 'Diary entry updated.'); return redirect('personal_diary:entry_detail',pk=entry.pk)
+    if request.method=='POST' and form.is_valid():
+        entry = form.save()
+        if _ensure_locked_entry_pin(entry): messages.info(request, 'Private entry PIN has been set to its date in DDMMYYYY format. Change it from Diary PIN settings.')
+        messages.success(request, 'Diary entry updated.'); return redirect('personal_diary:entry_detail',pk=entry.pk)
     return render(request,'personal_diary/entry_form.html',{'form':form,'entry':entry,'page_title':'डायरी बदलें'})
 
 @diary_access_required
@@ -164,9 +186,13 @@ def event_delete(request,pk): get_object_or_404(ImportantEvent,pk=pk,user=reques
 def autosave(request,pk=None):
     try: data=json.loads(request.body or '{}')
     except ValueError:return JsonResponse({'error':'invalid_json'},status=400)
+    is_new_draft = pk is None
     entry=_owned_entry(request,pk) if pk else DiaryEntry(user=request.user,is_draft=True)
     if data.get('updated_at') and entry.pk and data['updated_at']!=entry.updated_at.isoformat():return JsonResponse({'error':'conflict','updated_at':entry.updated_at.isoformat()},status=409)
-    entry.title=str(data.get('title',entry.title or 'Untitled'))[:180]; entry.content=str(data.get('content',entry.content)); entry.is_draft=True
+    # Autosave must never turn an already published entry back into a draft.
+    entry.title=str(data.get('title',entry.title or 'Untitled'))[:180]; entry.content=str(data.get('content',entry.content))
+    if is_new_draft:
+        entry.is_draft=True
     if data.get('mood') in DiaryEntry.Mood.values:entry.mood=data['mood']
     entry.save(); return JsonResponse({'id':entry.pk,'updated_at':entry.updated_at.isoformat(), 'autosave_url': reverse('personal_diary:autosave', args=[entry.pk]), 'edit_url': reverse('personal_diary:entry_update', args=[entry.pk])})
 
@@ -174,7 +200,12 @@ def autosave(request,pk=None):
 @require_POST
 def unlock_entry(request,pk):
     entry=_owned_entry(request,pk); pref=_preference(request.user)
-    if not pref.pin_hash or not check_password(request.POST.get('pin',''),pref.pin_hash):return HttpResponse('PIN verification failed.',status=403)
+    if not pref.pin_hash or not check_password(request.POST.get('pin',''),pref.pin_hash):
+        return render(request, 'personal_diary/unlock.html', {
+            'entry': entry,
+            'has_pin': bool(pref.pin_hash),
+            'error': 'PIN is incorrect. Please try again.',
+        }, status=403)
     request.session['diary_unlock_until']=int((timezone.now()+timedelta(minutes=15)).timestamp()); return redirect('personal_diary:entry_detail',pk=entry.pk)
 @diary_access_required
 @never_cache
