@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     'khata',
     'onedownload',
     'coupons',
+    'personal_diary',
 ]
 
 MIDDLEWARE = [
@@ -111,6 +112,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'khata.access.menu_permissions_context',
+                'personal_diary.access.diary_access_context',
             ],
         },
     },
@@ -257,3 +259,13 @@ GOOGLE_DRIVE_DOWNLOADS_CACHE_SECONDS = int(os.getenv('GOOGLE_DRIVE_DOWNLOADS_CAC
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv('GOOGLE_SERVICE_ACCOUNT_FILE', '').strip()
 GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON', '').strip()
 KHATA_ATTACHMENT_MAX_SIZE = 5 * 1024 * 1024
+
+# Personal Diary uses an isolated private Drive root; never reuse Khata folders.
+PERSONAL_DIARY_DRIVE_ROOT_ID = os.getenv('PERSONAL_DIARY_DRIVE_ROOT_ID', '').strip()
+PERSONAL_DIARY_PHOTO_MAX_BYTES = int(os.getenv('PERSONAL_DIARY_PHOTO_MAX_BYTES', str(10 * 1024 * 1024)))
+PERSONAL_DIARY_VIDEO_MAX_BYTES = int(os.getenv('PERSONAL_DIARY_VIDEO_MAX_BYTES', str(200 * 1024 * 1024)))
+PERSONAL_DIARY_AUDIO_MAX_BYTES = int(os.getenv('PERSONAL_DIARY_AUDIO_MAX_BYTES', str(25 * 1024 * 1024)))
+PERSONAL_DIARY_USER_QUOTA_BYTES = int(os.getenv('PERSONAL_DIARY_USER_QUOTA_BYTES', str(2 * 1024 * 1024 * 1024)))
+PERSONAL_DIARY_MAX_ATTACHMENTS = int(os.getenv('PERSONAL_DIARY_MAX_ATTACHMENTS', '20'))
+# Absolute path to a Devanagari-capable TTF installed outside the repository.
+PERSONAL_DIARY_PDF_FONT_PATH = os.getenv('PERSONAL_DIARY_PDF_FONT_PATH', '').strip()

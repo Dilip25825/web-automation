@@ -21,6 +21,7 @@ urlpatterns = [
     path('khata/', include('khata.urls')),
     path('downloads/', include('onedownload.urls')),
     path('coupons/', include('coupons.urls')),
+    path('diary/', include('personal_diary.urls')),
     path('', include('core.urls')),
 ]
 
