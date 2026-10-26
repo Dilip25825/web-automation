@@ -734,6 +734,7 @@
         main .diary-reading-page h1, main .diary-entry-copy, main .app-card .line-clamp-2 { font-family: 'Kalam', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', cursive; }
         main .diary-entry-copy { max-width: 100%; padding-top: 1px; color: #073b86; line-height: 32px !important; text-shadow: 0 .2px 0 rgba(7,59,134,.18); }
         main .diary-red-ink { color: #c1121f; font-weight: 700; text-shadow: 0 .2px 0 rgba(193,18,31,.16); }
+        main .diary-emoji { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif !important; font-style: normal; }
         main h1, main h2, main h3 { font-family: Georgia, 'Times New Roman', serif; }
         main .btn-primary { background: #b93036 !important; border-color: #96252b !important; }
         main .btn-primary:hover { background: #92242a !important; }
@@ -1134,6 +1135,27 @@
             }
         });
         element.replaceChildren(output);
+    });
+    document.querySelectorAll('.diary-entry-copy, .diary-reading-page h1, .app-card h2, .app-card p').forEach((root) => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+        textNodes.forEach((node) => {
+            const parts = node.nodeValue.split(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}](?:\uFE0F|\u200D[\u{1F300}-\u{1FAFF}])*)/gu);
+            if (parts.length === 1) return;
+            const output = document.createDocumentFragment();
+            parts.forEach((part) => {
+                if (/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(part)) {
+                    const emoji = document.createElement('span');
+                    emoji.className = 'diary-emoji';
+                    emoji.textContent = part;
+                    output.appendChild(emoji);
+                } else {
+                    output.appendChild(document.createTextNode(part));
+                }
+            });
+            node.parentNode.replaceChild(output, node);
+        });
     });
     </script>
     {% endif %}
