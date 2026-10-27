@@ -135,6 +135,8 @@ DATABASES = {
         # Store and read MySQL DATETIME values in Indian Standard Time.
         # This keeps legacy UserInfo Date_Time values aligned with the business timezone.
         'TIME_ZONE': 'Asia/Kolkata',
+        # Keep 4-byte Unicode (including emoji) intact for MariaDB connections.
+        'OPTIONS': {'charset': 'utf8mb4'},
         'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '30')),
         'CONN_HEALTH_CHECKS': True,
     }
