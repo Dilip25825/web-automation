@@ -126,6 +126,9 @@ def dashboard(request):
     dashboard_metrics = []
     activity_points = []
     recent_licenses = []
+    report_insights = []
+    report_links = []
+    month_start = today.replace(day=1)
 
     userinfo_records = UserInfoData.objects.none()
     if permissions.get('user_licenses'):
@@ -156,6 +159,11 @@ def dashboard(request):
                 {'label': 'Total Licence Amount', 'value': financial_totals['amount'], 'currency': True, 'icon': 'fa-indian-rupee-sign', 'tone': 'violet', 'url': reverse('licensing:userinfo_dashboard')},
                 {'label': 'Received Amount', 'value': financial_totals['received'], 'currency': True, 'icon': 'fa-circle-check', 'tone': 'emerald', 'url': reverse('licensing:userinfo_dashboard')},
             ])
+            report_insights.extend([
+                {'label': 'This Month Activations', 'value': userinfo_records.filter(date_time__date__gte=month_start).count(), 'detail': month_start.strftime('%B %Y'), 'icon': 'fa-calendar-check', 'tone': 'indigo'},
+                {'label': 'Pending Collection', 'value': max(0, (financial_totals['amount'] or 0) - (financial_totals['received'] or 0)), 'detail': 'Licence amount not received', 'currency': True, 'icon': 'fa-wallet', 'tone': 'rose'},
+            ])
+        report_links.append({'label': 'User Activation Report', 'detail': 'Date-wise licences and collection', 'icon': 'fa-chart-column', 'url': reverse('licensing:userinfo_activation_report'), 'tone': 'indigo'})
 
         start_date = today - timedelta(days=29)
         activity_by_day = dict(
@@ -179,6 +187,9 @@ def dashboard(request):
             erp_records = erp_records.none()
         erp_totals = erp_records.aggregate(total=Count('pk'), active=Count('pk', filter=Q(is_active=1)))
         dashboard_metrics.append({'label': 'ERP Licences', 'value': erp_totals['total'], 'detail': f"{erp_totals['active']} active", 'icon': 'fa-building-columns', 'tone': 'sky', 'url': reverse('licensing:pacserp_dashboard')})
+        if request.user.is_superuser:
+            report_insights.append({'label': 'ERP Renewals Due', 'value': erp_records.filter(expiry_date__gte=today, expiry_date__lte=today + timedelta(days=30)).count(), 'detail': 'Next 30 days', 'icon': 'fa-calendar-days', 'tone': 'amber'})
+        report_links.append({'label': 'ERP Activation Report', 'detail': 'ERP activations and collection', 'icon': 'fa-file-chart-column', 'url': reverse('licensing:erp_activation_report'), 'tone': 'sky'})
 
     if permissions.get('khata'):
         khata_today = Transaction.objects.filter(customer__user=request.user, date=today).aggregate(
@@ -193,6 +204,7 @@ def dashboard(request):
             ),
         )
         dashboard_metrics.append({'label': "Today's Khata Transactions", 'value': khata_today['total'], 'detail': f"₹{khata_today['given']} given · ₹{khata_today['received']} received", 'icon': 'fa-book-open', 'tone': 'amber', 'url': reverse('khata:dashboard')})
+        report_links.append({'label': 'Khata Report', 'detail': 'Ledger and transaction summary', 'icon': 'fa-book-open', 'url': reverse('khata:report_page'), 'tone': 'emerald'})
 
     for record in userinfo_records.order_by('-date_time')[:5]:
         recent_licenses.append(SimpleNamespace(
@@ -224,6 +236,8 @@ def dashboard(request):
         'dashboard_metrics': dashboard_metrics,
         'activity_points': activity_points,
         'recent_licenses': recent_licenses[:6],
+        'report_insights': report_insights,
+        'report_links': report_links,
     })
 
 

@@ -1,8 +1,11 @@
 {% extends 'core/base.html' %}
 {% block title %}Web Automation with Excel | Home{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-7xl space-y-12 px-4 py-6 sm:px-6 lg:px-8">
-<header class="app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
+<style>
+  .home-shell{gap:0}.home-shell>section,.home-shell>header{margin-bottom:2rem}.home-hero{background:linear-gradient(135deg,#fff 0%,#f8faff 58%,#eef2ff 100%)!important;border:1px solid #dbe4f0!important;box-shadow:0 12px 30px rgba(15,23,42,.07)!important;color:#0f172a!important}.home-hero h1{color:#0f172a!important;letter-spacing:-.035em}.home-hero p{color:#64748b!important}.home-hero .inline-flex{background:#eef2ff!important;color:#4338ca!important;box-shadow:inset 0 0 0 1px #c7d2fe}.home-hero .inline-flex i{color:#6366f1}.home-hero a.bg-white{background:#fff!important;border:1px solid #c7d2fe;color:#4338ca!important;box-shadow:none!important}.home-hero a[class*="bg-white/"]{background:#eef2ff!important;color:#4338ca!important;box-shadow:inset 0 0 0 1px #c7d2fe}.home-hero>div>span{background:#eef2ff!important;color:#4f46e5!important;box-shadow:inset 0 0 0 1px #c7d2fe}.home-shell .app-card{box-shadow:0 4px 14px rgba(15,23,42,.04)}.home-shell .min-h-64{min-height:14rem}.home-shell .border-t-4{border-top-width:3px}.home-shell h2,.home-shell h3{letter-spacing:-.018em}
+</style>
+<div class="home-shell mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+<header class="home-hero app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
   <div class="grid items-center gap-8 px-6 py-10 sm:px-10 lg:grid-cols-[1fr_auto] lg:py-14">
     <div><div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-100 ring-1 ring-white/15"><i class="fa-solid fa-bolt"></i>Web Automation with Excel</div>
       {% if request.user.is_authenticated %}<h1 class="mt-5 max-w-4xl text-4xl font-extrabold leading-tight sm:text-5xl">Your automation workspace is ready.</h1><p class="mt-4 max-w-2xl text-base leading-7 text-indigo-100">Business tools manage karein ya available automation solutions explore karein.</p>{% else %}<h1 class="mt-5 max-w-4xl text-4xl font-extrabold leading-tight sm:text-5xl">Repetitive work kam karein. Accuracy aur speed badhayein.</h1><p class="mt-4 max-w-3xl text-base leading-7 text-indigo-100">Excel, KRP, ERP aur PMFBY workflows ke liye practical automation solutions—structured, reliable aur easy to use.</p>{% endif %}

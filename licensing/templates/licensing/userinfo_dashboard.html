@@ -186,6 +186,8 @@
     .userinfo-monthly-report-head strong,.userinfo-monthly-report-head span{color:#475569}.userinfo-report-filter,.userinfo-report-period{background:#f8fafc;border-color:#dbe4f0;color:#475569}.userinfo-monthly-nav a{background:#fff;border-color:#cbd5e1;color:#4338ca}.userinfo-monthly-nav a:hover{background:#eef2ff;color:#4338ca}.userinfo-monthly-nav span{background:#f8fafc;border-color:#dbe4f0;color:#475569}
     .userinfo-monthly-card{background:#fff;border-color:#dbe4f0;color:#334155;box-shadow:0 2px 5px rgba(15,23,42,.03)}.userinfo-monthly-card:hover{border-color:#a5b4fc}.userinfo-monthly-card.is-selected{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.14)}.userinfo-monthly-card-icon{background:#eef2ff;color:#4f46e5}.userinfo-monthly-card-copy>strong,.userinfo-monthly-card-stats b{color:#334155}.userinfo-monthly-card-stats{color:#64748b}.userinfo-monthly-empty{border-color:#cbd5e1;color:#64748b}
     .userinfo-search-hero{background:#fff;border:1px solid #dbe4f0;box-shadow:0 8px 22px rgba(15,23,42,.06);color:#334155}.userinfo-search-hero::after{background:#eef2ff}.userinfo-search-hero-icon{background:#eef2ff;border-color:#c7d2fe;color:#4f46e5}.userinfo-search-hero h3{color:#0f172a}.userinfo-search-eyebrow,.userinfo-search-meta{color:#64748b}.userinfo-first-match{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
+    /* Calm enterprise layout: one surface for controls and one for records. */
+    .userinfo-dashboard-shell{background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}.userinfo-dashboard-shell>.p-5{padding:0!important}.userinfo-control-hero{border-radius:.85rem;box-shadow:0 4px 14px rgba(15,23,42,.045);margin-bottom:.9rem;padding:1.1rem 1.35rem}.userinfo-control-hero::after{display:none}.userinfo-control-heading{align-items:center;margin-bottom:.9rem}.userinfo-control-heading h2{font-size:1.25rem;font-weight:800}.userinfo-control-eyebrow{font-size:.62rem;letter-spacing:.12em}.userinfo-control-actions{gap:.45rem}.userinfo-total-badge{border-radius:.65rem;min-width:96px;padding:.45rem .65rem}.userinfo-total-badge strong{font-size:1.2rem}.userinfo-report-button{border-radius:.65rem;font-size:.72rem;min-height:2.35rem;padding:.42rem .62rem}.userinfo-add-record-button{border-radius:.65rem;box-shadow:none;font-size:.76rem;min-height:2.35rem;padding:.5rem .75rem}.userinfo-control-form{gap:.55rem}.userinfo-input-wrap{border-radius:.55rem;min-height:2.55rem}.userinfo-hero-search-button,.userinfo-hero-reset-button{border-radius:.55rem;min-height:2.55rem}.userinfo-professional-table th{background:#f8fafc;color:#475569;font-size:.68rem;letter-spacing:.055em;padding:.8rem .75rem}.userinfo-professional-table td{padding:1rem .75rem}.userinfo-professional-table tbody tr:hover{background:#fafbff;box-shadow:inset 2px 0 0 #6366f1}#userinfo-results{background:#fff;border:1px solid #e2e8f0;border-radius:.85rem;box-shadow:0 4px 14px rgba(15,23,42,.04);overflow:hidden}.userinfo-search-hero{border-radius:0;box-shadow:none;margin:0;border-width:0 0 1px}.userinfo-pagination{padding-bottom:.35rem}
 </style>
 <style>
     /* On phones, present each license record as a complete card instead of a seven-column table. */
@@ -217,7 +219,7 @@
 </style>
 <div class="mx-auto max-w-[112rem] space-y-4 px-0 py-1">
 
-    <div class="app-card overflow-hidden">
+    <div class="userinfo-dashboard-shell app-card overflow-hidden">
 
         <div class="p-5">
             <section class="userinfo-control-hero" aria-label="UserInfo search controls">

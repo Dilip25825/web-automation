@@ -462,10 +462,14 @@
         .app-navbar .app-brand-accent { color: #4f46e5 !important; }
         .app-navbar .app-brand-mark { border-color: #c7d2fe !important; box-shadow: 0 5px 14px rgba(79, 70, 229, .14) !important; }
         .app-navbar .app-nav-links > a,
-        .app-navbar .admin-menu > summary { color: #475569 !important; }
+        .app-navbar .admin-menu > summary,
+        .app-navbar .app-more-menu > summary { color: #475569 !important; }
         .app-navbar .app-nav-links > a:hover,
-        .app-navbar .admin-menu > summary:hover { background: #eef2ff !important; color: #4338ca !important; }
+        .app-navbar .admin-menu > summary:hover,
+        .app-navbar .app-more-menu > summary:hover { background: #eef2ff !important; color: #4338ca !important; }
         .app-navbar .app-nav-links > a.bg-white { background: #eef2ff !important; color: #4338ca !important; box-shadow: none !important; }
+        .app-navbar .admin-menu > summary,.app-navbar .app-more-menu > summary { background: transparent !important; }
+        .app-navbar .admin-menu > summary > i:first-child,.app-navbar .app-more-menu > summary > i:first-child { color: #6366f1 !important; }
         .app-navbar .app-public-links > a:not(.btn) { color: #475569 !important; }
         .app-navbar .app-public-links > a:not(.btn):hover { background: #eef2ff !important; color: #4338ca !important; }
         .app-navbar .account-menu > summary { border-color: #dbe3f0 !important; background: #fff !important; color: #334155 !important; box-shadow: 0 1px 2px rgba(15, 23, 42, .03); }
@@ -571,13 +575,13 @@
             text-align: center;
         }
 
-        .admin-menu { position: relative; }
-        .admin-menu > summary { cursor: pointer; list-style: none; }
-        .admin-menu > summary::-webkit-details-marker { display: none; }
-        .admin-menu-panel { position: absolute; top: calc(100% + .45rem); right: 0; z-index: 60; min-width: 205px; padding: .45rem; border: 1px solid rgba(199,210,254,.55); border-radius: .9rem; background: #fff; box-shadow: 0 18px 38px rgba(15,23,42,.24); }
-        .admin-menu-panel a, .admin-menu-panel button { display: flex; align-items: center; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .65rem .75rem; color: #334155; font: inherit; font-size: .82rem; font-weight: 800; text-align: left; text-decoration: none; }
-        .admin-menu-panel a:hover, .admin-menu-panel button:hover { background: #eef2ff; color: #4338ca; }
-        .admin-menu-panel i { width: 1.35rem; color: #4f46e5; }
+        .admin-menu,.app-more-menu { position: relative; }
+        .admin-menu > summary,.app-more-menu > summary { cursor: pointer; list-style: none; }
+        .admin-menu > summary::-webkit-details-marker,.app-more-menu > summary::-webkit-details-marker { display: none; }
+        .admin-menu-panel,.app-more-menu-panel { position: absolute; top: calc(100% + .45rem); right: 0; z-index: 60; min-width: 205px; padding: .45rem; border: 1px solid rgba(199,210,254,.55); border-radius: .9rem; background: #fff; box-shadow: 0 18px 38px rgba(15,23,42,.24); }
+        .admin-menu-panel a,.admin-menu-panel button,.app-more-menu-panel a { display: flex; align-items: center; width: 100%; border: 0; border-radius: .65rem; background: transparent; padding: .65rem .75rem; color: #334155; font: inherit; font-size: .82rem; font-weight: 800; text-align: left; text-decoration: none; }
+        .admin-menu-panel a:hover,.admin-menu-panel button:hover,.app-more-menu-panel a:hover { background: #eef2ff; color: #4338ca; }
+        .admin-menu-panel i,.app-more-menu-panel i { width: 1.35rem; color: #4f46e5; }
         .account-menu { position: relative; }
         .account-menu > summary { cursor: pointer; list-style: none; }
         .account-menu > summary::-webkit-details-marker { display: none; }
@@ -682,10 +686,7 @@
                         {% if menu_permissions.khata %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'khata' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'khata:dashboard' %}">
                             <i class="fa-solid fa-file-invoice-dollar"></i> Khata
                         </a>{% endif %}
-                        {% if menu_permissions.coupons %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'coupons' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}
-                        {% if menu_permissions.downloads %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'downloads' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'downloads:public_downloads' %}">
-                            <i class="fa-solid fa-download"></i> Download
-                        </a>{% endif %}
+                        {% if menu_permissions.coupons or menu_permissions.downloads %}<details class="app-more-menu"><summary class="flex items-center gap-2 rounded-xl px-3 py-2 text-indigo-100 transition hover:bg-white/10 hover:text-white"><i class="fa-solid fa-ellipsis"></i> More <i class="fa-solid fa-chevron-down text-[10px]"></i></summary><div class="app-more-menu-panel">{% if menu_permissions.coupons %}<a href="{% url 'coupons:dashboard' %}"><i class="fa-solid fa-ticket"></i> Coupons</a>{% endif %}{% if menu_permissions.downloads %}<a href="{% url 'downloads:public_downloads' %}"><i class="fa-solid fa-download"></i> Downloads</a>{% endif %}</div></details>{% endif %}
                         {% if can_access_diary %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'personal_diary' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'personal_diary:dashboard' %}">
                             <i class="fa-solid fa-book-heart"></i> मेरी डायरी
                         </a>{% endif %}
@@ -1044,7 +1045,7 @@
     {% endif %}
     <script>
     (() => {
-        const menus = () => document.querySelectorAll('details.account-menu, details.admin-menu');
+        const menus = () => document.querySelectorAll('details.account-menu, details.admin-menu, details.app-more-menu');
         document.addEventListener('click', event => {
             menus().forEach(menu => {
                 if (menu.open && !menu.contains(event.target)) menu.removeAttribute('open');
