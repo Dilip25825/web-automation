@@ -1,6 +1,6 @@
 Attribute VB_Name = "PayNow"
 Option Explicit
-Private Const BASE_URL As String = "https://webautomationexcel.com"
+Private Const BASE_URL As String = "https://webautomationexcel.com/api/payments/erp/create/""
 'Private Const BASE_URL As String = "http://127.0.0.1:8000"
 Private Const APP_NAME As String = "WebAutomationWithExcel"
 Private Const ERP_PAYMENT_SECTION As String = "ERPPayment"

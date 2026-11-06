@@ -14,6 +14,10 @@ def delete_transaction_with_activation_links(transaction, owner):
             ActivationLedgerEntry.objects.select_for_update()
             .filter(customer__user=owner)
             .filter(Q(transaction=locked_transaction) | Q(reversal_transaction=locked_transaction))
+            # Some legacy activation rows contain an invalid UUID token.  A ledger
+            # delete only needs these relation IDs, so avoid reading/converting the
+            # unrelated token field before the linked entries can be removed.
+            .only('pk', 'transaction_id', 'reversal_transaction_id')
             .first()
         )
 

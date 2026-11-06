@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import RequestFactory, TestCase
 
 from khata.models import ActivationLedgerEntry, ActivationLedgerMapping, Customer, Transaction
@@ -127,6 +128,34 @@ class ActivationKhataIntegrationTests(TestCase):
         self.assertEqual(result['deleted_count'], 2)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(ActivationLedgerEntry.objects.count(), 0)
+
+    def test_manual_delete_handles_legacy_invalid_activation_token(self):
+        request = self.request({
+            'accepted_by_user': self.operator.id,
+            'khata_effect': '1',
+            'khata_customer': self.customer.id,
+            'activation_token': str(uuid4()),
+        })
+        entry = create_activation_ledger_entry(
+            prepare_manual_activation(request, 1750),
+            request_user=self.owner,
+            source_type='USERINFO',
+            source_record_id=11585,
+            source_label='Legacy token test',
+        )
+        # Older production rows may contain a non-UUID token.  The linked Khata
+        # transaction must still be removable without loading that bad value.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'UPDATE khata_activationledgerentry SET activation_token = %s WHERE id = %s',
+                ['legacy-token-value', entry.pk],
+            )
+
+        result = delete_transaction_with_activation_links(entry.transaction, self.owner)
+
+        self.assertTrue(result['linked'])
+        self.assertFalse(Transaction.objects.exists())
+        self.assertFalse(ActivationLedgerEntry.objects.exists())
 
     def test_ledger_owner_can_delete_entry_created_by_selected_operator(self):
         request = self.factory.post('/licensing/toggle/7/', {})

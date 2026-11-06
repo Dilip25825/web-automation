@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
-            background: #f5f7ff;
+            background: #f8fafc;
             color: #172033
         }
 
@@ -26,7 +26,7 @@
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 1rem;
-            box-shadow: 0 10px 28px rgba(65, 62, 145, .08)
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .055)
         }
 
         .app-table,
@@ -451,6 +451,48 @@
             }
         }
 
+        /* Light application shell: shared by all business modules. */
+        .app-navbar {
+            border-color: #e2e8f0 !important;
+            background: rgba(255, 255, 255, .96) !important;
+            color: #334155 !important;
+            box-shadow: 0 5px 20px rgba(15, 23, 42, .06) !important;
+        }
+        .app-navbar .app-brand { color: #0f172a !important; }
+        .app-navbar .app-brand-accent { color: #4f46e5 !important; }
+        .app-navbar .app-brand-mark { border-color: #c7d2fe !important; box-shadow: 0 5px 14px rgba(79, 70, 229, .14) !important; }
+        .app-navbar .app-nav-links > a,
+        .app-navbar .admin-menu > summary { color: #475569 !important; }
+        .app-navbar .app-nav-links > a:hover,
+        .app-navbar .admin-menu > summary:hover { background: #eef2ff !important; color: #4338ca !important; }
+        .app-navbar .app-nav-links > a.bg-white { background: #eef2ff !important; color: #4338ca !important; box-shadow: none !important; }
+        .app-navbar .app-public-links > a:not(.btn) { color: #475569 !important; }
+        .app-navbar .app-public-links > a:not(.btn):hover { background: #eef2ff !important; color: #4338ca !important; }
+        .app-navbar .account-menu > summary { border-color: #dbe3f0 !important; background: #fff !important; color: #334155 !important; box-shadow: 0 1px 2px rgba(15, 23, 42, .03); }
+        .app-navbar .account-menu > summary:hover { background: #f8fafc !important; }
+        .app-navbar .account-menu > summary .text-indigo-200 { color: #64748b !important; }
+
+        .app-page-hero {
+            border: 1px solid #dbe4f0 !important;
+            background: #fff !important;
+            color: #0f172a !important;
+            box-shadow: 0 12px 30px rgba(15,23,42,.07) !important;
+        }
+        .app-page-hero h1 { color: #0f172a !important; }
+        .app-page-hero p.text-indigo-100,
+        .app-page-hero p.text-indigo-200,
+        .app-page-hero > div > div:first-child > p { color: #64748b !important; }
+        .app-page-hero span.text-indigo-100,
+        .app-page-hero span.text-indigo-200 { color: #64748b !important; }
+        .app-page-hero b.text-white { color: #0f172a !important; }
+        .app-page-hero a[class*="bg-white/"],
+        .app-page-hero button[class*="bg-white/"] { border: 1px solid #c7d2fe; background: #eef2ff !important; color: #4338ca !important; }
+        .app-page-hero a[class*="bg-white/"]:hover,
+        .app-page-hero button[class*="bg-white/"]:hover { background: #e0e7ff !important; }
+        .app-qr-header { background: #fff !important; color: #0f172a !important; border-bottom: 1px solid #e2e8f0; }
+        .app-qr-header .text-indigo-100 { color: #64748b !important; }
+        .app-qr-header button { background: #eef2ff !important; color: #4338ca !important; }
+
         /* Mobile menu overlay */
         .mobile-menu-overlay {
             display: none;
@@ -473,10 +515,11 @@
             max-width: 85%;
             height: 100vh;
             z-index: 50;
-            background: linear-gradient(160deg, #0f172a, #312e81 58%, #4338ca);
+            background: #ffffff;
             padding: 1.5rem 1rem;
             transition: right 0.3s ease;
-            box-shadow: -4px 0 30px rgba(0,0,0,0.1);
+            border-left: 1px solid #e2e8f0;
+            box-shadow: -12px 0 32px rgba(15,23,42,.12);
             overflow-y: auto;
         }
 
@@ -491,7 +534,7 @@
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #ffffff;
+            color: #475569;
             cursor: pointer;
         }
 
@@ -503,7 +546,7 @@
             border: 0;
             border-radius: 0.5rem;
             background: transparent;
-            color: #e0e7ff;
+            color: #475569;
             font: inherit;
             font-weight: 600;
             text-align: left;
@@ -512,14 +555,14 @@
         }
 
         .mobile-menu-panel .nav-item.active {
-            background: #ffffff;
+            background: #eef2ff;
             color: #3730a3;
             box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
         }
 
         .mobile-menu-panel .nav-item:hover {
-            background: rgba(255,255,255,.12);
-            color: #ffffff;
+            background: #f1f5f9;
+            color: #4338ca;
         }
 
         .mobile-menu-panel .nav-item i {
@@ -552,7 +595,7 @@
         .mobile-admin-submenu .nav-item { padding-top: .6rem; padding-bottom: .6rem; font-size: .92rem; }
 
         .mobile-menu-panel .divider {
-            border-top: 1px solid rgba(255,255,255,.16);
+            border-top: 1px solid #e2e8f0;
             margin: 0.75rem 0;
         }
 
@@ -562,8 +605,8 @@
             text-align: left;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
-            background: rgba(244,63,94,.16);
-            color: #fecdd3;
+            background: #fff1f2;
+            color: #be123c;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -571,7 +614,7 @@
         }
 
         .mobile-menu-panel .logout-btn:hover {
-            background: rgba(244,63,94,.28);
+            background: #ffe4e6;
         }
 
         .mobile-menu-panel .logout-btn i {
@@ -608,11 +651,11 @@
 </head>
 
 <body class="min-h-screen font-sans antialiased">
-    <nav class="sticky top-0 z-40 border-b border-white/10 bg-gradient-to-r from-slate-950/95 via-indigo-950/95 to-indigo-800/95 text-white shadow-[0_10px_35px_rgba(15,23,42,0.25)] backdrop-blur-xl">
+    <nav class="app-navbar sticky top-0 z-40 border-b backdrop-blur-xl">
         <div class="mx-auto flex min-h-[4.5rem] max-w-[1920px] items-center gap-5 px-4 sm:px-6">
-            <a class="flex shrink-0 items-center gap-2.5 text-lg font-extrabold text-white sm:text-xl" href="{% url 'core:home' %}">
-                <span class="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-white/25 bg-white shadow-lg shadow-indigo-950/30"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
-                <span>Web Automation <span class="text-cyan-300">With Excel</span></span>
+            <a class="app-brand flex shrink-0 items-center gap-2.5 text-lg font-extrabold sm:text-xl" href="{% url 'core:home' %}">
+                <span class="app-brand-mark h-11 w-11 shrink-0 overflow-hidden rounded-xl border bg-white"><img src="{% static 'core/images/youtube-channel-logo.jpg' %}" alt="Web Automation With Excel channel logo" class="h-full w-full object-cover"></span>
+                <span>Web Automation <span class="app-brand-accent">With Excel</span></span>
             </a>
 
             {% if request.user.is_authenticated %}
@@ -623,7 +666,7 @@
 
                 <!-- Desktop Menu (Hidden on mobile) -->
                 <div class="hidden w-full items-center justify-between lg:flex">
-                    <div class="flex items-center gap-1 text-sm font-bold text-slate-600">
+                    <div class="app-nav-links flex items-center gap-1 text-sm font-bold">
                         {% if menu_permissions.dashboard %}<a class="flex items-center gap-2 rounded-xl px-3 py-2 transition {% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'dashboard' %}bg-white text-indigo-800 shadow-md shadow-indigo-950/20{% else %}text-indigo-100 hover:bg-white/10 hover:text-white{% endif %}" href="{% url 'core:dashboard' %}">
                             <i class="fa-solid fa-table-columns"></i> Dashboard
                         </a>{% endif %}
@@ -653,7 +696,7 @@
                 </div>
             {% else %}
                 <button id="mobileMenuToggle" class="ml-auto grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md lg:hidden" aria-label="Open navigation menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
-                <div class="ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
+                <div class="app-public-links ml-auto hidden items-center gap-2 text-sm font-bold lg:flex">
                     <a href="{% url 'downloads:public_downloads' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-download"></i> Downloads</a>
                     <a href="{% url 'core:client_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-book-open"></i> PMFBY &amp; KRP Guide</a>
                     <a href="{% url 'core:erp_guide' %}" class="rounded-lg px-3 py-2 text-indigo-100 hover:bg-white/10 hover:text-white"><i class="fa-solid fa-building-columns"></i> ERP Guide</a>
@@ -688,7 +731,7 @@
     {% if request.user.is_superuser %}
     <div id="global-qr-modal" class="fixed inset-0 z-[1100] hidden items-center justify-center bg-slate-950/25 p-4" role="dialog" aria-modal="true" aria-labelledby="global-qr-title">
         <div class="w-full max-w-[500px] overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-2xl">
-            <div class="flex items-center justify-between bg-gradient-to-r from-indigo-900 to-violet-600 px-5 py-4 text-white">
+            <div class="app-qr-header flex items-center justify-between px-5 py-4">
                 <div><p class="text-[10px] font-black uppercase tracking-[.18em] text-indigo-200">Quick Payment</p><h2 id="global-qr-title" class="mt-1 text-lg font-black"><i class="fa-solid fa-qrcode mr-2"></i>UPI QR Generator</h2></div>
                 <button type="button" data-qr-modal-close class="grid h-9 w-9 place-items-center rounded-xl bg-white/15 text-lg hover:bg-white/25" aria-label="Close QR Generator"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -731,6 +774,13 @@
         main .diary-date-stamp span b { font-size: 1.35rem; } main .diary-date-stamp span small { font-size: .78rem; letter-spacing: .08em; }
         main .diary-date-stamp em { position: absolute; top: .45rem; left: 11.7rem; width: 180px; color: #57534e; font-family: ui-sans-serif, system-ui; font-size: .72rem; font-style: normal; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
         main .diary-reading-lines { min-height: 540px; padding-left: 6.2rem !important; background-color: #fff; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(56, 91, 147, .28) 32px, transparent 33px); background-size: 100% 32px; }
+        main > .mx-auto.max-w-6xl > section:first-child { border: 1px solid #d8cdb8; background: #fffdf4 !important; box-shadow: 0 10px 24px rgba(15,23,42,.09) !important; color: #172033 !important; }
+        main > .mx-auto.max-w-6xl > section:first-child .text-white { color: #172033 !important; }
+        main > .mx-auto.max-w-6xl > section:first-child .text-indigo-100 { color: #64748b !important; }
+        main > .mx-auto.max-w-6xl > section:first-child a[class*="bg-white/"] { border-color: #c7d2fe !important; background: #eef2ff !important; color: #4338ca !important; }
+        main header:has(#diary-unlock-title) { background: #fff !important; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
+        main header:has(#diary-unlock-title) .text-indigo-200 { color: #64748b !important; }
+        main header:has(#diary-unlock-title) a { background: #eef2ff !important; color: #4338ca !important; }
         main .diary-reading-page h1, main .diary-entry-copy, main .app-card .line-clamp-2 { font-family: 'Kalam', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', cursive; }
         main .diary-entry-copy { max-width: 100%; padding-top: 1px; color: #073b86; line-height: 32px !important; text-shadow: 0 .2px 0 rgba(7,59,134,.18); }
         main .diary-red-ink { color: #c1121f; font-weight: 700; text-shadow: 0 .2px 0 rgba(193,18,31,.16); }

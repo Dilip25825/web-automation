@@ -4,13 +4,14 @@
 <div id="reminders-app">
 <style>
 #reminders-app .reminder-modal-panel{border:0;border-radius:1.35rem;overflow:hidden;background:#fff;box-shadow:0 32px 90px rgba(15,23,42,.36)}
-#reminders-app .reminder-modal-header{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#020617,#312e81 55%,#4338ca);padding:1.35rem 1.5rem;color:#fff}
+#reminders-app .reminder-modal-header{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #e2e8f0;padding:1.35rem 1.5rem;color:#0f172a}
+#reminders-app .reminder-modal-header .text-indigo-200{color:#64748b!important}#reminders-app .reminder-modal-header .bg-white\/10{background:#eef2ff!important;color:#4338ca!important}#reminders-app .reminder-modal-header .text-white{color:#4338ca!important}
 #reminders-app .reminder-modal-body{background:#fff;padding:1.5rem}
 #reminders-app .reminder-modal-footer{display:flex;justify-content:flex-end;gap:.5rem;border-top:1px solid #e2e8f0;background:#f8fafc;padding:1rem 1.5rem}
 @media(max-width:575px){#reminders-app .reminder-modal-header,#reminders-app .reminder-modal-body,#reminders-app .reminder-modal-footer{padding:1.1rem}}
 </style>
 <div id="reminders-dashboard-content" class="mx-auto max-w-[96rem] space-y-4 px-0 py-1">
-<header class="app-card overflow-hidden border-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-700 text-white shadow-xl">
+<header class="app-page-hero app-card overflow-hidden">
   <div class="flex flex-col justify-between gap-6 px-6 py-7 sm:px-8 lg:flex-row lg:items-center">
     <div><p class="text-xs font-bold uppercase tracking-[.18em] text-indigo-200"><i class="fa-solid fa-bell mr-2"></i>Productivity workspace</p><h1 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Task Reminders</h1><p class="mt-2 max-w-xl text-sm text-indigo-100">Deadlines, priorities aur follow-ups ko ek organized workspace mein manage karein.</p></div>
     <div class="flex flex-wrap gap-2"><button type="button" data-modal-open="category-modal" class="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/25 hover:bg-white/20"><i class="fa-solid fa-tags mr-2"></i>Categories</button><button type="button" data-modal-open="task-modal" class="rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/25 hover:bg-white/20""><i class="fa-solid fa-plus mr-2"></i>New Task</button></div>

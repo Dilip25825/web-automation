@@ -7,7 +7,7 @@ Option Explicit
 '     CheckErpVersionOnOpen
 ' End Sub
 
-Private Const ERP_VERSION_API_URL As String = "https://web-automation-maar.onrender.com/api/licensing/erp/version/"
+Private Const ERP_VERSION_API_URL As String = "https://webautomationexcel.com/api/licensing/erp/version/"
 Private Const USER_SHEET_NAME As String = "User"
 Private Const VERSION_CELL As String = "B6"
 Private Const VERSION_INFO_ID As Long = 4

@@ -1,6 +1,19 @@
 from django.contrib.auth.decorators import login_required
+from datetime import timedelta
+from decimal import Decimal
+from types import SimpleNamespace
+
+from django.db.models import Count, DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce, TruncDate
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
+from django.utils import timezone
+
+from khata.access import menu_permissions, request_operator_settings
+from khata.models import Transaction
+from licensing.activation_ledger import search_only_operator
+from licensing.models import UserInfoData, tblPacsErp
 
 
 SOLUTIONS = {
@@ -107,7 +120,111 @@ def contact(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'core/dashboard.html')
+    permissions = getattr(request, 'menu_permissions', menu_permissions(request.user))
+    operator_settings = request_operator_settings(request)
+    today = timezone.localdate()
+    dashboard_metrics = []
+    activity_points = []
+    recent_licenses = []
+
+    userinfo_records = UserInfoData.objects.none()
+    if permissions.get('user_licenses'):
+        userinfo_records = UserInfoData.objects.all()
+        if not request.user.is_superuser:
+            userinfo_records = userinfo_records.filter(
+                Q(accepte_by__icontains=request.user.username)
+                | Q(accepte_by__isnull=True)
+                | Q(accepte_by__exact='')
+            )
+        if search_only_operator(request.user, operator_settings):
+            userinfo_records = userinfo_records.none()
+        userinfo_totals = userinfo_records.aggregate(total=Count('pk'))
+        dashboard_metrics.append({
+            'label': 'Total User Licences',
+            'value': userinfo_totals['total'],
+            'icon': 'fa-users',
+            'tone': 'indigo',
+            'url': reverse('licensing:userinfo_dashboard'),
+        })
+        # Financial totals are intentionally restricted to the superuser dashboard.
+        if request.user.is_superuser:
+            financial_totals = userinfo_records.aggregate(
+                amount=Coalesce(Sum('amount'), 0),
+                received=Coalesce(Sum('payment_status'), 0),
+            )
+            dashboard_metrics.extend([
+                {'label': 'Total Licence Amount', 'value': financial_totals['amount'], 'currency': True, 'icon': 'fa-indian-rupee-sign', 'tone': 'violet', 'url': reverse('licensing:userinfo_dashboard')},
+                {'label': 'Received Amount', 'value': financial_totals['received'], 'currency': True, 'icon': 'fa-circle-check', 'tone': 'emerald', 'url': reverse('licensing:userinfo_dashboard')},
+            ])
+
+        start_date = today - timedelta(days=29)
+        activity_by_day = dict(
+            userinfo_records.filter(date_time__date__gte=start_date)
+            .annotate(day=TruncDate('date_time'))
+            .values('day').annotate(total=Count('pk')).values_list('day', 'total')
+        )
+        activity_points = [
+            {'label': (start_date + timedelta(days=offset)).strftime('%d %b'), 'total': activity_by_day.get(start_date + timedelta(days=offset), 0)}
+            for offset in range(30)
+        ]
+
+    erp_records = tblPacsErp.objects.none()
+    if permissions.get('erp_licenses'):
+        erp_records = tblPacsErp.objects.all()
+        if not request.user.is_superuser:
+            erp_records = erp_records.filter(
+                Q(expiry_date__lt=today) | Q(accepte_by__iexact=request.user.username)
+            ).exclude(erp_id__iendswith=' Expired')
+        if search_only_operator(request.user, operator_settings):
+            erp_records = erp_records.none()
+        erp_totals = erp_records.aggregate(total=Count('pk'), active=Count('pk', filter=Q(is_active=1)))
+        dashboard_metrics.append({'label': 'ERP Licences', 'value': erp_totals['total'], 'detail': f"{erp_totals['active']} active", 'icon': 'fa-building-columns', 'tone': 'sky', 'url': reverse('licensing:pacserp_dashboard')})
+
+    if permissions.get('khata'):
+        khata_today = Transaction.objects.filter(customer__user=request.user, date=today).aggregate(
+            total=Count('pk'),
+            given=Coalesce(
+                Sum('amount', filter=Q(trans_type='GIVEN')),
+                Value(Decimal('0'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            ),
+            received=Coalesce(
+                Sum('amount', filter=Q(trans_type='GOT')),
+                Value(Decimal('0'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            ),
+        )
+        dashboard_metrics.append({'label': "Today's Khata Transactions", 'value': khata_today['total'], 'detail': f"₹{khata_today['given']} given · ₹{khata_today['received']} received", 'icon': 'fa-book-open', 'tone': 'amber', 'url': reverse('khata:dashboard')})
+
+    for record in userinfo_records.order_by('-date_time')[:5]:
+        recent_licenses.append(SimpleNamespace(
+            label=record.hero_pacs_name,
+            kind='User Licence',
+            amount=record.amount or 0,
+            status='Active' if record.is_active else 'Inactive',
+            status_tone='active' if record.is_active else 'inactive',
+            date_value=record.date_time,
+            url=reverse('licensing:userinfo_dashboard'),
+        ))
+    for record in erp_records.order_by('-date_time')[:5]:
+        recent_licenses.append(SimpleNamespace(
+            label=record.hero_pacs_name,
+            kind='ERP Licence',
+            amount=record.current_amount or record.amount or 0,
+            status='Active' if record.is_active else 'Inactive',
+            status_tone='active' if record.is_active else 'inactive',
+            date_value=record.date_time,
+            url=reverse('licensing:pacserp_dashboard'),
+        ))
+    recent_licenses.sort(key=lambda item: item.date_value or timezone.now(), reverse=True)
+
+    max_activity = max((point['total'] for point in activity_points), default=0) or 1
+    for point in activity_points:
+        point['height'] = max(5, round((point['total'] / max_activity) * 100))
+
+    return render(request, 'core/dashboard.html', {
+        'dashboard_metrics': dashboard_metrics,
+        'activity_points': activity_points,
+        'recent_licenses': recent_licenses[:6],
+    })
 
 
 def documentation(request):
