@@ -23,6 +23,7 @@ urlpatterns = [
     path("userinfo/fasal-rin/options/", license_views.fasal_rin_options, name="fasal_rin_options"),
     path("userinfo/fasal-rin/subscription/", license_views.fasal_rin_subscription, name="fasal_rin_subscription"),
     path("userinfo/fasal-rin/entries/check/", license_views.check_fasal_rin_entry, name="fasal_rin_entry_check"),
+    path("userinfo/fasal-rin/coupon/redeem/", license_views.redeem_fasal_rin_coupon, name="fasal_rin_coupon_redeem"),
     path("userinfo/fasal-rin/entries/consume/", license_views.consume_fasal_rin_entries, name="fasal_rin_entries_consume"),
     path("userinfo/fasal-rin/upi/", license_views.get_fasal_rin_upi, name="fasal_rin_upi"),    path("userinfo/pmfby/options/", license_views.pmfby_options, name="pmfby_options"),
     path("userinfo/pmfby/subscription/", license_views.pmfby_subscription, name="pmfby_subscription"),
