@@ -1,11 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.hashers import check_password
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import DiaryAccessSettings, DiaryEntry, DiaryMedia, ImportantEvent, DiaryPreference
+from .models import DiaryAccessSettings, DiaryEntry, ImportantEvent, DiaryPreference
 
 
 class DiaryAccessTests(TestCase):
@@ -63,12 +62,10 @@ class DiaryPhaseTests(TestCase):
         DiaryAccessSettings.objects.create(user=self.b, can_access_diary=True)
         self.entry = DiaryEntry.objects.create(user=self.a, title='A secret', content='private body')
 
-    def test_cross_user_event_media_and_export_are_private(self):
+    def test_cross_user_event_and_export_are_private(self):
         event = ImportantEvent.objects.create(user=self.a, title='A event', event_date=timezone.localdate())
-        media = DiaryMedia.objects.create(user=self.a, entry=self.entry, drive_file_id='unique-drive-id', drive_parent_folder_id='folder', original_filename='x.jpg', media_type='PHOTO', mime_type='image/jpeg', file_size=1)
         self.client.force_login(self.b)
         self.assertEqual(self.client.post(reverse('personal_diary:event_delete', args=[event.pk])).status_code, 404)
-        self.assertEqual(self.client.get(reverse('personal_diary:media_download', args=[media.pk])).status_code, 404)
         self.assertEqual(self.client.get(reverse('personal_diary:export_json')).status_code, 200)
         self.assertNotContains(self.client.get(reverse('personal_diary:export_json')), 'A secret')
 
@@ -109,12 +106,3 @@ class DiaryPhaseTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.entry.refresh_from_db()
         self.assertFalse(self.entry.is_draft)
-
-    def test_invalid_signature_and_quota_are_rejected_before_drive(self):
-        self.client.force_login(self.a)
-        bad = SimpleUploadedFile('not-really.jpg', b'not an image', content_type='image/jpeg')
-        response = self.client.post(reverse('personal_diary:media_upload', args=[self.entry.pk]), {'files': bad})
-        self.assertEqual(response.status_code, 400)
-        jpg = SimpleUploadedFile('real.jpg', b'\xff\xd8\xff' + b'x' * 20, content_type='image/jpeg')
-        response = self.client.post(reverse('personal_diary:media_upload', args=[self.entry.pk]), {'files': jpg})
-        self.assertEqual(response.status_code, 400)

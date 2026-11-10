@@ -1160,6 +1160,8 @@
     {% endif %}
     {% if request.resolver_match.namespace == 'personal_diary' %}
     <script>
+    // Diary media/gallery has been retired; remove any legacy link rendered by older templates.
+    document.querySelectorAll('a[href$="/diary/gallery/"]').forEach((link) => link.remove());
     // Match the compact, wide working area used by the User Licenses screens.
     document.querySelectorAll('main > .mx-auto').forEach((page) => {
         page.style.maxWidth = '96rem';

@@ -4,8 +4,7 @@ from io import BytesIO
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password, make_password
-from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,10 +12,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from . import drive_storage
 from .access import diary_access_required
 from .forms import DiaryEntryForm, ImportantEventForm
-from .models import DiaryAccessSettings, DiaryEntry, DiaryMedia, DiaryPreference, ImportantEvent
+from .models import DiaryAccessSettings, DiaryEntry, DiaryPreference, ImportantEvent
 
 def _entries_for(r): return DiaryEntry.objects.filter(user=r.user, deleted_at__isnull=True).prefetch_related('tags')
 def _owned_entry(r, pk): return get_object_or_404(_entries_for(r), pk=pk)
@@ -96,7 +94,7 @@ def entry_detail(request, pk):
     # Covers older private entries created before the date-PIN default existed.
     _ensure_locked_entry_pin(entry)
     if entry.is_locked and not _unlocked(request,entry): return render(request,'personal_diary/unlock.html',{'entry':entry,'has_pin':bool(_preference(request.user).pin_hash)})
-    return _private(render(request,'personal_diary/entry_detail.html',{'entry':entry,'media_items':entry.media.filter(deleted_at__isnull=True)}))
+    return _private(render(request,'personal_diary/entry_detail.html',{'entry':entry}))
 
 @diary_access_required
 @never_cache
@@ -124,49 +122,12 @@ def calendar_view(request):
     counts={x['entry_date'].day:x['total'] for x in data}; weeks=[[(d,counts.get(d.day,0) if d.month==month else 0) for d in w] for w in calendar.Calendar().monthdatescalendar(year,month)]
     return render(request,'personal_diary/calendar.html',{'year':year,'month':month,'month_name':calendar.month_name[month],'weeks':weeks,'counts':counts,'previous_month':date(year-1,12,1) if month==1 else date(year,month-1,1),'next_month':date(year+1,1,1) if month==12 else date(year,month+1,1)})
 
-def _media_spec(f):
-    ext=os.path.splitext(f.name)[1].lower(); head=f.read(32); f.seek(0)
-    specs={'.jpg':('PHOTO','image/jpeg',lambda x:x.startswith(b'\xff\xd8\xff')),'.jpeg':('PHOTO','image/jpeg',lambda x:x.startswith(b'\xff\xd8\xff')),'.png':('PHOTO','image/png',lambda x:x.startswith(b'\x89PNG\r\n\x1a\n')),'.webp':('PHOTO','image/webp',lambda x:x[:4]==b'RIFF' and x[8:12]==b'WEBP'),'.mp4':('VIDEO','video/mp4',lambda x:x[4:8]==b'ftyp'),'.mov':('VIDEO','video/quicktime',lambda x:x[4:8]==b'ftyp'),'.webm':('VIDEO','video/webm',lambda x:x.startswith(b'\x1aE\xdf\xa3')),'.mp3':('AUDIO','audio/mpeg',lambda x:x.startswith(b'ID3') or x[:2]==b'\xff\xfb'),'.m4a':('AUDIO','audio/mp4',lambda x:x[4:8]==b'ftyp'),'.wav':('AUDIO','audio/wav',lambda x:x[:4]==b'RIFF' and x[8:12]==b'WAVE')}; s=specs.get(ext)
-    return s[:2] if s and s[2](head) and (not f.content_type or f.content_type in {s[1],'application/octet-stream'}) else None
 
 @diary_access_required
-@require_POST
-def media_upload(request,pk):
-    entry=_owned_entry(request,pk); _require_unlocked(request,entry); files=request.FILES.getlist('files')
-    if not files or len(files)>int(getattr(settings,'PERSONAL_DIARY_MAX_ATTACHMENTS',20)): return HttpResponse('Invalid attachment count.',status=400)
-    specs=[(f,_media_spec(f)) for f in files]
-    if any(not s for _,s in specs): return HttpResponse('Unsupported or invalid media file.',status=400)
-    ids=[]
-    try:
-      with transaction.atomic():
-        limits=DiaryAccessSettings.objects.select_for_update().get(user=request.user); used=DiaryMedia.objects.filter(user=request.user,deleted_at__isnull=True).aggregate(total=Sum('file_size'))['total'] or 0; quota=limits.storage_quota_bytes or settings.PERSONAL_DIARY_USER_QUOTA_BYTES
-        if used+sum(f.size for f,_ in specs)>quota: return HttpResponse('Storage quota exceeded.',status=400)
-        for f,(kind,mime) in specs:
-          max_size=getattr(limits,{'PHOTO':'photo_max_upload_bytes','VIDEO':'video_max_upload_bytes','AUDIO':'audio_max_upload_bytes'}[kind]) or getattr(settings,'PERSONAL_DIARY_%s_MAX_BYTES'%kind)
-          if f.size>max_size:return HttpResponse('Media size limit exceeded.',status=400)
-        for f,(kind,mime) in specs:
-          result,parent,name=drive_storage.upload(f,request.user.pk,kind,mime); ids.append(result['id']); DiaryMedia.objects.create(user=request.user,entry=entry,drive_file_id=result['id'],drive_parent_folder_id=parent,original_filename=name,media_type=kind,mime_type=mime,file_size=f.size)
-    except Exception:
-      for file_id in ids: drive_storage.delete(file_id)
-      return HttpResponse('Media could not be uploaded.',status=503)
-    return redirect('personal_diary:entry_detail',pk=entry.pk)
-
-@diary_access_required
-@never_cache
-def media_download(request,pk):
-    media=get_object_or_404(DiaryMedia,pk=pk,user=request.user,deleted_at__isnull=True,entry__deleted_at__isnull=True); _require_unlocked(request,media.entry)
-    return _private(FileResponse(drive_storage.download(media.drive_file_id),as_attachment=request.GET.get('download')=='1',filename=media.original_filename,content_type=media.mime_type))
-@diary_access_required
-@require_POST
-def media_delete(request,pk):
-    media=get_object_or_404(DiaryMedia,pk=pk,user=request.user,deleted_at__isnull=True); _require_unlocked(request,media.entry); media.soft_delete(); messages.success(request, 'Media removed from gallery.'); return redirect('personal_diary:gallery')
-@diary_access_required
-@never_cache
 def gallery(request):
-    items=DiaryMedia.objects.filter(user=request.user,deleted_at__isnull=True,entry__deleted_at__isnull=True).select_related('entry'); typ=request.GET.get('type')
-    if typ in DiaryMedia.MediaType.values: items=items.filter(media_type=typ)
-    if request.GET.get('date'):items=items.filter(uploaded_at__date=request.GET['date'])
-    return _private(render(request,'personal_diary/gallery.html',{'items':[x for x in items if _unlocked(request,x.entry)],'types':DiaryMedia.MediaType,'selected_type':typ or ''}))
+    """Legacy Gallery URL retained only to avoid broken saved links."""
+    messages.info(request, 'Diary media is no longer available.')
+    return redirect('personal_diary:dashboard')
 
 @diary_access_required
 @never_cache
